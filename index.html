@@ -166,6 +166,11 @@
         gap: 4px;
       }
 
+      .action-stack {
+        display: grid;
+        gap: 8px;
+      }
+
       .stat-row {
         display: flex;
         justify-content: space-between;
@@ -471,13 +476,65 @@
       </section>
 
       <section id="settingsView" class="view">
+        <div class="summary-grid">
+          <div>
+            <span id="settingsGoogleStatus">!</span>
+            <small>Google</small>
+          </div>
+          <div>
+            <span id="settingsDownloadCount">0</span>
+            <small>downloads</small>
+          </div>
+          <div>
+            <span id="settingsUnsyncedCount">0</span>
+            <small>unsynced</small>
+          </div>
+        </div>
+
+        <section class="panel">
+          <h2>Connection</h2>
+          <div class="stats-list" id="connectionSettings"></div>
+          <div class="toolbar">
+            <button class="primary" id="settingsSignIn">Sign in to Google</button>
+            <button id="settingsScanDrive" disabled>Refresh Drive library</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Library</h2>
+          <div class="stats-list" id="librarySettings"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Stats</h2>
+          <div class="stats-list" id="statsSettings"></div>
+          <div class="toolbar">
+            <button id="settingsSyncStats">Sync stats to ledger</button>
+            <button id="settingsRefreshStats">Refresh local stats</button>
+          </div>
+        </section>
+
         <section class="panel">
           <h2>Storage</h2>
           <p id="storageStatus">Storage estimate not loaded yet.</p>
+          <div class="stats-list" id="storageSettings"></div>
           <div class="toolbar">
             <button id="refreshStorage">Refresh storage</button>
             <button class="danger" id="clearAllDownloads">Delete all downloads</button>
           </div>
+        </section>
+
+        <section class="panel">
+          <h2>Cleanup</h2>
+          <div class="action-stack">
+            <button class="danger" id="settingsClearLocalStats">Clear local stats</button>
+            <small>Downloads stay saved. Google Sheet rows are not deleted by this PWA action.</small>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Offline</h2>
+          <div class="stats-list" id="offlineSettings"></div>
         </section>
       </section>
     </main>
@@ -531,6 +588,7 @@
       let currentObjectUrl = "";
       let lastProgressAt = 0;
       let lastPosition = 0;
+      let storageEstimate = null;
       let suppressPause = false;
       let suppressNextSeekRecord = false;
       let endingHandled = false;
@@ -711,6 +769,7 @@
         renderDownloads();
         renderFiles();
         renderStats();
+        renderSettings();
         refreshStorageEstimate();
       }
 
@@ -718,6 +777,7 @@
         events = await readEvents();
         events.sort((a, b) => new Date(a.at) - new Date(b.at));
         renderStats();
+        renderSettings();
       }
 
       function latestEventFor(fileId, type) {
@@ -801,6 +861,51 @@
           : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
       }
 
+      function renderSettings() {
+        const unsynced = events.filter((event) => !event.syncedAt);
+        const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
+        const savedFolders = new Set(downloads.map((file) => file.folderPath || "Podcast"));
+        $("settingsGoogleStatus").textContent = accessToken ? "OK" : "!";
+        $("settingsDownloadCount").textContent = downloads.length;
+        $("settingsUnsyncedCount").textContent = unsynced.length;
+        $("settingsScanDrive").disabled = !accessToken;
+        $("settingsSignIn").textContent = accessToken ? "Reconnect Google" : "Sign in to Google";
+
+        $("connectionSettings").innerHTML = rows([
+          ["Google", accessToken ? "Connected" : "Tap to sign in"],
+          ["Drive refresh", accessToken ? "Ready" : "Needs Google sign-in"],
+          ["Stats ledger", accessToken ? "Ready to sync" : "Needs Google sign-in"],
+          ["Offline playback", downloads.length ? "Ready for saved files" : "Download files first"]
+        ]);
+
+        $("librarySettings").innerHTML = rows([
+          ["Audio files loaded", String(audioFiles.length)],
+          ["Current folder", folderLabel(currentFolder)],
+          ["Downloaded files", String(downloads.length)],
+          ["Downloaded folders", String(savedFolders.size || 0)]
+        ]);
+
+        $("statsSettings").innerHTML = rows([
+          ["Local events", String(events.length)],
+          ["Waiting to sync", String(unsynced.length)],
+          ["Completed listens", String(events.filter((event) => event.type === "complete").length)],
+          ["Last event", formatDateTime(events[events.length - 1]?.at)]
+        ]);
+
+        $("storageSettings").innerHTML = rows([
+          ["Saved audio size", formatBytes(downloadedBytes)],
+          ["Browser usage", storageEstimate ? formatBytes(storageEstimate.usage) : "Not checked"],
+          ["Browser quota", storageEstimate ? formatBytes(storageEstimate.quota) : "Not checked"]
+        ]);
+
+        $("offlineSettings").innerHTML = rows([
+          ["Works offline", "Downloaded audio playback"],
+          ["Works offline", "Local stats recording"],
+          ["Needs internet", "Drive refresh"],
+          ["Needs internet", "Google Sheet sync"]
+        ]);
+      }
+
       async function recordEvent(type, extra = {}) {
         if (!currentFile) return;
         const player = $("player");
@@ -882,6 +987,7 @@
           }
           await refreshEvents();
           setStatus(`Synced ${unsynced.length} event${unsynced.length === 1 ? "" : "s"} to the Google Sheet.`);
+          renderSettings();
         } catch (error) {
           setStatus(error.message || "Stats sync failed.");
         } finally {
@@ -895,8 +1001,10 @@
           return;
         }
         const estimate = await navigator.storage.estimate();
+        storageEstimate = estimate;
         const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
         $("storageStatus").textContent = `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser reports ${formatBytes(estimate.usage)} used out of ${formatBytes(estimate.quota)} available for this site.`;
+        renderSettings();
       }
 
       function isDownloaded(id) {
@@ -1216,6 +1324,7 @@
         currentFolder = "Podcast";
         saveCachedLibrary(audioFiles);
         renderFiles();
+        renderSettings();
         setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Download one or more for offline playback.`);
       }
 
@@ -1261,6 +1370,7 @@
                 ? "Ready. Sign in to Google when you want to refresh Drive."
                 : `Sign-in failed: ${response.error}`);
               syncMiniPlayerVisibility();
+              renderSettings();
               return;
             }
             accessToken = response.access_token;
@@ -1269,6 +1379,7 @@
             $("signIn").textContent = "Reconnect Google";
             setStatus("Google connected. You can refresh the Podcast library.");
             syncMiniPlayerVisibility();
+            renderSettings();
           }
         });
         return true;
@@ -1289,6 +1400,7 @@
         if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
         $("signIn").textContent = "Sign in to Google";
         setStatus("Ready. Tap to sign in when you want to refresh Drive.");
+        renderSettings();
       }
 
       $("signIn").addEventListener("click", () => {
@@ -1296,7 +1408,18 @@
         connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
       });
 
+      $("settingsSignIn").addEventListener("click", () => {
+        window.clearTimeout(quietReconnectTimer);
+        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
+      });
+
       $("scanDrive").addEventListener("click", () => {
+        findPodcastAudio().catch((error) => {
+          setStatus(error.message || "Drive scan failed.");
+        });
+      });
+
+      $("settingsScanDrive").addEventListener("click", () => {
         findPodcastAudio().catch((error) => {
           setStatus(error.message || "Drive scan failed.");
         });
@@ -1308,6 +1431,8 @@
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshStats").addEventListener("click", refreshEvents);
       $("syncStats").addEventListener("click", syncStatsToLedger);
+      $("settingsRefreshStats").addEventListener("click", refreshEvents);
+      $("settingsSyncStats").addEventListener("click", syncStatsToLedger);
 
       document.querySelectorAll(".nav-button[data-view]").forEach((button) => {
         button.addEventListener("click", () => {
@@ -1321,6 +1446,17 @@
         await clearEvents();
         events = [];
         renderStats();
+        renderSettings();
+        setStatus("Local stats cleared. Downloads were not deleted.");
+      });
+
+      $("settingsClearLocalStats").addEventListener("click", async () => {
+        const confirmed = window.confirm("Clear local listening events from this test page? Downloads will stay saved.");
+        if (!confirmed) return;
+        await clearEvents();
+        events = [];
+        renderStats();
+        renderSettings();
         setStatus("Local stats cleared. Downloads were not deleted.");
       });
 
@@ -1410,6 +1546,7 @@
       });
       syncMiniPlayerVisibility();
       renderFiles();
+      renderSettings();
       tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {
