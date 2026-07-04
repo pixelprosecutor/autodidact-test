@@ -1,5 +1,4 @@
 <!doctype html>
-<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -175,6 +174,67 @@
       .stats-list {
         display: grid;
         gap: 4px;
+      }
+
+      .storage-meter {
+        height: 12px;
+        margin: 12px 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(7, 22, 47, .8);
+      }
+
+      .storage-meter span {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--accent);
+        transition: width .2s ease;
+      }
+
+      .readiness-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .readiness-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(125, 211, 252, .18);
+      }
+
+      .readiness-item:last-child {
+        border-bottom: 0;
+      }
+
+      .readiness-dot {
+        width: 12px;
+        height: 12px;
+        margin-top: 5px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--warn);
+      }
+
+      .readiness-item.ready .readiness-dot {
+        background: #7ef7b2;
+      }
+
+      .readiness-item.warning .readiness-dot {
+        background: var(--warn);
+      }
+
+      .readiness-item.problem .readiness-dot {
+        background: var(--danger);
+      }
+
+      .readiness-item strong,
+      .readiness-item small {
+        display: block;
       }
 
       .action-stack {
@@ -469,7 +529,25 @@
         </section>
 
         <section class="panel">
+          <h2>Offline readiness</h2>
+          <p id="offlineReadinessSummary">Checking local files and sync status.</p>
+          <div class="readiness-list" id="offlineReadinessList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Storage safety</h2>
+          <p id="downloadStorageStatus">Storage estimate not loaded yet.</p>
+          <div class="storage-meter" aria-hidden="true"><span id="downloadStorageFill"></span></div>
+          <div class="stats-list" id="downloadStorageStats"></div>
+          <div class="toolbar">
+            <button id="requestStorageProtection">Protect downloads if possible</button>
+            <button id="refreshDownloadStorage">Refresh storage</button>
+          </div>
+        </section>
+
+        <section class="panel">
           <h2>Saved audio</h2>
+          <div class="stats-list" id="downloadFolderList"></div>
           <div class="grid" id="downloadList"></div>
         </section>
       </section>
@@ -537,6 +615,16 @@
           <div class="toolbar">
             <button class="primary" id="settingsSignIn">Sign in to Google</button>
             <button id="settingsScanDrive" disabled>Refresh Drive library</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Version</h2>
+          <p id="buildStatus">Checking app version.</p>
+          <div class="stats-list" id="buildSettings"></div>
+          <div class="toolbar">
+            <button id="checkForUpdate">Check for update</button>
+            <button id="reloadApp">Reload app</button>
           </div>
         </section>
 
@@ -625,6 +713,10 @@
       const EVENT_STORE = "events";
       const LIBRARY_CACHE_KEY = "autodidact-pwa-library";
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
+      const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
+      const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
+      const APP_BUILD = "offline-ready-1";
+      const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
       let tokenClient = null;
@@ -643,6 +735,9 @@
       let seekStartPosition = null;
       let seekRecordTimer = 0;
       let quietReconnectTimer = 0;
+      let storagePersisted = null;
+      let updateWaiting = false;
+      let refreshingForUpdate = false;
 
       const $ = (id) => document.getElementById(id);
 
@@ -721,6 +816,18 @@
           <div class="stat-row">
             <span>${escapeHtml(label)}</span>
             <strong>${escapeHtml(value)}</strong>
+          </div>
+        `).join("");
+      }
+
+      function readinessItems(items) {
+        return items.map((item) => `
+          <div class="readiness-item ${escapeHtml(item.level)}">
+            <span class="readiness-dot" aria-hidden="true"></span>
+            <span>
+              <strong>${escapeHtml(item.label)}</strong>
+              <small>${escapeHtml(item.detail)}</small>
+            </span>
           </div>
         `).join("");
       }
@@ -827,6 +934,7 @@
         events.sort((a, b) => new Date(a.at) - new Date(b.at));
         renderStats();
         renderSettings();
+        renderOfflineReadiness();
       }
 
       function latestEventFor(fileId, type) {
@@ -912,8 +1020,10 @@
 
       function renderSettings() {
         const unsynced = events.filter((event) => !event.syncedAt);
-        const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
+        const downloadedBytes = downloadedByteCount();
         const savedFolders = new Set(downloads.map((file) => file.folderPath || "Podcast"));
+        const lastDriveScan = localStorage.getItem(LAST_DRIVE_SCAN_KEY);
+        const lastLedgerSync = localStorage.getItem(LAST_LEDGER_SYNC_KEY);
         $("settingsGoogleStatus").textContent = accessToken ? "OK" : "!";
         $("settingsDownloadCount").textContent = downloads.length;
         $("settingsUnsyncedCount").textContent = unsynced.length;
@@ -931,20 +1041,23 @@
           ["Audio files loaded", String(audioFiles.length)],
           ["Current folder", folderLabel(currentFolder)],
           ["Downloaded files", String(downloads.length)],
-          ["Downloaded folders", String(savedFolders.size || 0)]
+          ["Downloaded folders", String(savedFolders.size || 0)],
+          ["Last Drive refresh", formatDateTime(lastDriveScan)]
         ]);
 
         $("statsSettings").innerHTML = rows([
           ["Local events", String(events.length)],
           ["Waiting to sync", String(unsynced.length)],
           ["Completed listens", String(events.filter((event) => event.type === "complete").length)],
-          ["Last event", formatDateTime(events[events.length - 1]?.at)]
+          ["Last event", formatDateTime(events[events.length - 1]?.at)],
+          ["Last ledger sync", formatDateTime(lastLedgerSync)]
         ]);
 
         $("storageSettings").innerHTML = rows([
           ["Saved audio size", formatBytes(downloadedBytes)],
           ["Browser usage", storageEstimate ? formatBytes(storageEstimate.usage) : "Not checked"],
-          ["Browser quota", storageEstimate ? formatBytes(storageEstimate.quota) : "Not checked"]
+          ["Browser quota", storageEstimate ? formatBytes(storageEstimate.quota) : "Not checked"],
+          ["Storage protection", storageProtectionLabel()]
         ]);
 
         $("offlineSettings").innerHTML = rows([
@@ -953,6 +1066,7 @@
           ["Needs internet", "Drive refresh"],
           ["Needs internet", "Google Sheet sync"]
         ]);
+        renderBuildStatus();
       }
 
       async function recordEvent(type, extra = {}) {
@@ -1034,6 +1148,7 @@
             event.syncedAt = syncedAt;
             await storeEvent(event);
           }
+          localStorage.setItem(LAST_LEDGER_SYNC_KEY, syncedAt);
           await refreshEvents();
           setStatus(`Synced ${unsynced.length} event${unsynced.length === 1 ? "" : "s"} to the Google Sheet.`);
           renderSettings();
@@ -1044,17 +1159,214 @@
         }
       }
 
+      function downloadedByteCount() {
+        return downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
+      }
+
+      function storagePercent() {
+        if (!storageEstimate?.usage || !storageEstimate?.quota) return 0;
+        return Math.min(100, Math.round((storageEstimate.usage / storageEstimate.quota) * 100));
+      }
+
+      function storageHealthLabel(percent) {
+        if (!storageEstimate) return "Not checked";
+        if (percent >= 85) return "Nearly full";
+        if (percent >= 65) return "Getting full";
+        return "Looks healthy";
+      }
+
+      function storageProtectionLabel() {
+        if (!navigator.storage?.persisted) return "Not available in this browser";
+        if (storagePersisted === null) return "Not checked";
+        return storagePersisted ? "Protected by browser" : "Normal browser storage";
+      }
+
+      function renderBuildStatus(message = "") {
+        $("buildStatus").textContent = message || (updateWaiting
+          ? "An update is ready. Reload the app to use it."
+          : "This is the version currently running on this device.");
+        $("buildSettings").innerHTML = rows([
+          ["Running build", APP_BUILD],
+          ["App shell", navigator.serviceWorker?.controller ? "Service worker active" : "Browser page"],
+          ["Update status", updateWaiting ? "Update ready" : "No update waiting"]
+        ]);
+      }
+
+      function downloadedFolderRows() {
+        const folderMap = new Map();
+        for (const file of downloads) {
+          const folderPath = file.folderPath || "Podcast";
+          if (!folderMap.has(folderPath)) {
+            folderMap.set(folderPath, { count: 0, bytes: 0 });
+          }
+          const folder = folderMap.get(folderPath);
+          folder.count += 1;
+          folder.bytes += file.size || file.blob?.size || 0;
+        }
+        return [...folderMap.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([folderPath, info]) => [
+            folderLabel(folderPath),
+            `${info.count} file${info.count === 1 ? "" : "s"} · ${formatBytes(info.bytes)}`
+          ]);
+      }
+
+      function renderOfflineReadiness() {
+        const unsynced = events.filter((event) => !event.syncedAt);
+        const downloadedBytes = downloadedByteCount();
+        const currentFolderDownloads = downloadedInsideFolder(currentFolder);
+        const currentFolderMissing = audioInsideFolder(currentFolder).filter((file) => !isDownloaded(file.id));
+        const percent = storagePercent();
+        const lastDriveScan = localStorage.getItem(LAST_DRIVE_SCAN_KEY);
+        const lastLedgerSync = localStorage.getItem(LAST_LEDGER_SYNC_KEY);
+        const items = [
+          {
+            label: "Offline audio",
+            level: downloads.length ? "ready" : "problem",
+            detail: downloads.length
+              ? `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally, about ${formatBytes(downloadedBytes)}.`
+              : "No local files saved yet."
+          },
+          {
+            label: "Current folder",
+            level: currentFolderDownloads.length ? "ready" : "warning",
+            detail: currentFolderDownloads.length
+              ? `${currentFolderDownloads.length} saved here; ${currentFolderMissing.length} not saved yet.`
+              : `${folderLabel(currentFolder)} has no saved local audio.`
+          },
+          {
+            label: "Local stats",
+            level: "ready",
+            detail: "Listening events are stored on this device while offline."
+          },
+          {
+            label: "Stats sync",
+            level: unsynced.length ? "warning" : "ready",
+            detail: unsynced.length
+              ? `${unsynced.length} event${unsynced.length === 1 ? "" : "s"} waiting to sync when online.`
+              : `No local events waiting to sync.${lastLedgerSync ? ` Last sync: ${formatDateTime(lastLedgerSync)}.` : ""}`
+          },
+          {
+            label: "Storage",
+            level: !storageEstimate ? "warning" : percent >= 85 ? "problem" : percent >= 65 ? "warning" : "ready",
+            detail: storageEstimate
+              ? `${storageHealthLabel(percent)}: ${formatBytes(storageEstimate.usage)} used out of ${formatBytes(storageEstimate.quota)}.`
+              : "Storage has not been checked in this session."
+          },
+          {
+            label: "Drive refresh",
+            level: audioFiles.length ? "ready" : "warning",
+            detail: audioFiles.length
+              ? `${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"} loaded.${lastDriveScan ? ` Last refresh: ${formatDateTime(lastDriveScan)}.` : ""}`
+              : "Refresh Drive after signing in."
+          }
+        ];
+        const problemCount = items.filter((item) => item.level === "problem").length;
+        const warningCount = items.filter((item) => item.level === "warning").length;
+        $("offlineReadinessSummary").textContent = problemCount
+          ? "Not ready for offline listening yet."
+          : warningCount
+            ? "Mostly ready, with a few things to check."
+            : "Ready for offline listening.";
+        $("offlineReadinessList").innerHTML = readinessItems(items);
+      }
+
+      function renderStoragePanels() {
+        const downloadedBytes = downloadedByteCount();
+        const percent = storagePercent();
+        const health = storageHealthLabel(percent);
+        const status = storageEstimate
+          ? `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser storage is ${health.toLowerCase()}.`
+          : `${downloads.length} local file${downloads.length === 1 ? "" : "s"} saved. Refresh storage to check browser space.`;
+
+        $("storageStatus").textContent = storageEstimate
+          ? `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser reports ${formatBytes(storageEstimate.usage)} used out of ${formatBytes(storageEstimate.quota)} available for this site.`
+          : "Storage estimate not loaded yet.";
+
+        $("downloadStorageStatus").textContent = status;
+        $("downloadStorageFill").style.width = `${percent}%`;
+        $("downloadStorageStats").innerHTML = rows([
+          ["Saved audio size", formatBytes(downloadedBytes)],
+          ["Browser usage", storageEstimate ? `${formatBytes(storageEstimate.usage)} (${percent}%)` : "Not checked"],
+          ["Browser quota", storageEstimate ? formatBytes(storageEstimate.quota) : "Not checked"],
+          ["Storage protection", storageProtectionLabel()]
+        ]);
+        renderOfflineReadiness();
+      }
+
       async function refreshStorageEstimate() {
         if (!navigator.storage?.estimate) {
           $("storageStatus").textContent = `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally. Browser storage estimate is unavailable.`;
+          $("downloadStorageStatus").textContent = `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally. Browser storage estimate is unavailable.`;
           return;
         }
         const estimate = await navigator.storage.estimate();
         storageEstimate = estimate;
-        const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
-        $("storageStatus").textContent = `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser reports ${formatBytes(estimate.usage)} used out of ${formatBytes(estimate.quota)} available for this site.`;
+        if (navigator.storage?.persisted) {
+          storagePersisted = await navigator.storage.persisted();
+        }
+        renderStoragePanels();
         renderSettings();
       }
+
+      async function requestStorageProtection() {
+        if (!navigator.storage?.persist) {
+          storagePersisted = false;
+          renderStoragePanels();
+          setStatus("This browser does not offer a storage-protection request. Downloads can still work, but iOS may clear site storage if space gets tight.");
+          return;
+        }
+        storagePersisted = await navigator.storage.persist();
+        renderStoragePanels();
+        setStatus(storagePersisted
+          ? "The browser accepted the storage-protection request."
+          : "The browser did not grant extra storage protection. Downloads still work, but keep an eye on phone storage.");
+      }
+
+      function watchServiceWorkerRegistration(registration) {
+        if (!registration) return;
+        if (registration.waiting) {
+          updateWaiting = true;
+          renderBuildStatus();
+        }
+        registration.addEventListener("updatefound", () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          $("buildStatus").textContent = "Downloading an app update.";
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              updateWaiting = true;
+              renderBuildStatus("An update is ready. Reload the app to use it.");
+            }
+          });
+        });
+      }
+
+      async function checkForAppUpdate() {
+        if (!("serviceWorker" in navigator)) {
+          renderBuildStatus("This browser is not using service worker app-shell caching.");
+          return;
+        }
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (!registration) {
+            renderBuildStatus("No app-shell cache is registered yet. Reload after GitHub finishes deploying.");
+            return;
+          }
+          await registration.update();
+          watchServiceWorkerRegistration(registration);
+          renderBuildStatus(updateWaiting
+            ? "An update is ready. Reload the app to use it."
+            : "Checked for updates. No newer app shell is waiting yet.");
+        } catch {
+          renderBuildStatus("Update check failed. Try again after the page finishes loading.");
+        }
+      }
+
+      function reloadApp() {
+        window.location.reload();
+      }
+
 
       function isDownloaded(id) {
         return downloads.some((item) => item.id === id);
@@ -1245,6 +1557,10 @@
         $("downloadSummary").textContent = downloads.length
           ? `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally, about ${formatBytes(totalBytes)} total.`
           : "No local audio saved yet.";
+        const folderRows = downloadedFolderRows();
+        $("downloadFolderList").innerHTML = folderRows.length
+          ? rows(folderRows)
+          : "<p>No downloaded folders yet.</p>";
 
         $("downloadList").innerHTML = downloads.map((file) => `
           <div class="file-row">
@@ -1273,6 +1589,8 @@
           });
         });
         renderDownloadFolderStats();
+        renderStoragePanels();
+        renderOfflineReadiness();
       }
 
       function renderFiles() {
@@ -1306,6 +1624,7 @@
         });
         bindFileActions($("fileList"));
         renderDownloadFolderStats();
+        renderOfflineReadiness();
       }
 
       function renderSearch() {
@@ -1425,6 +1744,7 @@
         audioFiles = found.sort((a, b) => a.folderPath.localeCompare(b.folderPath) || a.name.localeCompare(b.name));
         currentFolder = "Podcast";
         saveCachedLibrary(audioFiles);
+        localStorage.setItem(LAST_DRIVE_SCAN_KEY, new Date().toISOString());
         renderFiles();
         renderSearch();
         renderSettings();
@@ -1589,6 +1909,10 @@
       $("skipBack").addEventListener("click", () => skipAudio(-15));
       $("skipForward").addEventListener("click", () => skipAudio(30));
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
+      $("refreshDownloadStorage").addEventListener("click", refreshStorageEstimate);
+      $("requestStorageProtection").addEventListener("click", requestStorageProtection);
+      $("checkForUpdate").addEventListener("click", checkForAppUpdate);
+      $("reloadApp").addEventListener("click", reloadApp);
       $("refreshStats").addEventListener("click", refreshEvents);
       $("syncStats").addEventListener("click", syncStatsToLedger);
       $("settingsRefreshStats").addEventListener("click", refreshEvents);
@@ -1713,10 +2037,21 @@
       tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshingForUpdate) return;
+          refreshingForUpdate = true;
+          window.location.reload();
+        });
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("service-worker.js").catch(() => {
-            setStatus("The app opened, but offline app-shell caching is not available yet.");
-          });
+          navigator.serviceWorker.register(`${SERVICE_WORKER_FILE}?build=${APP_BUILD}`)
+            .then((registration) => {
+              watchServiceWorkerRegistration(registration);
+              renderBuildStatus();
+            })
+            .catch(() => {
+              setStatus("The app opened, but offline app-shell caching is not available yet.");
+              renderBuildStatus("Offline app-shell caching is not available yet.");
+            });
         });
       }
     </script>

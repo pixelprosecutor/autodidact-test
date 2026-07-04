@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-downloads-folder-v1";
+const CACHE_NAME = "autodidact-offline-ready-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
