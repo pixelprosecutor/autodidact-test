@@ -189,6 +189,15 @@
     </section>
 
     <section class="panel">
+      <h2>Local stats</h2>
+      <p id="statsStatus">No local listening events recorded yet.</p>
+      <div class="toolbar">
+        <button id="refreshStats">Refresh stats</button>
+        <button class="danger" id="clearLocalStats">Clear local stats</button>
+      </div>
+    </section>
+
+    <section class="panel">
       <h2>Downloaded audio</h2>
       <p id="downloadSummary">No local audio saved yet.</p>
       <div class="grid" id="downloadList"></div>
@@ -209,13 +218,19 @@
       const CLIENT_ID = "300070172174-mkvnuqucmvgv6obsa4nf7imq7jugljbu.apps.googleusercontent.com";
       const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
       const DB_NAME = "autodidact-pwa-cache";
-      const STORE_NAME = "downloads";
+      const DOWNLOAD_STORE = "downloads";
+      const EVENT_STORE = "events";
 
       let accessToken = "";
       let tokenClient = null;
       let audioFiles = [];
       let downloads = [];
+      let events = [];
+      let currentFile = null;
       let currentObjectUrl = "";
+      let lastProgressAt = 0;
+      let lastPosition = 0;
+      let suppressPause = false;
 
       const $ = (id) => document.getElementById(id);
 
@@ -247,9 +262,14 @@
 
       function openDb() {
         return new Promise((resolve, reject) => {
-          const request = indexedDB.open(DB_NAME, 1);
+          const request = indexedDB.open(DB_NAME, 2);
           request.onupgradeneeded = () => {
-            request.result.createObjectStore(STORE_NAME, { keyPath: "id" });
+            if (!request.result.objectStoreNames.contains(DOWNLOAD_STORE)) {
+              request.result.createObjectStore(DOWNLOAD_STORE, { keyPath: "id" });
+            }
+            if (!request.result.objectStoreNames.contains(EVENT_STORE)) {
+              request.result.createObjectStore(EVENT_STORE, { keyPath: "eventId" });
+            }
           };
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
@@ -259,8 +279,8 @@
       async function storeDownload(record) {
         const db = await openDb();
         return new Promise((resolve, reject) => {
-          const transaction = db.transaction(STORE_NAME, "readwrite");
-          transaction.objectStore(STORE_NAME).put(record);
+          const transaction = db.transaction(DOWNLOAD_STORE, "readwrite");
+          transaction.objectStore(DOWNLOAD_STORE).put(record);
           transaction.oncomplete = resolve;
           transaction.onerror = () => reject(transaction.error);
         });
@@ -269,8 +289,8 @@
       async function readDownloads() {
         const db = await openDb();
         return new Promise((resolve, reject) => {
-          const transaction = db.transaction(STORE_NAME, "readonly");
-          const request = transaction.objectStore(STORE_NAME).getAll();
+          const transaction = db.transaction(DOWNLOAD_STORE, "readonly");
+          const request = transaction.objectStore(DOWNLOAD_STORE).getAll();
           request.onsuccess = () => resolve(request.result || []);
           request.onerror = () => reject(request.error);
         });
@@ -279,8 +299,8 @@
       async function deleteDownload(id) {
         const db = await openDb();
         return new Promise((resolve, reject) => {
-          const transaction = db.transaction(STORE_NAME, "readwrite");
-          transaction.objectStore(STORE_NAME).delete(id);
+          const transaction = db.transaction(DOWNLOAD_STORE, "readwrite");
+          transaction.objectStore(DOWNLOAD_STORE).delete(id);
           transaction.oncomplete = resolve;
           transaction.onerror = () => reject(transaction.error);
         });
@@ -289,8 +309,38 @@
       async function clearDownloads() {
         const db = await openDb();
         return new Promise((resolve, reject) => {
-          const transaction = db.transaction(STORE_NAME, "readwrite");
-          transaction.objectStore(STORE_NAME).clear();
+          const transaction = db.transaction(DOWNLOAD_STORE, "readwrite");
+          transaction.objectStore(DOWNLOAD_STORE).clear();
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      }
+
+      async function storeEvent(record) {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction(EVENT_STORE, "readwrite");
+          transaction.objectStore(EVENT_STORE).put(record);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      }
+
+      async function readEvents() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction(EVENT_STORE, "readonly");
+          const request = transaction.objectStore(EVENT_STORE).getAll();
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      async function clearEvents() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction(EVENT_STORE, "readwrite");
+          transaction.objectStore(EVENT_STORE).clear();
           transaction.oncomplete = resolve;
           transaction.onerror = () => reject(transaction.error);
         });
@@ -302,6 +352,52 @@
         renderDownloads();
         renderFiles();
         refreshStorageEstimate();
+      }
+
+      async function refreshEvents() {
+        events = await readEvents();
+        events.sort((a, b) => new Date(a.at) - new Date(b.at));
+        renderStats();
+      }
+
+      function latestEventFor(fileId, type) {
+        return [...events].reverse().find((event) => event.fileId === fileId && (!type || event.type === type));
+      }
+
+      function renderStats() {
+        const unsynced = events.filter((event) => !event.syncedAt);
+        const playEvents = events.filter((event) => event.type === "play");
+        const completeEvents = events.filter((event) => event.type === "complete");
+        const progress = currentFile ? latestEventFor(currentFile.id, "progress") : null;
+        const progressText = progress
+          ? ` Current progress for ${displayName(currentFile.name)}: ${Math.round(progress.position || 0)}s.`
+          : "";
+        $("statsStatus").textContent = `${events.length} local event${events.length === 1 ? "" : "s"} recorded. ${unsynced.length} waiting to sync later. ${playEvents.length} play${playEvents.length === 1 ? "" : "s"}, ${completeEvents.length} completion${completeEvents.length === 1 ? "" : "s"}.${progressText}`;
+      }
+
+      async function recordEvent(type, extra = {}) {
+        if (!currentFile) return;
+        const player = $("player");
+        const event = {
+          eventId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          type,
+          fileId: currentFile.id,
+          name: currentFile.name,
+          folderPath: currentFile.folderPath || "Podcast",
+          mimeType: currentFile.mimeType || "",
+          position: Math.round(extra.position ?? player.currentTime ?? 0),
+          duration: Math.round(extra.duration ?? player.duration ?? 0) || 0,
+          seconds: Math.round(extra.seconds ?? 0),
+          playbackRate: player.playbackRate || 1,
+          previousPosition: Math.round(extra.previousPosition ?? 0),
+          delta: Math.round(extra.delta ?? 0),
+          trigger: extra.trigger || "",
+          syncedAt: "",
+          at: new Date().toISOString()
+        };
+        events.push(event);
+        await storeEvent(event);
+        renderStats();
       }
 
       async function refreshStorageEstimate() {
@@ -342,6 +438,16 @@
         });
         document.querySelectorAll("[data-delete-local]").forEach((button) => {
           button.addEventListener("click", async () => {
+            if (currentFile?.id === button.dataset.deleteLocal) {
+              suppressPause = true;
+              $("player").pause();
+              suppressPause = false;
+              if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+              currentObjectUrl = "";
+              currentFile = null;
+              $("player").removeAttribute("src");
+              $("nowPlaying").textContent = "No local file selected";
+            }
             await deleteDownload(button.dataset.deleteLocal);
             setStatus("Local download deleted.");
             await refreshDownloads();
@@ -385,6 +491,9 @@
         }
         if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = URL.createObjectURL(file.blob);
+        currentFile = file;
+        lastProgressAt = 0;
+        lastPosition = 0;
         $("nowPlaying").textContent = displayName(file.name);
         $("player").src = currentObjectUrl;
         $("player").play().catch(() => {
@@ -513,20 +622,88 @@
       });
 
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
+      $("refreshStats").addEventListener("click", refreshEvents);
+
+      $("clearLocalStats").addEventListener("click", async () => {
+        const confirmed = window.confirm("Clear local listening events from this test page? Downloads will stay saved.");
+        if (!confirmed) return;
+        await clearEvents();
+        events = [];
+        renderStats();
+        setStatus("Local stats cleared. Downloads were not deleted.");
+      });
 
       $("clearAllDownloads").addEventListener("click", async () => {
         const confirmed = window.confirm("Delete every local audio download saved by this test page?");
         if (!confirmed) return;
+        suppressPause = true;
+        $("player").pause();
+        suppressPause = false;
         await clearDownloads();
         if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = "";
+        currentFile = null;
         $("player").removeAttribute("src");
         $("nowPlaying").textContent = "No local file selected";
         setStatus("All local downloads deleted.");
         await refreshDownloads();
       });
 
-      refreshDownloads().catch(() => {
+      $("player").addEventListener("play", () => {
+        recordEvent("play", {
+          position: $("player").currentTime || 0,
+          duration: $("player").duration || 0
+        });
+      });
+
+      $("player").addEventListener("pause", () => {
+        if (!currentFile || $("player").ended || suppressPause) return;
+        recordEvent("pause", {
+          position: $("player").currentTime || 0,
+          duration: $("player").duration || 0
+        });
+      });
+
+      $("player").addEventListener("timeupdate", () => {
+        if (!currentFile) return;
+        const now = Date.now();
+        if (now - lastProgressAt < 15000) return;
+        lastProgressAt = now;
+        recordEvent("progress", {
+          position: $("player").currentTime || 0,
+          duration: $("player").duration || 0,
+          seconds: Math.max(0, ($("player").currentTime || 0) - lastPosition),
+          trigger: "timeupdate"
+        });
+        lastPosition = $("player").currentTime || 0;
+      });
+
+      $("player").addEventListener("seeking", () => {
+        lastPosition = $("player").currentTime || 0;
+      });
+
+      $("player").addEventListener("seeked", () => {
+        if (!currentFile) return;
+        const current = $("player").currentTime || 0;
+        recordEvent("seek", {
+          position: current,
+          previousPosition: lastPosition,
+          delta: current - lastPosition,
+          duration: $("player").duration || 0
+        });
+        lastPosition = current;
+      });
+
+      $("player").addEventListener("ended", () => {
+        if (!currentFile) return;
+        recordEvent("complete", {
+          position: $("player").duration || $("player").currentTime || 0,
+          duration: $("player").duration || 0,
+          trigger: "ended"
+        });
+      });
+
+      Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
     </script>
