@@ -131,6 +131,57 @@
         background: rgba(16, 40, 77, .84);
       }
 
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .summary-grid div {
+        min-width: 0;
+        padding: 12px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .8);
+      }
+
+      .summary-grid span {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: 21px;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .summary-grid small {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .stats-list {
+        display: grid;
+        gap: 4px;
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(125, 211, 252, .18);
+      }
+
+      .stat-row:last-child {
+        border-bottom: 0;
+      }
+
+      .stat-row strong {
+        text-align: right;
+      }
+
       .status {
         margin-bottom: 0;
         color: var(--warn);
@@ -381,7 +432,36 @@
       <section id="statsView" class="view">
         <section class="panel">
           <h2>Local stats</h2>
+          <div class="summary-grid">
+            <div>
+              <span id="statsAudioCount">0</span>
+              <small>audio files</small>
+            </div>
+            <div>
+              <span id="statsCompletedCount">0</span>
+              <small>completed listens</small>
+            </div>
+            <div>
+              <span id="statsListeningTime">0m</span>
+              <small>listening time</small>
+            </div>
+          </div>
           <p id="statsStatus">No local listening events recorded yet.</p>
+          <div class="stats-list" id="coreStats"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Recent activity</h2>
+          <div class="stats-list" id="recentStats"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Folders</h2>
+          <div class="stats-list" id="folderStats"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Sync</h2>
           <div class="toolbar">
             <button id="syncStats">Sync stats to ledger</button>
             <button id="refreshStats">Refresh stats</button>
@@ -513,6 +593,32 @@
         return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
       }
 
+      function formatDuration(seconds) {
+        const total = Math.max(0, Math.round(Number(seconds || 0)));
+        if (total < 60) return `${total}s`;
+        const minutes = Math.round(total / 60);
+        if (minutes < 60) return `${minutes}m`;
+        const hours = Math.floor(minutes / 60);
+        const remainder = minutes % 60;
+        return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "None";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "None";
+        return date.toLocaleString();
+      }
+
+      function rows(items) {
+        return items.map(([label, value]) => `
+          <div class="stat-row">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          </div>
+        `).join("");
+      }
+
       function openDb() {
         return new Promise((resolve, reject) => {
           const request = indexedDB.open(DB_NAME, 2);
@@ -604,6 +710,7 @@
         downloads.sort((a, b) => a.name.localeCompare(b.name));
         renderDownloads();
         renderFiles();
+        renderStats();
         refreshStorageEstimate();
       }
 
@@ -617,15 +724,81 @@
         return [...events].reverse().find((event) => event.fileId === fileId && (!type || event.type === type));
       }
 
+      function statsForFile(fileId) {
+        const fileEvents = events.filter((event) => event.fileId === fileId);
+        const seconds = fileEvents.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
+        const plays = fileEvents.filter((event) => event.type === "play").length;
+        const completions = fileEvents.filter((event) => event.type === "complete").length;
+        const latest = fileEvents[fileEvents.length - 1];
+        return { seconds, plays, completions, latest };
+      }
+
+      function folderStatsRows() {
+        const folderMap = new Map();
+        for (const file of audioFiles) {
+          const folderPath = file.folderPath || "Podcast";
+          if (!folderMap.has(folderPath)) {
+            folderMap.set(folderPath, { files: 0, downloads: 0, seconds: 0, completions: 0 });
+          }
+          const entry = folderMap.get(folderPath);
+          const stats = statsForFile(file.id);
+          entry.files += 1;
+          entry.downloads += isDownloaded(file.id) ? 1 : 0;
+          entry.seconds += stats.seconds;
+          entry.completions += stats.completions;
+        }
+
+        return [...folderMap.entries()]
+          .sort((a, b) => b[1].seconds - a[1].seconds || a[0].localeCompare(b[0]))
+          .slice(0, 8)
+          .map(([folderPath, entry]) => [
+            folderLabel(folderPath),
+            `${formatDuration(entry.seconds)} - ${entry.completions} complete - ${entry.downloads}/${entry.files} saved`
+          ]);
+      }
+
       function renderStats() {
         const unsynced = events.filter((event) => !event.syncedAt);
         const playEvents = events.filter((event) => event.type === "play");
         const completeEvents = events.filter((event) => event.type === "complete");
+        const pauseEvents = events.filter((event) => event.type === "pause");
+        const seekBacks = events.filter((event) => event.type === "seek" && event.delta < 0);
+        const seekForwards = events.filter((event) => event.type === "seek" && event.delta > 0);
+        const listeningSeconds = events.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
+        const firstEvent = events[0];
+        const lastEvent = events[events.length - 1];
+        const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
         const progress = currentFile ? latestEventFor(currentFile.id, "progress") : null;
         const progressText = progress
           ? ` Current progress for ${displayName(currentFile.name)}: ${Math.round(progress.position || 0)}s.`
           : "";
+        $("statsAudioCount").textContent = audioFiles.length;
+        $("statsCompletedCount").textContent = completeEvents.length;
+        $("statsListeningTime").textContent = formatDuration(listeningSeconds);
         $("statsStatus").textContent = `${events.length} local event${events.length === 1 ? "" : "s"} recorded. ${unsynced.length} waiting to sync later. ${playEvents.length} play${playEvents.length === 1 ? "" : "s"}, ${completeEvents.length} completion${completeEvents.length === 1 ? "" : "s"}.${progressText}`;
+        $("coreStats").innerHTML = rows([
+          ["Downloaded files", `${downloads.length} (${formatBytes(downloadedBytes)})`],
+          ["Total plays", String(playEvents.length)],
+          ["Completed listens", String(completeEvents.length)],
+          ["Completion rate", `${playEvents.length ? Math.round((completeEvents.length / playEvents.length) * 100) : 0}%`],
+          ["Pauses", String(pauseEvents.length)],
+          ["Seek-backs", String(seekBacks.length)],
+          ["Seek-forwards", String(seekForwards.length)],
+          ["First event", formatDateTime(firstEvent?.at)],
+          ["Last event", formatDateTime(lastEvent?.at)]
+        ]);
+
+        $("recentStats").innerHTML = events.length
+          ? rows([...events].slice(-8).reverse().map((event) => [
+            displayName(event.name),
+            `${event.type}${event.position ? ` at ${formatDuration(event.position)}` : ""}`
+          ]))
+          : `<p>No recent activity yet.</p>`;
+
+        const folders = folderStatsRows();
+        $("folderStats").innerHTML = folders.length
+          ? rows(folders)
+          : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
       }
 
       async function recordEvent(type, extra = {}) {
