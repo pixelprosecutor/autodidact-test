@@ -1114,17 +1114,8 @@
 
       function tryQuietGoogleReconnect() {
         if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
-        if (!ensureGoogleClient()) {
-          window.setTimeout(tryQuietGoogleReconnect, 500);
-          return;
-        }
-        setStatus("Checking saved Google permission...");
-        window.clearTimeout(quietReconnectTimer);
-        quietReconnectTimer = window.setTimeout(() => {
-          if (accessToken) return;
-          setStatus("Ready. Tap Sign in to Google when you want to refresh Drive.");
-        }, 3500);
-        connectToGoogle("");
+        $("signIn").textContent = "Sign in to Google";
+        setStatus("Ready. Tap to sign in when you want to refresh Drive.");
       }
 
       $("signIn").addEventListener("click", () => {
