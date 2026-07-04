@@ -85,6 +85,7 @@
       }
 
       .toolbar,
+      .player-tools,
       .row-actions {
         display: flex;
         flex-wrap: wrap;
@@ -156,6 +157,14 @@
         white-space: nowrap;
       }
 
+      .player-tools {
+        margin-top: 8px;
+      }
+
+      .player-tools button {
+        flex: 1;
+      }
+
       @media (min-width: 680px) {
         .file-row {
           grid-template-columns: 1fr auto;
@@ -212,6 +221,10 @@
     <aside class="mini-player">
       <strong id="nowPlaying">No local file selected</strong>
       <audio id="player" controls preload="metadata"></audio>
+      <div class="player-tools">
+        <button id="skipBack" type="button">-15s</button>
+        <button id="skipForward" type="button">+30s</button>
+      </div>
     </aside>
 
     <script>
@@ -220,10 +233,12 @@
       const DB_NAME = "autodidact-pwa-cache";
       const DOWNLOAD_STORE = "downloads";
       const EVENT_STORE = "events";
+      const LIBRARY_CACHE_KEY = "autodidact-pwa-library";
+      const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok";
 
       let accessToken = "";
       let tokenClient = null;
-      let audioFiles = [];
+      let audioFiles = readCachedLibrary();
       let downloads = [];
       let events = [];
       let currentFile = null;
@@ -231,11 +246,27 @@
       let lastProgressAt = 0;
       let lastPosition = 0;
       let suppressPause = false;
+      let suppressNextSeekRecord = false;
+      let seekStartPosition = null;
+      let seekRecordTimer = 0;
 
       const $ = (id) => document.getElementById(id);
 
       function setStatus(message) {
         $("status").textContent = message;
+      }
+
+      function readCachedLibrary() {
+        try {
+          const cached = JSON.parse(localStorage.getItem(LIBRARY_CACHE_KEY) || "[]");
+          return Array.isArray(cached) ? cached : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveCachedLibrary(files) {
+        localStorage.setItem(LIBRARY_CACHE_KEY, JSON.stringify(files));
       }
 
       function escapeHtml(value) {
@@ -501,6 +532,25 @@
         });
       }
 
+      function skipAudio(seconds) {
+        if (!currentFile || !$("player").src) return;
+        const player = $("player");
+        const previousPosition = player.currentTime || 0;
+        const duration = Number.isFinite(player.duration) ? player.duration : 0;
+        const upperBound = duration || previousPosition + Math.abs(seconds);
+        const nextPosition = Math.max(0, Math.min(previousPosition + seconds, upperBound));
+        suppressNextSeekRecord = true;
+        player.currentTime = nextPosition;
+        lastPosition = nextPosition;
+        recordEvent("seek", {
+          position: nextPosition,
+          previousPosition,
+          delta: nextPosition - previousPosition,
+          duration,
+          trigger: seconds < 0 ? "skip_back" : "skip_forward"
+        });
+      }
+
       async function driveFetch(path, params = {}) {
         const url = new URL(`https://www.googleapis.com/drive/v3/${path}`);
         Object.entries(params).forEach(([key, value]) => {
@@ -563,6 +613,7 @@
         const found = [];
         await scanFolder(podcast.id, "Podcast", found);
         audioFiles = found.sort((a, b) => a.folderPath.localeCompare(b.folderPath) || a.name.localeCompare(b.name));
+        saveCachedLibrary(audioFiles);
         renderFiles();
         setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Download one or more for offline playback.`);
       }
@@ -608,11 +659,14 @@
               return;
             }
             accessToken = response.access_token;
+            localStorage.setItem(GOOGLE_CONSENT_KEY, "yes");
             $("scanDrive").disabled = false;
             setStatus("Signed in. Now find Podcast audio.");
           }
         });
-        tokenClient.requestAccessToken({ prompt: "consent" });
+        tokenClient.requestAccessToken({
+          prompt: localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent"
+        });
       });
 
       $("scanDrive").addEventListener("click", () => {
@@ -621,6 +675,8 @@
         });
       });
 
+      $("skipBack").addEventListener("click", () => skipAudio(-15));
+      $("skipForward").addEventListener("click", () => skipAudio(30));
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshStats").addEventListener("click", refreshEvents);
 
@@ -679,19 +735,34 @@
       });
 
       $("player").addEventListener("seeking", () => {
-        lastPosition = $("player").currentTime || 0;
+        if (suppressNextSeekRecord) return;
+        if (seekStartPosition === null) {
+          seekStartPosition = lastPosition || $("player").currentTime || 0;
+        }
       });
 
       $("player").addEventListener("seeked", () => {
         if (!currentFile) return;
-        const current = $("player").currentTime || 0;
-        recordEvent("seek", {
-          position: current,
-          previousPosition: lastPosition,
-          delta: current - lastPosition,
-          duration: $("player").duration || 0
-        });
-        lastPosition = current;
+        if (suppressNextSeekRecord) {
+          suppressNextSeekRecord = false;
+          return;
+        }
+        window.clearTimeout(seekRecordTimer);
+        seekRecordTimer = window.setTimeout(() => {
+          const current = $("player").currentTime || 0;
+          const previousPosition = seekStartPosition ?? lastPosition;
+          const delta = current - previousPosition;
+          seekStartPosition = null;
+          if (Math.abs(delta) < 1) return;
+          recordEvent("seek", {
+            position: current,
+            previousPosition,
+            delta,
+            duration: $("player").duration || 0,
+            trigger: "scrub"
+          });
+          lastPosition = current;
+        }, 500);
       });
 
       $("player").addEventListener("ended", () => {
@@ -706,6 +777,7 @@
       Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
+      renderFiles();
     </script>
   </body>
 </html>
