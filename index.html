@@ -201,6 +201,7 @@
       <h2>Local stats</h2>
       <p id="statsStatus">No local listening events recorded yet.</p>
       <div class="toolbar">
+        <button id="syncStats">Sync stats to ledger</button>
         <button id="refreshStats">Refresh stats</button>
         <button class="danger" id="clearLocalStats">Clear local stats</button>
       </div>
@@ -229,12 +230,16 @@
 
     <script>
       const CLIENT_ID = "300070172174-mkvnuqucmvgv6obsa4nf7imq7jugljbu.apps.googleusercontent.com";
-      const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
+      const STATS_SPREADSHEET_ID = "1YPCzXfvHYoa9UIQ1ypQk8xkXjLl6rGZRxMPM4W9gmZE";
+      const SCOPES = [
+        "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/spreadsheets"
+      ].join(" ");
       const DB_NAME = "autodidact-pwa-cache";
       const DOWNLOAD_STORE = "downloads";
       const EVENT_STORE = "events";
       const LIBRARY_CACHE_KEY = "autodidact-pwa-library";
-      const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok";
+      const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
 
       let accessToken = "";
       let tokenClient = null;
@@ -281,6 +286,11 @@
 
       function displayName(name) {
         return String(name || "").replace(/\.(mp3|mpeg|mp4|m4a|aac|wav|flac|ogg|opus|webm)$/i, "");
+      }
+
+      function extensionFor(name) {
+        const match = String(name || "").match(/\.([a-z0-9]+)$/i);
+        return match ? `.${match[1].toLowerCase()}` : "";
       }
 
       function formatBytes(value) {
@@ -429,6 +439,69 @@
         events.push(event);
         await storeEvent(event);
         renderStats();
+      }
+
+      function sheetRowFor(event) {
+        return [
+          event.at || new Date().toISOString(),
+          event.type || "",
+          event.fileId || "",
+          event.name || "",
+          event.folderPath || "",
+          extensionFor(event.name),
+          event.seconds || 0,
+          event.sessionId || "",
+          event.position || 0,
+          event.duration || 0,
+          event.playbackRate || 1,
+          event.previousPosition || 0,
+          event.delta || 0,
+          event.trigger || ""
+        ];
+      }
+
+      async function syncStatsToLedger() {
+        if (!accessToken) {
+          setStatus("Sign in to Google before syncing stats.");
+          return;
+        }
+
+        const unsynced = events.filter((event) => !event.syncedAt);
+        if (!unsynced.length) {
+          setStatus("No local stats are waiting to sync.");
+          return;
+        }
+
+        $("syncStats").disabled = true;
+        setStatus(`Syncing ${unsynced.length} local event${unsynced.length === 1 ? "" : "s"} to the Google Sheet...`);
+
+        try {
+          const url = `https://sheets.googleapis.com/v4/spreadsheets/${STATS_SPREADSHEET_ID}/values/Events!A:N:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ values: unsynced.map(sheetRowFor) })
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(body.error?.message || `Sheet sync failed: ${response.status}`);
+          }
+
+          const syncedAt = new Date().toISOString();
+          for (const event of unsynced) {
+            event.syncedAt = syncedAt;
+            await storeEvent(event);
+          }
+          await refreshEvents();
+          setStatus(`Synced ${unsynced.length} event${unsynced.length === 1 ? "" : "s"} to the Google Sheet.`);
+        } catch (error) {
+          setStatus(error.message || "Stats sync failed.");
+        } finally {
+          $("syncStats").disabled = false;
+        }
       }
 
       async function refreshStorageEstimate() {
@@ -679,6 +752,7 @@
       $("skipForward").addEventListener("click", () => skipAudio(30));
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshStats").addEventListener("click", refreshEvents);
+      $("syncStats").addEventListener("click", syncStatsToLedger);
 
       $("clearLocalStats").addEventListener("click", async () => {
         const confirmed = window.confirm("Clear local listening events from this test page? Downloads will stay saved.");
@@ -781,4 +855,3 @@
     </script>
   </body>
 </html>
-
