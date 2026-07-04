@@ -300,6 +300,15 @@
         text-align: left;
       }
 
+      .playable-row {
+        cursor: pointer;
+      }
+
+      .playable-row:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
       .explorer-icon {
         display: grid;
         place-items: center;
@@ -735,7 +744,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "no-header-1";
+      const APP_BUILD = "stream-play-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
@@ -1396,12 +1405,12 @@
         $("togglePlay").textContent = $("player").paused ? "Play" : "Pause";
       }
 
-      function showMiniPlayer(file) {
+      function showMiniPlayer(file, sourceLabel = "local download") {
         document.body.classList.add("has-player");
         $("miniPlayer").hidden = false;
         $("miniPlayer").classList.remove("hidden");
         $("nowPlaying").textContent = displayName(file.name);
-        $("nowPlayingMeta").textContent = `${file.folderPath || "Podcast"} - local download`;
+        $("nowPlayingMeta").textContent = `${file.folderPath || "Podcast"} - ${sourceLabel}`;
         updatePlayButton();
       }
 
@@ -1532,7 +1541,7 @@
         const saved = isDownloaded(file.id);
         const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
         return `
-          <div class="explorer-row">
+          <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
             <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
@@ -1550,13 +1559,28 @@
 
       function bindFileActions(container) {
         container.querySelectorAll("[data-download]").forEach((button) => {
-          button.addEventListener("click", () => {
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
             const file = audioFiles.find((item) => item.id === button.dataset.download);
             if (file) downloadFile(file).catch(() => {});
           });
         });
         container.querySelectorAll("[data-play-local]").forEach((button) => {
-          button.addEventListener("click", () => playLocal(button.dataset.playLocal));
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            playLocal(button.dataset.playLocal);
+          });
+        });
+        container.querySelectorAll("[data-play-file]").forEach((row) => {
+          row.addEventListener("click", (event) => {
+            if (event.target.closest("button")) return;
+            playFile(row.dataset.playFile);
+          });
+          row.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            playFile(row.dataset.playFile);
+          });
         });
       }
 
@@ -1683,6 +1707,55 @@
         });
       }
 
+      async function playOnline(file) {
+        if (!accessToken) {
+          setStatus("Sign in to Google before playing files that are not downloaded.");
+          return;
+        }
+        try {
+          setStatus(`Loading ${file.name} from Google Drive...`);
+          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          if (!response.ok) {
+            throw new Error(`Online playback failed: ${response.status}`);
+          }
+          const blob = await response.blob();
+          if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+          currentObjectUrl = URL.createObjectURL(blob);
+          currentFile = {
+            ...file,
+            size: Number(file.size || blob.size || 0)
+          };
+          endingHandled = false;
+          lastProgressAt = 0;
+          lastPosition = 0;
+          $("player").src = currentObjectUrl;
+          showMiniPlayer(currentFile, "online playback");
+          setStatus(`Playing ${file.name} from Google Drive.`);
+          $("player").play().catch(() => {
+            setStatus("Tap play in the audio control if the browser blocks autoplay.");
+            updatePlayButton();
+          });
+        } catch (error) {
+          setStatus(error.message || "Online playback failed.");
+        }
+      }
+
+      function playFile(fileId) {
+        const downloaded = downloads.find((item) => item.id === fileId);
+        if (downloaded) {
+          playLocal(fileId);
+          return;
+        }
+        const file = audioFiles.find((item) => item.id === fileId);
+        if (!file) {
+          setStatus("That audio file is not available in the loaded library.");
+          return;
+        }
+        playOnline(file);
+      }
+
       function skipAudio(seconds) {
         if (!currentFile || !$("player").src) return;
         const player = $("player");
@@ -1770,7 +1843,7 @@
         renderFiles();
         renderSearch();
         renderSettings();
-        setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Download one or more for offline playback.`);
+        setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Tap a file to play, or use the download icon for offline playback.`);
       }
 
       async function downloadFile(file, refreshAfter = true) {

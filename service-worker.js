@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-no-header-v1";
+const CACHE_NAME = "autodidact-stream-play-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
