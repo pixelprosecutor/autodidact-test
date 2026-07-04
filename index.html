@@ -90,6 +90,17 @@
         opacity: .5;
       }
 
+      input[type="search"] {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 12px;
+        background: rgba(7, 22, 47, .8);
+        color: var(--ink);
+        font: inherit;
+      }
+
       [hidden] {
         display: none !important;
       }
@@ -363,7 +374,7 @@
         width: min(820px, 100%);
         margin: 0 auto;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 8px;
         padding: 10px 14px max(10px, env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
@@ -382,9 +393,18 @@
         color: var(--muted);
       }
 
+      .nav-button span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
       .nav-button img {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         object-fit: contain;
         image-rendering: pixelated;
       }
@@ -421,16 +441,36 @@
         </section>
 
         <section class="panel">
-          <h2>Downloaded audio</h2>
-          <p id="downloadSummary">No local audio saved yet.</p>
-          <div class="grid" id="downloadList"></div>
-        </section>
-
-        <section class="panel">
           <h2>Podcast library</h2>
           <p>Open folders just like Drive. Downloaded files can play without internet after they are saved.</p>
           <div class="explorer-path" id="explorerPath"></div>
           <div class="grid" id="fileList"></div>
+        </section>
+      </section>
+
+      <section id="searchView" class="view">
+        <section class="panel">
+          <h2>Search</h2>
+          <input id="searchInput" type="search" placeholder="Search audio files">
+          <p id="searchSummary">Search the loaded Podcast library.</p>
+          <div class="grid" id="searchResults"></div>
+        </section>
+      </section>
+
+      <section id="downloadsView" class="view">
+        <section class="panel">
+          <h2>Downloads</h2>
+          <p id="downloadSummary">No local audio saved yet.</p>
+          <div class="toolbar">
+            <button id="downloadCurrentFolder">Download this folder</button>
+            <button class="danger" id="deleteCurrentFolderDownloads">Delete this folder's downloads</button>
+          </div>
+          <div class="stats-list" id="downloadFolderStats"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Saved audio</h2>
+          <div class="grid" id="downloadList"></div>
         </section>
       </section>
 
@@ -551,15 +591,23 @@
     </aside>
 
     <nav class="bottom-nav" aria-label="Views">
-      <button class="nav-button active" data-view="library" type="button">
+      <button class="nav-button active" data-view="library" type="button" aria-label="Library" title="Library">
         <img src="assets/autodidact-icon-64.png" alt="">
         <span>Library</span>
       </button>
-      <button class="nav-button" data-view="stats" type="button">
+      <button class="nav-button" data-view="search" type="button" aria-label="Search" title="Search">
+        <img src="assets/search_binoculars.png" alt="">
+        <span>Search</span>
+      </button>
+      <button class="nav-button" data-view="downloads" type="button" aria-label="Downloads" title="Downloads">
+        <img src="assets/downloaded.png" alt="">
+        <span>Downloads</span>
+      </button>
+      <button class="nav-button" data-view="stats" type="button" aria-label="Stats" title="Stats">
         <img src="assets/stats_tab.png" alt="">
         <span>Stats</span>
       </button>
-      <button class="nav-button" data-view="settings" type="button">
+      <button class="nav-button" data-view="settings" type="button" aria-label="Settings" title="Settings">
         <img src="assets/settings_fb2.png" alt="">
         <span>Settings</span>
       </button>
@@ -768,6 +816,7 @@
         downloads.sort((a, b) => a.name.localeCompare(b.name));
         renderDownloads();
         renderFiles();
+        renderSearch();
         renderStats();
         renderSettings();
         refreshStorageEstimate();
@@ -1079,6 +1128,10 @@
         return String(folderPath || "Podcast").split(" / ").pop();
       }
 
+      function folderIsInside(folderPath, parent) {
+        return folderPath === parent || String(folderPath || "").startsWith(`${parent} /`);
+      }
+
       function parentFolder(folderPath) {
         if (folderPath === "Podcast") return "Podcast";
         const parts = String(folderPath || "Podcast").split(" / ");
@@ -1102,6 +1155,18 @@
         return audioFiles
           .filter((file) => (file.folderPath || "Podcast") === parent)
           .sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      function audioInsideFolder(parent) {
+        return audioFiles
+          .filter((file) => folderIsInside(file.folderPath || "Podcast", parent))
+          .sort((a, b) => (a.folderPath || "Podcast").localeCompare(b.folderPath || "Podcast") || a.name.localeCompare(b.name));
+      }
+
+      function downloadedInsideFolder(parent) {
+        return downloads
+          .filter((file) => folderIsInside(file.folderPath || "Podcast", parent))
+          .sort((a, b) => (a.folderPath || "Podcast").localeCompare(b.folderPath || "Podcast") || a.name.localeCompare(b.name));
       }
 
       function folderItemCount(folderPath) {
@@ -1129,6 +1194,50 @@
             renderFiles();
           });
         });
+      }
+
+      function fileRow(file, includeFolder = false) {
+        const saved = isDownloaded(file.id);
+        const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
+        return `
+          <div class="explorer-row">
+            <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-main">
+              <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+              <span class="explorer-subtitle">${escapeHtml(folderText)}${file.mimeType.replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
+            </span>
+            <span class="row-actions">
+              ${saved ? `<button data-play-local="${escapeHtml(file.id)}">Play local</button>` : ""}
+              <button ${saved ? "disabled" : ""} data-download="${escapeHtml(file.id)}">${saved ? "Downloaded" : "Download"}</button>
+            </span>
+          </div>
+        `;
+      }
+
+      function bindFileActions(container) {
+        container.querySelectorAll("[data-download]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const file = audioFiles.find((item) => item.id === button.dataset.download);
+            if (file) downloadFile(file).catch(() => {});
+          });
+        });
+        container.querySelectorAll("[data-play-local]").forEach((button) => {
+          button.addEventListener("click", () => playLocal(button.dataset.playLocal));
+        });
+      }
+
+      function renderDownloadFolderStats() {
+        const folderFiles = audioInsideFolder(currentFolder);
+        const savedFiles = downloadedInsideFolder(currentFolder);
+        const savedBytes = savedFiles.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
+        const missing = folderFiles.filter((file) => !isDownloaded(file.id));
+        const missingBytes = missing.reduce((total, item) => total + (Number(item.size) || 0), 0);
+        $("downloadFolderStats").innerHTML = rows([
+          ["Current folder", folderLabel(currentFolder)],
+          ["Audio in folder", String(folderFiles.length)],
+          ["Saved in folder", `${savedFiles.length} (${formatBytes(savedBytes)})`],
+          ["Not saved yet", `${missing.length} (${formatBytes(missingBytes)})`]
+        ]);
       }
 
       function renderDownloads() {
@@ -1163,6 +1272,7 @@
             await refreshDownloads();
           });
         });
+        renderDownloadFolderStats();
       }
 
       function renderFiles() {
@@ -1181,22 +1291,7 @@
           </button>
         `).join("");
 
-        const fileRows = files.map((file) => {
-          const saved = isDownloaded(file.id);
-          return `
-            <div class="explorer-row">
-              <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
-              <span class="explorer-main">
-                <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
-                <span class="explorer-subtitle">${file.mimeType.replace("audio/", "")} · ${formatBytes(file.size)}${saved ? " · downloaded" : ""}</span>
-              </span>
-              <span class="row-actions">
-                ${saved ? `<button data-play-local="${escapeHtml(file.id)}">Play local</button>` : ""}
-                <button ${saved ? "disabled" : ""} data-download="${escapeHtml(file.id)}">${saved ? "Downloaded" : "Download"}</button>
-              </span>
-            </div>
-          `;
-        }).join("");
+        const fileRows = files.map((file) => fileRow(file)).join("");
 
         const emptyMessage = audioFiles.length
           ? "No audio files or folders here."
@@ -1209,15 +1304,22 @@
             renderFiles();
           });
         });
-        $("fileList").querySelectorAll("[data-download]").forEach((button) => {
-          button.addEventListener("click", () => {
-            const file = audioFiles.find((item) => item.id === button.dataset.download);
-            if (file) downloadFile(file);
-          });
-        });
-        $("fileList").querySelectorAll("[data-play-local]").forEach((button) => {
-          button.addEventListener("click", () => playLocal(button.dataset.playLocal));
-        });
+        bindFileActions($("fileList"));
+        renderDownloadFolderStats();
+      }
+
+      function renderSearch() {
+        const query = $("searchInput")?.value.trim().toLowerCase() || "";
+        const matches = query
+          ? audioFiles.filter((file) => `${file.name} ${file.folderPath || "Podcast"}`.toLowerCase().includes(query)).slice(0, 60)
+          : [];
+        $("searchSummary").textContent = query
+          ? `${matches.length} match${matches.length === 1 ? "" : "es"} in the loaded library.`
+          : "Search the loaded Podcast library.";
+        $("searchResults").innerHTML = query
+          ? matches.map((file) => fileRow(file, true)).join("") || "<p>No matches.</p>"
+          : "";
+        bindFileActions($("searchResults"));
       }
 
       function playLocal(id) {
@@ -1324,11 +1426,12 @@
         currentFolder = "Podcast";
         saveCachedLibrary(audioFiles);
         renderFiles();
+        renderSearch();
         renderSettings();
         setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Download one or more for offline playback.`);
       }
 
-      async function downloadFile(file) {
+      async function downloadFile(file, refreshAfter = true) {
         try {
           setStatus(`Downloading ${file.name}... Keep this page open until it finishes.`);
           const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
@@ -1349,9 +1452,66 @@
             blob
           });
           setStatus(`Downloaded ${file.name}. It should now play from local storage, even after refresh.`);
-          await refreshDownloads();
+          if (refreshAfter) {
+            await refreshDownloads();
+          }
         } catch (error) {
           setStatus(error.message || "Download failed.");
+          throw error;
+        }
+      }
+
+      async function downloadCurrentFolderFiles() {
+        if (!accessToken) {
+          setStatus("Sign in to Google before downloading from Drive.");
+          return;
+        }
+        const missing = audioInsideFolder(currentFolder).filter((file) => !isDownloaded(file.id));
+        if (!missing.length) {
+          setStatus(`${folderLabel(currentFolder)} is already downloaded.`);
+          return;
+        }
+        const totalBytes = missing.reduce((total, file) => total + (Number(file.size) || 0), 0);
+        const confirmed = window.confirm(`Download ${missing.length} file${missing.length === 1 ? "" : "s"} from ${folderLabel(currentFolder)}, about ${formatBytes(totalBytes)}?`);
+        if (!confirmed) return;
+
+        $("downloadCurrentFolder").disabled = true;
+        try {
+          for (let index = 0; index < missing.length; index += 1) {
+            setStatus(`Downloading ${index + 1} of ${missing.length}: ${missing[index].name}`);
+            await downloadFile(missing[index], false);
+          }
+          setStatus(`Downloaded ${missing.length} file${missing.length === 1 ? "" : "s"} from ${folderLabel(currentFolder)}.`);
+          await refreshDownloads();
+        } catch {
+          await refreshDownloads();
+        } finally {
+          $("downloadCurrentFolder").disabled = false;
+        }
+      }
+
+      async function deleteCurrentFolderDownloads() {
+        const savedFiles = downloadedInsideFolder(currentFolder);
+        if (!savedFiles.length) {
+          setStatus(`No local downloads found in ${folderLabel(currentFolder)}.`);
+          return;
+        }
+        const confirmed = window.confirm(`Delete ${savedFiles.length} local download${savedFiles.length === 1 ? "" : "s"} from ${folderLabel(currentFolder)}?`);
+        if (!confirmed) return;
+
+        $("deleteCurrentFolderDownloads").disabled = true;
+        try {
+          const savedIds = new Set(savedFiles.map((file) => file.id));
+          if (currentFile && savedIds.has(currentFile.id)) {
+            resetMiniPlayer();
+          }
+          for (const file of savedFiles) {
+            await deleteDownload(file.id);
+          }
+          setStatus(`Deleted ${savedFiles.length} local download${savedFiles.length === 1 ? "" : "s"} from ${folderLabel(currentFolder)}.`);
+          await refreshDownloads();
+        } finally {
+          $("deleteCurrentFolderDownloads").disabled = false;
         }
       }
 
@@ -1433,6 +1593,9 @@
       $("syncStats").addEventListener("click", syncStatsToLedger);
       $("settingsRefreshStats").addEventListener("click", refreshEvents);
       $("settingsSyncStats").addEventListener("click", syncStatsToLedger);
+      $("downloadCurrentFolder").addEventListener("click", downloadCurrentFolderFiles);
+      $("deleteCurrentFolderDownloads").addEventListener("click", deleteCurrentFolderDownloads);
+      $("searchInput").addEventListener("input", renderSearch);
 
       document.querySelectorAll(".nav-button[data-view]").forEach((button) => {
         button.addEventListener("click", () => {

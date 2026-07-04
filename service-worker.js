@@ -1,9 +1,11 @@
-const CACHE_NAME = "autodidact-settings-control-v1";
+const CACHE_NAME = "autodidact-downloads-folder-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/autodidact-icon-64.png",
+  "./assets/downloaded.png",
+  "./assets/search_binoculars.png",
   "./assets/stats_tab.png",
   "./assets/settings_fb2.png"
 ];
