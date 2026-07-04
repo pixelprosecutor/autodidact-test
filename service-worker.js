@@ -1,10 +1,12 @@
-const CACHE_NAME = "autodidact-stream-play-v2";
+const CACHE_NAME = "autodidact-google-jit-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/autodidact-icon-64.png",
   "./assets/downloaded.png",
+  "./assets/google-no.png",
+  "./assets/google-ok.png",
   "./assets/search_binoculars.png",
   "./assets/stats_tab.png",
   "./assets/settings_fb2.png"

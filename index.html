@@ -468,7 +468,7 @@
         width: min(820px, 100%);
         margin: 0 auto;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 8px;
         padding: 10px 14px max(10px, env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
@@ -522,13 +522,13 @@
     <main>
       <section id="libraryView" class="view active">
         <div class="toolbar">
-          <button class="primary" id="signIn">Sign in to Google</button>
-          <button id="scanDrive" disabled>Find Podcast audio</button>
+          <button class="primary" id="signIn" hidden>Sign in to Google</button>
+          <button id="scanDrive">Find Podcast audio</button>
         </div>
 
         <section class="panel">
           <h2>Status</h2>
-          <p class="status" id="status">Ready. Sign in first.</p>
+          <p class="status" id="status">Ready. Google access will be requested when needed.</p>
         </section>
 
         <section class="panel">
@@ -643,7 +643,7 @@
           <div class="stats-list" id="connectionSettings"></div>
           <div class="toolbar">
             <button class="primary" id="settingsSignIn">Sign in to Google</button>
-            <button id="settingsScanDrive" disabled>Refresh Drive library</button>
+            <button id="settingsScanDrive">Refresh Drive library</button>
           </div>
         </section>
 
@@ -720,6 +720,10 @@
         <img src="assets/search_binoculars.png" alt="">
         <span>Search</span>
       </button>
+      <button class="nav-button" id="googleStatusButton" type="button" aria-label="Google access unavailable" title="Google access unavailable">
+        <img id="googleStatusIcon" src="assets/google-no.png" alt="">
+        <span>Google</span>
+      </button>
       <button class="nav-button" data-view="stats" type="button" aria-label="Stats" title="Stats">
         <img src="assets/stats_tab.png" alt="">
         <span>Stats</span>
@@ -744,11 +748,12 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "stream-play-2";
+      const APP_BUILD = "google-jit-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
       let tokenClient = null;
+      let pendingGoogleAction = null;
       let audioFiles = readCachedLibrary();
       let currentFolder = "Podcast";
       let downloads = [];
@@ -772,6 +777,13 @@
 
       function setStatus(message) {
         $("status").textContent = message;
+      }
+
+      function updateGoogleStatus() {
+        const connected = Boolean(accessToken);
+        $("googleStatusIcon").src = connected ? "assets/google-ok.png" : "assets/google-no.png";
+        $("googleStatusButton").setAttribute("aria-label", connected ? "Google access connected" : "Google access unavailable");
+        $("googleStatusButton").title = connected ? "Google access connected" : "Google access unavailable";
       }
 
       function showView(viewName) {
@@ -1056,8 +1068,9 @@
         $("settingsGoogleStatus").textContent = accessToken ? "OK" : "!";
         $("settingsDownloadCount").textContent = downloads.length;
         $("settingsUnsyncedCount").textContent = unsynced.length;
-        $("settingsScanDrive").disabled = !accessToken;
-        $("settingsSignIn").textContent = accessToken ? "Reconnect Google" : "Sign in to Google";
+        $("settingsScanDrive").disabled = false;
+        $("settingsSignIn").textContent = accessToken ? "Refresh Google access" : "Connect Google";
+        updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
           ["Google", accessToken ? "Connected" : "Tap to sign in"],
@@ -1144,7 +1157,7 @@
 
       async function syncStatsToLedger() {
         if (!accessToken) {
-          setStatus("Sign in to Google before syncing stats.");
+          requestGoogleAccess(() => syncStatsToLedger(), "Google access is needed to sync stats.");
           return;
         }
 
@@ -1713,7 +1726,7 @@
 
       async function playOnline(file) {
         if (!accessToken) {
-          setStatus("Sign in to Google before playing files that are not downloaded.");
+          requestGoogleAccess(() => playOnline(file), "Google access is needed to stream this file.");
           return;
         }
         currentFile = {
@@ -1828,6 +1841,10 @@
       }
 
       async function findPodcastAudio() {
+        if (!accessToken) {
+          requestGoogleAccess(() => findPodcastAudio(), "Google access is needed to refresh Drive.");
+          return;
+        }
         setStatus("Looking for the Podcast folder...");
         const folders = await driveFetch("files", {
           q: "name = 'Podcast' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
@@ -1856,6 +1873,10 @@
       }
 
       async function downloadFile(file, refreshAfter = true) {
+        if (!accessToken) {
+          requestGoogleAccess(() => downloadFile(file, refreshAfter).catch(() => {}), "Google access is needed to download this file.");
+          return;
+        }
         try {
           setStatus(`Downloading ${file.name}... Keep this page open until it finishes.`);
           const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
@@ -1887,7 +1908,7 @@
 
       async function downloadCurrentFolderFiles() {
         if (!accessToken) {
-          setStatus("Sign in to Google before downloading from Drive.");
+          requestGoogleAccess(() => downloadCurrentFolderFiles(), "Google access is needed to download this folder.");
           return;
         }
         const missing = audioInsideFolder(currentFolder).filter((file) => !isDownloaded(file.id));
@@ -1949,7 +1970,10 @@
           callback: (response) => {
             window.clearTimeout(quietReconnectTimer);
             if (response.error) {
-              $("scanDrive").disabled = true;
+              $("scanDrive").disabled = false;
+              accessToken = "";
+              pendingGoogleAction = null;
+              updateGoogleStatus();
               setStatus(response.error === "interaction_required"
                 ? "Ready. Sign in to Google when you want to refresh Drive."
                 : `Sign-in failed: ${response.error}`);
@@ -1960,10 +1984,16 @@
             accessToken = response.access_token;
             localStorage.setItem(GOOGLE_CONSENT_KEY, "yes");
             $("scanDrive").disabled = false;
-            $("signIn").textContent = "Reconnect Google";
-            setStatus("Google connected. You can refresh the Podcast library.");
+            $("signIn").textContent = "Refresh Google access";
+            updateGoogleStatus();
+            const action = pendingGoogleAction;
+            pendingGoogleAction = null;
+            setStatus(action ? "Google connected. Continuing..." : "Google connected.");
             syncMiniPlayerVisibility();
             renderSettings();
+            if (action) {
+              window.setTimeout(() => action(), 0);
+            }
           }
         });
         return true;
@@ -1980,10 +2010,21 @@
         return true;
       }
 
+      function requestGoogleAccess(action, message = "Google access is needed for this action.") {
+        pendingGoogleAction = action;
+        setStatus(message);
+        const promptMode = localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent";
+        const started = connectToGoogle(promptMode);
+        if (!started) {
+          pendingGoogleAction = null;
+        }
+        return started;
+      }
+
       function tryQuietGoogleReconnect() {
         if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
         $("signIn").textContent = "Sign in to Google";
-        setStatus("Ready. Tap to sign in when you want to refresh Drive.");
+        setStatus("Ready. Google access will be requested when streaming, downloading, refreshing Drive, or syncing stats.");
         renderSettings();
       }
 
@@ -1993,6 +2034,11 @@
       });
 
       $("settingsSignIn").addEventListener("click", () => {
+        window.clearTimeout(quietReconnectTimer);
+        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
+      });
+
+      $("googleStatusButton").addEventListener("click", () => {
         window.clearTimeout(quietReconnectTimer);
         connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
       });
