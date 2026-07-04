@@ -1,9 +1,11 @@
-const CACHE_NAME = "autodidact-app-shell-v1";
+const CACHE_NAME = "autodidact-mobile-shell-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./assets/autodidact-icon-64.png"
+  "./assets/autodidact-icon-64.png",
+  "./assets/stats_tab.png",
+  "./assets/settings_fb2.png"
 ];
 
 self.addEventListener("install", (event) => {
