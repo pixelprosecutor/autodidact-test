@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-mobile-shell-v1";
+const CACHE_NAME = "autodidact-folder-explorer-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

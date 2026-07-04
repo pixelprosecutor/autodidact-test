@@ -143,6 +143,97 @@
         background: rgba(7, 22, 47, .8);
       }
 
+      .explorer-path {
+        margin-bottom: 8px;
+      }
+
+      .explorer-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .8);
+        text-align: left;
+      }
+
+      .explorer-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--panel-strong);
+        color: var(--accent);
+        font-size: 21px;
+      }
+
+      .explorer-icon img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .folder-glyph {
+        width: 24px;
+        height: 18px;
+        border: 2px solid var(--accent);
+        border-radius: 3px;
+        position: relative;
+      }
+
+      .folder-glyph::before {
+        content: "";
+        position: absolute;
+        top: -7px;
+        left: 2px;
+        width: 12px;
+        height: 7px;
+        border: 2px solid var(--accent);
+        border-bottom: 0;
+        border-radius: 3px 3px 0 0;
+      }
+
+      .audio-glyph {
+        width: 0;
+        height: 0;
+        border-top: 9px solid transparent;
+        border-bottom: 9px solid transparent;
+        border-left: 14px solid var(--accent);
+        margin-left: 3px;
+      }
+
+      .explorer-main {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .explorer-title {
+        display: block;
+        overflow: hidden;
+        font-weight: 750;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .explorer-subtitle {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .explorer-action {
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 750;
+      }
+
       .file-row strong,
       .file-row small {
         display: block;
@@ -258,7 +349,8 @@
 
         <section class="panel">
           <h2>Podcast library</h2>
-          <p>The list shows audio files found in the Podcast folder and subfolders. Downloaded files can play without internet after they are saved.</p>
+          <p>Open folders just like Drive. Downloaded files can play without internet after they are saved.</p>
+          <div class="explorer-path" id="explorerPath"></div>
           <div class="grid" id="fileList"></div>
         </section>
       </section>
@@ -327,6 +419,7 @@
       let accessToken = "";
       let tokenClient = null;
       let audioFiles = readCachedLibrary();
+      let currentFolder = "Podcast";
       let downloads = [];
       let events = [];
       let currentFile = null;
@@ -610,6 +703,63 @@
         return downloads.some((item) => item.id === id);
       }
 
+      function folderLabel(folderPath) {
+        if (folderPath === "Podcast") return "Library";
+        return String(folderPath || "Podcast").split(" / ").pop();
+      }
+
+      function parentFolder(folderPath) {
+        if (folderPath === "Podcast") return "Podcast";
+        const parts = String(folderPath || "Podcast").split(" / ");
+        parts.pop();
+        return parts.join(" / ") || "Podcast";
+      }
+
+      function directChildren(parent) {
+        const prefix = `${parent} /`;
+        return Array.from(new Set(audioFiles
+          .map((file) => file.folderPath || "Podcast")
+          .filter((folderPath) => folderPath.startsWith(prefix))
+          .map((folderPath) => {
+            const rest = folderPath.slice(prefix.length);
+            return `${prefix}${rest.split(" / ")[0]}`;
+          })))
+          .sort((a, b) => folderLabel(a).localeCompare(folderLabel(b)));
+      }
+
+      function directAudio(parent) {
+        return audioFiles
+          .filter((file) => (file.folderPath || "Podcast") === parent)
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      function folderItemCount(folderPath) {
+        return directChildren(folderPath).length + directAudio(folderPath).length;
+      }
+
+      function renderExplorerPath() {
+        const atRoot = currentFolder === "Podcast";
+        $("explorerPath").innerHTML = `
+          <button class="explorer-row" ${atRoot ? "" : `data-folder-open="${escapeHtml(parentFolder(currentFolder))}"`}>
+            <span class="explorer-icon">
+              ${atRoot ? `<img src="assets/autodidact-icon-64.png" alt="">` : `<span class="folder-glyph" aria-hidden="true"></span>`}
+            </span>
+            <span class="explorer-main">
+              <span class="explorer-title">${escapeHtml(folderLabel(currentFolder))}</span>
+              <span class="explorer-subtitle">${folderItemCount(currentFolder)} item${folderItemCount(currentFolder) === 1 ? "" : "s"}</span>
+            </span>
+            <span class="explorer-action">${atRoot ? "" : "Back"}</span>
+          </button>
+        `;
+
+        $("explorerPath").querySelectorAll("[data-folder-open]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentFolder = button.dataset.folderOpen;
+            renderFiles();
+          });
+        });
+      }
+
       function renderDownloads() {
         const totalBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
         $("downloadSummary").textContent = downloads.length
@@ -629,10 +779,10 @@
           </div>
         `).join("") || "<p>No downloads yet.</p>";
 
-        document.querySelectorAll("[data-play-local]").forEach((button) => {
+        $("downloadList").querySelectorAll("[data-play-local]").forEach((button) => {
           button.addEventListener("click", () => playLocal(button.dataset.playLocal));
         });
-        document.querySelectorAll("[data-delete-local]").forEach((button) => {
+        $("downloadList").querySelectorAll("[data-delete-local]").forEach((button) => {
           button.addEventListener("click", async () => {
             if (currentFile?.id === button.dataset.deleteLocal) {
               suppressPause = true;
@@ -652,13 +802,29 @@
       }
 
       function renderFiles() {
-        $("fileList").innerHTML = audioFiles.slice(0, 80).map((file) => {
+        renderExplorerPath();
+        const childFolders = directChildren(currentFolder);
+        const files = directAudio(currentFolder);
+
+        const folderRows = childFolders.map((folderPath) => `
+          <button class="explorer-row" data-folder-open="${escapeHtml(folderPath)}">
+            <span class="explorer-icon"><span class="folder-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-main">
+              <span class="explorer-title">${escapeHtml(folderLabel(folderPath))}</span>
+              <span class="explorer-subtitle">${folderItemCount(folderPath)} item${folderItemCount(folderPath) === 1 ? "" : "s"}</span>
+            </span>
+            <span class="explorer-action">›</span>
+          </button>
+        `).join("");
+
+        const fileRows = files.map((file) => {
           const saved = isDownloaded(file.id);
           return `
-            <div class="file-row">
-              <span>
-                <strong>${escapeHtml(displayName(file.name))}</strong>
-                <small>${escapeHtml(file.folderPath)} · ${file.mimeType.replace("audio/", "")} · ${formatBytes(file.size)} ${saved ? "· downloaded" : ""}</small>
+            <div class="explorer-row">
+              <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
+              <span class="explorer-main">
+                <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+                <span class="explorer-subtitle">${file.mimeType.replace("audio/", "")} · ${formatBytes(file.size)}${saved ? " · downloaded" : ""}</span>
               </span>
               <span class="row-actions">
                 ${saved ? `<button data-play-local="${escapeHtml(file.id)}">Play local</button>` : ""}
@@ -666,15 +832,26 @@
               </span>
             </div>
           `;
-        }).join("") || "<p>No audio files loaded yet.</p>";
+        }).join("");
 
-        document.querySelectorAll("[data-download]").forEach((button) => {
+        const emptyMessage = audioFiles.length
+          ? "No audio files or folders here."
+          : "No audio files loaded yet.";
+        $("fileList").innerHTML = folderRows + fileRows || `<p>${emptyMessage}</p>`;
+
+        $("fileList").querySelectorAll("[data-folder-open]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentFolder = button.dataset.folderOpen;
+            renderFiles();
+          });
+        });
+        $("fileList").querySelectorAll("[data-download]").forEach((button) => {
           button.addEventListener("click", () => {
             const file = audioFiles.find((item) => item.id === button.dataset.download);
             if (file) downloadFile(file);
           });
         });
-        document.querySelectorAll("[data-play-local]").forEach((button) => {
+        $("fileList").querySelectorAll("[data-play-local]").forEach((button) => {
           button.addEventListener("click", () => playLocal(button.dataset.playLocal));
         });
       }
@@ -778,6 +955,7 @@
         const found = [];
         await scanFolder(podcast.id, "Podcast", found);
         audioFiles = found.sort((a, b) => a.folderPath.localeCompare(b.folderPath) || a.name.localeCompare(b.name));
+        currentFolder = "Podcast";
         saveCachedLibrary(audioFiles);
         renderFiles();
         setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Download one or more for offline playback.`);
