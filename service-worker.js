@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-mini-player-v1";
+const CACHE_NAME = "autodidact-mini-player-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

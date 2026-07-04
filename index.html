@@ -90,6 +90,10 @@
         opacity: .5;
       }
 
+      [hidden] {
+        display: none !important;
+      }
+
       audio {
         width: 100%;
         height: 38px;
@@ -394,7 +398,7 @@
       </section>
     </main>
 
-    <aside class="mini-player hidden" id="miniPlayer">
+    <aside class="mini-player hidden" id="miniPlayer" hidden>
       <strong id="nowPlaying">No local file selected</strong>
       <small id="nowPlayingMeta">Select a downloaded file to begin.</small>
       <audio id="player" controls preload="metadata"></audio>
@@ -445,6 +449,7 @@
       let lastPosition = 0;
       let suppressPause = false;
       let suppressNextSeekRecord = false;
+      let endingHandled = false;
       let seekStartPosition = null;
       let seekRecordTimer = 0;
 
@@ -726,6 +731,7 @@
 
       function showMiniPlayer(file) {
         document.body.classList.add("has-player");
+        $("miniPlayer").hidden = false;
         $("miniPlayer").classList.remove("hidden");
         $("nowPlaying").textContent = displayName(file.name);
         $("nowPlayingMeta").textContent = `${file.folderPath || "Podcast"} - local download`;
@@ -739,12 +745,26 @@
         if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = "";
         currentFile = null;
+        endingHandled = false;
         $("player").removeAttribute("src");
+        $("player").load();
         $("nowPlaying").textContent = "No local file selected";
         $("nowPlayingMeta").textContent = "Select a downloaded file to begin.";
         $("miniPlayer").classList.add("hidden");
+        $("miniPlayer").hidden = true;
         document.body.classList.remove("has-player");
         updatePlayButton();
+      }
+
+      function finishPlayback(trigger) {
+        if (!currentFile || endingHandled) return;
+        endingHandled = true;
+        recordEvent("complete", {
+          position: $("player").duration || $("player").currentTime || 0,
+          duration: $("player").duration || 0,
+          trigger
+        });
+        resetMiniPlayer();
       }
 
       function togglePlayback() {
@@ -913,6 +933,7 @@
         if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = URL.createObjectURL(file.blob);
         currentFile = file;
+        endingHandled = false;
         lastProgressAt = 0;
         lastPosition = 0;
         $("player").src = currentObjectUrl;
@@ -1117,6 +1138,12 @@
 
       $("player").addEventListener("timeupdate", () => {
         if (!currentFile) return;
+        const duration = $("player").duration || 0;
+        const currentTime = $("player").currentTime || 0;
+        if (duration && duration - currentTime <= 0.4) {
+          finishPlayback("near_end");
+          return;
+        }
         const now = Date.now();
         if (now - lastProgressAt < 15000) return;
         lastProgressAt = now;
@@ -1161,13 +1188,7 @@
       });
 
       $("player").addEventListener("ended", () => {
-        if (!currentFile) return;
-        recordEvent("complete", {
-          position: $("player").duration || $("player").currentTime || 0,
-          duration: $("player").duration || 0,
-          trigger: "ended"
-        });
-        resetMiniPlayer();
+        finishPlayback("ended");
       });
 
       Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
