@@ -521,16 +521,6 @@
   <body>
     <main>
       <section id="libraryView" class="view active">
-        <div class="toolbar">
-          <button class="primary" id="signIn" hidden>Sign in to Google</button>
-          <button id="scanDrive">Find Podcast audio</button>
-        </div>
-
-        <section class="panel">
-          <h2>Status</h2>
-          <p class="status" id="status">Ready. Google access will be requested when needed.</p>
-        </section>
-
         <section class="panel">
           <div class="explorer-path" id="explorerPath"></div>
           <div class="grid" id="fileList"></div>
@@ -648,6 +638,11 @@
         </section>
 
         <section class="panel">
+          <h2>Status</h2>
+          <p class="status" id="status">Ready. Google access will be requested when needed.</p>
+        </section>
+
+        <section class="panel">
           <h2>Version</h2>
           <p id="buildStatus">Checking app version.</p>
           <div class="stats-list" id="buildSettings"></div>
@@ -748,7 +743,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "google-jit-1";
+      const APP_BUILD = "settings-status-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
@@ -776,7 +771,8 @@
       const $ = (id) => document.getElementById(id);
 
       function setStatus(message) {
-        $("status").textContent = message;
+        const status = $("status");
+        if (status) status.textContent = message;
       }
 
       function updateGoogleStatus() {
@@ -1970,7 +1966,6 @@
           callback: (response) => {
             window.clearTimeout(quietReconnectTimer);
             if (response.error) {
-              $("scanDrive").disabled = false;
               accessToken = "";
               pendingGoogleAction = null;
               updateGoogleStatus();
@@ -1983,8 +1978,6 @@
             }
             accessToken = response.access_token;
             localStorage.setItem(GOOGLE_CONSENT_KEY, "yes");
-            $("scanDrive").disabled = false;
-            $("signIn").textContent = "Refresh Google access";
             updateGoogleStatus();
             const action = pendingGoogleAction;
             pendingGoogleAction = null;
@@ -2023,15 +2016,9 @@
 
       function tryQuietGoogleReconnect() {
         if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
-        $("signIn").textContent = "Sign in to Google";
         setStatus("Ready. Google access will be requested when streaming, downloading, refreshing Drive, or syncing stats.");
         renderSettings();
       }
-
-      $("signIn").addEventListener("click", () => {
-        window.clearTimeout(quietReconnectTimer);
-        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
-      });
 
       $("settingsSignIn").addEventListener("click", () => {
         window.clearTimeout(quietReconnectTimer);
@@ -2041,12 +2028,6 @@
       $("googleStatusButton").addEventListener("click", () => {
         window.clearTimeout(quietReconnectTimer);
         connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
-      });
-
-      $("scanDrive").addEventListener("click", () => {
-        findPodcastAudio().catch((error) => {
-          setStatus(error.message || "Drive scan failed.");
-        });
       });
 
       $("settingsScanDrive").addEventListener("click", () => {
