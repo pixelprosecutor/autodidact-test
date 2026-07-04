@@ -115,6 +115,9 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        flex: 0 0 auto;
+        justify-content: flex-end;
+        margin-left: auto;
       }
 
       .toolbar {
@@ -287,6 +290,9 @@
         align-items: center;
         gap: 10px;
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
         padding: 10px;
         border: 1px solid var(--line);
         border-radius: 8px;
@@ -350,6 +356,7 @@
       .explorer-title {
         display: block;
         overflow: hidden;
+        font-size: 15px;
         font-weight: 750;
         line-height: 1.2;
         text-overflow: ellipsis;
@@ -361,12 +368,30 @@
         margin-top: 4px;
         color: var(--muted);
         font-size: 12px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .explorer-action {
+        flex: 0 0 auto;
         color: var(--muted);
         font-size: 18px;
         font-weight: 750;
+      }
+
+      .icon-action {
+        width: 42px;
+        min-width: 42px;
+        padding: 5px;
+      }
+
+      .icon-action img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .file-row strong,
@@ -501,8 +526,6 @@
         </section>
 
         <section class="panel">
-          <h2>Podcast library</h2>
-          <p>Open folders just like Drive. Downloaded files can play without internet after they are saved.</p>
           <div class="explorer-path" id="explorerPath"></div>
           <div class="grid" id="fileList"></div>
         </section>
@@ -715,7 +738,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "offline-ready-1";
+      const APP_BUILD = "library-polish-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
@@ -1520,7 +1543,9 @@
             </span>
             <span class="row-actions">
               ${saved ? `<button data-play-local="${escapeHtml(file.id)}">Play local</button>` : ""}
-              <button ${saved ? "disabled" : ""} data-download="${escapeHtml(file.id)}">${saved ? "Downloaded" : "Download"}</button>
+              <button class="icon-action" ${saved ? "disabled" : ""} data-download="${escapeHtml(file.id)}" aria-label="${saved ? "Downloaded" : "Download"}" title="${saved ? "Downloaded" : "Download"}">
+                <img src="assets/downloaded.png" alt="">
+              </button>
             </span>
           </div>
         `;
@@ -2057,4 +2082,3 @@
     </script>
   </body>
 </html>
-
