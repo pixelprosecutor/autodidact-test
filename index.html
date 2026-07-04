@@ -271,6 +271,10 @@
         display: none;
       }
 
+      body:not(.has-player) .mini-player {
+        display: none !important;
+      }
+
       .mini-player strong {
         display: block;
         overflow: hidden;
@@ -738,6 +742,18 @@
         updatePlayButton();
       }
 
+      function hideMiniPlayerChrome() {
+        $("miniPlayer").classList.add("hidden");
+        $("miniPlayer").hidden = true;
+        document.body.classList.remove("has-player");
+      }
+
+      function syncMiniPlayerVisibility() {
+        if (!currentFile || !$("player").src) {
+          hideMiniPlayerChrome();
+        }
+      }
+
       function resetMiniPlayer() {
         suppressPause = true;
         $("player").pause();
@@ -750,9 +766,7 @@
         $("player").load();
         $("nowPlaying").textContent = "No local file selected";
         $("nowPlayingMeta").textContent = "Select a downloaded file to begin.";
-        $("miniPlayer").classList.add("hidden");
-        $("miniPlayer").hidden = true;
-        document.body.classList.remove("has-player");
+        hideMiniPlayerChrome();
         updatePlayButton();
       }
 
@@ -1058,28 +1072,56 @@
         }
       }
 
-      $("signIn").addEventListener("click", () => {
+      function ensureGoogleClient() {
         if (!window.google?.accounts?.oauth2) {
-          setStatus("Google sign-in script is still loading. Try again in a moment.");
-          return;
+          return false;
         }
         tokenClient ||= google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
           callback: (response) => {
             if (response.error) {
-              setStatus(`Sign-in failed: ${response.error}`);
+              $("scanDrive").disabled = true;
+              setStatus(response.error === "interaction_required"
+                ? "Ready. Sign in to Google when you want to refresh Drive."
+                : `Sign-in failed: ${response.error}`);
+              syncMiniPlayerVisibility();
               return;
             }
             accessToken = response.access_token;
             localStorage.setItem(GOOGLE_CONSENT_KEY, "yes");
             $("scanDrive").disabled = false;
-            setStatus("Signed in. Now find Podcast audio.");
+            $("signIn").textContent = "Reconnect Google";
+            setStatus("Google connected. You can refresh the Podcast library.");
+            syncMiniPlayerVisibility();
           }
         });
+        return true;
+      }
+
+      function connectToGoogle(promptMode = "consent") {
+        if (!ensureGoogleClient()) {
+          setStatus("Google sign-in script is still loading. Try again in a moment.");
+          return false;
+        }
         tokenClient.requestAccessToken({
-          prompt: localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent"
+          prompt: promptMode
         });
+        return true;
+      }
+
+      function tryQuietGoogleReconnect() {
+        if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
+        if (!ensureGoogleClient()) {
+          window.setTimeout(tryQuietGoogleReconnect, 500);
+          return;
+        }
+        setStatus("Checking saved Google permission...");
+        connectToGoogle("");
+      }
+
+      $("signIn").addEventListener("click", () => {
+        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
       });
 
       $("scanDrive").addEventListener("click", () => {
@@ -1194,7 +1236,9 @@
       Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
+      syncMiniPlayerVisibility();
       renderFiles();
+      tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
