@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-reconnect-v1";
+const CACHE_NAME = "autodidact-reconnect-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

@@ -456,6 +456,7 @@
       let endingHandled = false;
       let seekStartPosition = null;
       let seekRecordTimer = 0;
+      let quietReconnectTimer = 0;
 
       const $ = (id) => document.getElementById(id);
 
@@ -1080,6 +1081,7 @@
           client_id: CLIENT_ID,
           scope: SCOPES,
           callback: (response) => {
+            window.clearTimeout(quietReconnectTimer);
             if (response.error) {
               $("scanDrive").disabled = true;
               setStatus(response.error === "interaction_required"
@@ -1117,10 +1119,16 @@
           return;
         }
         setStatus("Checking saved Google permission...");
+        window.clearTimeout(quietReconnectTimer);
+        quietReconnectTimer = window.setTimeout(() => {
+          if (accessToken) return;
+          setStatus("Ready. Tap Sign in to Google when you want to refresh Drive.");
+        }, 3500);
         connectToGoogle("");
       }
 
       $("signIn").addEventListener("click", () => {
+        window.clearTimeout(quietReconnectTimer);
         connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
       });
 
