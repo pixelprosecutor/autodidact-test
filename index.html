@@ -538,35 +538,6 @@
 
       <section id="downloadsView" class="view">
         <section class="panel">
-          <h2>Downloads</h2>
-          <p id="downloadSummary">No local audio saved yet.</p>
-          <div class="toolbar">
-            <button id="downloadCurrentFolder">Download this folder</button>
-            <button class="danger" id="deleteCurrentFolderDownloads">Delete this folder's downloads</button>
-          </div>
-          <div class="stats-list" id="downloadFolderStats"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Offline readiness</h2>
-          <p id="offlineReadinessSummary">Checking local files and sync status.</p>
-          <div class="readiness-list" id="offlineReadinessList"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Storage safety</h2>
-          <p id="downloadStorageStatus">Storage estimate not loaded yet.</p>
-          <div class="storage-meter" aria-hidden="true"><span id="downloadStorageFill"></span></div>
-          <div class="stats-list" id="downloadStorageStats"></div>
-          <div class="toolbar">
-            <button id="requestStorageProtection">Protect downloads if possible</button>
-            <button id="refreshDownloadStorage">Refresh storage</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>Saved audio</h2>
-          <div class="stats-list" id="downloadFolderList"></div>
           <div class="grid" id="downloadList"></div>
         </section>
       </section>
@@ -658,6 +629,34 @@
         </section>
 
         <section class="panel">
+          <h2>Downloads</h2>
+          <p id="downloadSummary">No local audio saved yet.</p>
+          <div class="toolbar">
+            <button id="downloadCurrentFolder">Download this folder</button>
+            <button class="danger" id="deleteCurrentFolderDownloads">Delete this folder's downloads</button>
+          </div>
+          <div class="stats-list" id="downloadFolderStats"></div>
+          <div class="stats-list" id="downloadFolderList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Offline readiness</h2>
+          <p id="offlineReadinessSummary">Checking local files and sync status.</p>
+          <div class="readiness-list" id="offlineReadinessList"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Storage safety</h2>
+          <p id="downloadStorageStatus">Storage estimate not loaded yet.</p>
+          <div class="storage-meter" aria-hidden="true"><span id="downloadStorageFill"></span></div>
+          <div class="stats-list" id="downloadStorageStats"></div>
+          <div class="toolbar">
+            <button id="requestStorageProtection">Protect downloads if possible</button>
+            <button id="refreshDownloadStorage">Refresh storage</button>
+          </div>
+        </section>
+
+        <section class="panel">
           <h2>Stats</h2>
           <div class="stats-list" id="statsSettings"></div>
           <div class="toolbar">
@@ -743,7 +742,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "settings-status-1";
+      const APP_BUILD = "downloads-clean-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
 
       let accessToken = "";
@@ -1570,6 +1569,18 @@
         `;
       }
 
+      function downloadedFileRow(file) {
+        return `
+          <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
+            <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-main">
+              <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+              <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${formatBytes(file.size || file.blob?.size)} - saved ${new Date(file.savedAt).toLocaleDateString()}</span>
+            </span>
+          </div>
+        `;
+      }
+
       function bindFileActions(container) {
         container.querySelectorAll("[data-download]").forEach((button) => {
           button.addEventListener("click", (event) => {
@@ -1621,32 +1632,9 @@
           ? rows(folderRows)
           : "<p>No downloaded folders yet.</p>";
 
-        $("downloadList").innerHTML = downloads.map((file) => `
-          <div class="file-row">
-            <span>
-              <strong>${escapeHtml(displayName(file.name))}</strong>
-              <small>${escapeHtml(file.folderPath || "Podcast")} · ${formatBytes(file.size || file.blob?.size)} · saved ${new Date(file.savedAt).toLocaleString()}</small>
-            </span>
-            <span class="row-actions">
-              <button data-play-local="${escapeHtml(file.id)}">Play</button>
-              <button class="danger" data-delete-local="${escapeHtml(file.id)}">Delete</button>
-            </span>
-          </div>
-        `).join("") || "<p>No downloads yet.</p>";
+        $("downloadList").innerHTML = downloads.map((file) => downloadedFileRow(file)).join("") || "<p>No downloads yet.</p>";
 
-        $("downloadList").querySelectorAll("[data-play-local]").forEach((button) => {
-          button.addEventListener("click", () => playLocal(button.dataset.playLocal));
-        });
-        $("downloadList").querySelectorAll("[data-delete-local]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            if (currentFile?.id === button.dataset.deleteLocal) {
-              resetMiniPlayer();
-            }
-            await deleteDownload(button.dataset.deleteLocal);
-            setStatus("Local download deleted.");
-            await refreshDownloads();
-          });
-        });
+        bindFileActions($("downloadList"));
         renderDownloadFolderStats();
         renderStoragePanels();
         renderOfflineReadiness();
@@ -2188,4 +2176,3 @@
     </script>
   </body>
 </html>
-
