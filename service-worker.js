@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-fullscreen-player-art-v1";
+const CACHE_NAME = "autodidact-bottom-nav-center-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
