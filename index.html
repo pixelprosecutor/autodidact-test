@@ -328,6 +328,10 @@
         image-rendering: pixelated;
       }
 
+      .explorer-icon.audio-icon {
+        background: transparent;
+      }
+
       .folder-glyph {
         width: 24px;
         height: 18px;
@@ -348,13 +352,11 @@
         border-radius: 3px 3px 0 0;
       }
 
-      .audio-glyph {
-        width: 0;
-        height: 0;
-        border-top: 9px solid transparent;
-        border-bottom: 9px solid transparent;
-        border-left: 14px solid var(--accent);
-        margin-left: 3px;
+      .audio-cassette-icon {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .explorer-main {
@@ -466,6 +468,13 @@
         color: var(--muted);
         font-size: 12px;
         text-transform: uppercase;
+      }
+
+      .player-art img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .native-player {
@@ -805,8 +814,12 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "driving-player-1";
+      const APP_BUILD = "cassette-pair-test-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
+      const TEST_CASSETTE_ART = {
+        icon: "assets/cassettes/test/test-01-icon.png",
+        large: "assets/cassettes/test/test-01-large.png"
+      };
 
       let accessToken = "";
       let tokenClient = null;
@@ -1499,12 +1512,25 @@
         $("playerProgressFill").style.width = `${percent}%`;
       }
 
+      function cassetteIconMarkup() {
+        return `<img class="audio-cassette-icon" src="${TEST_CASSETTE_ART.icon}" alt="">`;
+      }
+
+      function setPlayerArt(file) {
+        if (!file) {
+          $("playerArt").innerHTML = "";
+          return;
+        }
+        $("playerArt").innerHTML = `<img src="${TEST_CASSETTE_ART.large}" alt="">`;
+      }
+
       function showMiniPlayer(file, sourceLabel = "local download") {
         document.body.classList.add("has-player");
         $("miniPlayer").hidden = false;
         $("miniPlayer").classList.remove("hidden");
         $("nowPlaying").textContent = displayName(file.name);
         $("nowPlayingMeta").textContent = `${file.folderPath || "Podcast"} - ${sourceLabel}`;
+        setPlayerArt(file);
         updatePlayButton();
         updatePlayerProgress();
       }
@@ -1534,6 +1560,7 @@
         $("player").load();
         $("nowPlaying").textContent = "No local file selected";
         $("nowPlayingMeta").textContent = "Select a downloaded file to begin.";
+        setPlayerArt(null);
         hideMiniPlayerChrome();
         updatePlayButton();
         updatePlayerProgress();
@@ -1688,7 +1715,7 @@
         const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
         return `
           <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
-            <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-icon audio-icon">${cassetteIconMarkup()}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(folderText)}${file.mimeType.replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
@@ -1706,7 +1733,7 @@
       function downloadedFileRow(file) {
         return `
           <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
-            <span class="explorer-icon"><span class="audio-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-icon audio-icon">${cassetteIconMarkup()}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${formatBytes(file.size || file.blob?.size)} - saved ${new Date(file.savedAt).toLocaleDateString()}</span>
@@ -2325,4 +2352,3 @@
     </script>
   </body>
 </html>
-
