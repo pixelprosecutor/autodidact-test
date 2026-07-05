@@ -39,7 +39,7 @@
       }
 
       body.has-player {
-        padding-bottom: 380px;
+        padding-bottom: 96px;
       }
 
       h1,
@@ -421,13 +421,18 @@
       .mini-player {
         position: fixed;
         right: 0;
-        bottom: calc(72px + env(safe-area-inset-bottom));
+        bottom: 0;
         left: 0;
+        top: 0;
+        z-index: 40;
         width: min(820px, 100%);
         margin: 0 auto;
-        padding: 12px 14px max(12px, env(safe-area-inset-bottom));
-        border-top: 1px solid var(--line);
-        background: rgba(7, 22, 47, .98);
+        min-height: 100vh;
+        padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        background: var(--paper);
       }
 
       .mini-player.hidden {
@@ -443,6 +448,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: 18px;
       }
 
       .mini-player small {
@@ -454,20 +460,14 @@
       }
 
       .player-art {
-        height: 92px;
-        margin-bottom: 10px;
+        flex: 1 1 auto;
+        min-height: 180px;
+        max-height: 48vh;
+        margin: 8px 0 18px;
         display: grid;
         place-items: center;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background:
-          linear-gradient(90deg, rgba(125, 211, 252, .14) 1px, transparent 1px),
-          linear-gradient(rgba(125, 211, 252, .1) 1px, transparent 1px),
-          rgba(10, 31, 68, .82);
-        background-size: 14px 14px;
-        color: var(--muted);
-        font-size: 12px;
-        text-transform: uppercase;
+        border: 0;
+        background: transparent;
       }
 
       .player-art img {
@@ -490,7 +490,7 @@
         grid-template-columns: auto 1fr auto;
         gap: 8px;
         align-items: center;
-        margin-top: 10px;
+        margin-top: 12px;
         color: var(--muted);
         font-size: 12px;
       }
@@ -511,14 +511,14 @@
       }
 
       .player-tools {
-        margin-top: 8px;
+        margin-top: 14px;
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 8px;
       }
 
       .player-tools button {
-        min-height: 58px;
+        min-height: 64px;
         padding: 8px 6px;
         font-size: 13px;
       }
@@ -814,7 +814,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-pair-test-1";
+      const APP_BUILD = "fullscreen-player-art-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const TEST_CASSETTE_ART = {
         icon: "assets/cassettes/test/test-01-icon.png",
