@@ -814,7 +814,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "local-playback-1";
+      const APP_BUILD = "downloaded-row-cleanup-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_ART =       [
               {
@@ -2463,6 +2463,11 @@
       function fileRow(file, includeFolder = false) {
         const saved = isDownloaded(file.id);
         const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
+        const downloadAction = saved ? "" : `
+              <button class="icon-action" data-download="${escapeHtml(file.id)}" aria-label="Download" title="Download">
+                <img src="assets/downloaded.png" alt="">
+              </button>
+            `;
         return `
           <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
             <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
@@ -2470,12 +2475,7 @@
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(folderText)}${file.mimeType.replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
             </span>
-            <span class="row-actions">
-              ${saved ? `<button data-play-local="${escapeHtml(file.id)}">Play local</button>` : ""}
-              <button class="icon-action" ${saved ? "disabled" : ""} data-download="${escapeHtml(file.id)}" aria-label="${saved ? "Downloaded" : "Download"}" title="${saved ? "Downloaded" : "Download"}">
-                <img src="assets/downloaded.png" alt="">
-              </button>
-            </span>
+            ${downloadAction ? `<span class="row-actions">${downloadAction}</span>` : ""}
           </div>
         `;
       }
@@ -2498,12 +2498,6 @@
             event.stopPropagation();
             const file = audioFiles.find((item) => item.id === button.dataset.download);
             if (file) downloadFile(file).catch(() => {});
-          });
-        });
-        container.querySelectorAll("[data-play-local]").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            event.stopPropagation();
-            playLocal(button.dataset.playLocal);
           });
         });
         container.querySelectorAll("[data-play-file]").forEach((row) => {
