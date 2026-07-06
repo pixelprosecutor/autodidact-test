@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-folder-icon-v1";
+const CACHE_NAME = "autodidact-player-icons-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,12 @@ const APP_SHELL = [
   "./assets/folder-icon-34.png",
   "./assets/google-no.png",
   "./assets/google-ok.png",
+  "./assets/eject-icon-34x34.png",
+  "./assets/pause-icon-34x34.png",
+  "./assets/play-icon-34x34.png",
+  "./assets/seekback-icon-34x34.png",
+  "./assets/seekforward-icon-34x34.png",
+  "./assets/stop-icon-34x34.png",
   "./assets/search_binoculars.png",
   "./assets/stats_tab.png",
   "./assets/settings_fb2.png"

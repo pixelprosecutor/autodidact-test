@@ -814,7 +814,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "folder-icon-1";
+      const APP_BUILD = "player-icons-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const TEST_CASSETTE_ART = {
         icon: "assets/cassettes/test/test-01-icon.png",
@@ -1496,7 +1496,10 @@
       }
 
       function updatePlayButton() {
-        $("togglePlay").textContent = $("player").paused ? "Play" : "Pause";
+        const paused = $("player").paused;
+        $("togglePlayIcon").src = paused ? PLAYER_ICONS.play : PLAYER_ICONS.pause;
+        $("togglePlay").setAttribute("aria-label", paused ? "Play" : "Pause");
+        $("togglePlay").title = paused ? "Play" : "Pause";
       }
 
       function formatClock(seconds) {
