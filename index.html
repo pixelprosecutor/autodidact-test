@@ -426,11 +426,13 @@
         z-index: 40;
         width: min(820px, 100%);
         margin: 0 auto;
-        min-height: 100vh;
+        height: 100vh;
+        height: 100dvh;
         padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+        align-content: stretch;
+        overflow: hidden;
         background: var(--paper);
       }
 
@@ -459,14 +461,13 @@
       }
 
       .player-art {
-        flex: 1 1 auto;
-        min-height: 180px;
-        max-height: 48vh;
-        margin: 8px 0 18px;
+        min-height: 0;
+        margin: 0 0 18px;
         display: grid;
         place-items: center;
         border: 0;
         background: transparent;
+        overflow: hidden;
       }
 
       .player-art img {
@@ -511,6 +512,7 @@
 
       .player-tools {
         margin-top: 14px;
+        padding-bottom: 2px;
         display: grid;
         width: 100%;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -818,7 +820,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "player-controls-center-1";
+      const APP_BUILD = "player-controls-visible-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const TEST_CASSETTE_ART = {
         icon: "assets/cassettes/test/test-01-icon.png",
