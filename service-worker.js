@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-cassette-library-119-v1";
+const CACHE_NAME = "autodidact-cassette-library-116-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -227,8 +227,6 @@ const APP_SHELL = [
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-5-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-large-384x256.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-7-icon-34x34.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-7-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-10-icon-34x34.png",
@@ -247,12 +245,8 @@ const APP_SHELL = [
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-4-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-5-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-5-large-384x256.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-6-icon-34x34.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-6-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-7-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-7-large-384x256.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-8-icon-34x34.png",
-  "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-8-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-9-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-04-05-47-pm-9-large-384x256.png"
 ];
