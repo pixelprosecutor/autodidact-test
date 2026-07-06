@@ -331,24 +331,11 @@
         background: transparent;
       }
 
-      .folder-glyph {
-        width: 24px;
-        height: 18px;
-        border: 2px solid var(--accent);
-        border-radius: 3px;
-        position: relative;
-      }
-
-      .folder-glyph::before {
-        content: "";
-        position: absolute;
-        top: -7px;
-        left: 2px;
-        width: 12px;
-        height: 7px;
-        border: 2px solid var(--accent);
-        border-bottom: 0;
-        border-radius: 3px 3px 0 0;
+      .folder-icon {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .audio-cassette-icon {
@@ -525,6 +512,13 @@
         min-height: 64px;
         padding: 8px 6px;
         font-size: 13px;
+      }
+
+      .player-tools img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .bottom-nav {
@@ -771,11 +765,11 @@
         <span id="playerDuration">--:--</span>
       </div>
       <div class="player-tools">
-        <button id="skipBack" type="button">-15s</button>
-        <button id="togglePlay" type="button">Play</button>
-        <button id="skipForward" type="button">+30s</button>
-        <button id="stopPlayer" type="button">Stop</button>
-        <button id="closePlayer" type="button">Eject</button>
+        <button id="skipBack" type="button" aria-label="Skip back 15 seconds" title="Skip back 15 seconds"><img src="assets/seekback-icon-34x34.png" alt=""></button>
+        <button id="togglePlay" type="button" aria-label="Play" title="Play"><img id="togglePlayIcon" src="assets/play-icon-34x34.png" alt=""></button>
+        <button id="skipForward" type="button" aria-label="Skip forward 30 seconds" title="Skip forward 30 seconds"><img src="assets/seekforward-icon-34x34.png" alt=""></button>
+        <button id="stopPlayer" type="button" aria-label="Stop" title="Stop"><img src="assets/stop-icon-34x34.png" alt=""></button>
+        <button id="closePlayer" type="button" aria-label="Eject" title="Eject"><img src="assets/eject-icon-34x34.png" alt=""></button>
       </div>
     </aside>
 
@@ -820,11 +814,20 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "player-controls-visible-1";
+      const APP_BUILD = "folder-icon-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const TEST_CASSETTE_ART = {
         icon: "assets/cassettes/test/test-01-icon.png",
         large: "assets/cassettes/test/test-01-large.png"
+      };
+      const FOLDER_ICON = "assets/folder-icon-34.png";
+      const PLAYER_ICONS = {
+        play: "assets/play-icon-34x34.png",
+        pause: "assets/pause-icon-34x34.png",
+        seekBack: "assets/seekback-icon-34x34.png",
+        seekForward: "assets/seekforward-icon-34x34.png",
+        stop: "assets/stop-icon-34x34.png",
+        eject: "assets/eject-icon-34x34.png"
       };
 
       let accessToken = "";
@@ -1522,6 +1525,10 @@
         return `<img class="audio-cassette-icon" src="${TEST_CASSETTE_ART.icon}" alt="">`;
       }
 
+      function folderIconMarkup() {
+        return `<img class="folder-icon" src="${FOLDER_ICON}" alt="">`;
+      }
+
       function setPlayerArt(file) {
         if (!file) {
           $("playerArt").innerHTML = "";
@@ -1698,7 +1705,7 @@
         $("explorerPath").innerHTML = `
           <button class="explorer-row" ${atRoot ? "" : `data-folder-open="${escapeHtml(parentFolder(currentFolder))}"`}>
             <span class="explorer-icon">
-              ${atRoot ? `<img src="assets/autodidact-icon-64.png" alt="">` : `<span class="folder-glyph" aria-hidden="true"></span>`}
+              ${atRoot ? `<img src="assets/autodidact-icon-64.png" alt="">` : folderIconMarkup()}
             </span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(folderLabel(currentFolder))}</span>
@@ -1814,7 +1821,7 @@
 
         const folderRows = childFolders.map((folderPath) => `
           <button class="explorer-row" data-folder-open="${escapeHtml(folderPath)}">
-            <span class="explorer-icon"><span class="folder-glyph" aria-hidden="true"></span></span>
+            <span class="explorer-icon">${folderIconMarkup()}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(folderLabel(folderPath))}</span>
               <span class="explorer-subtitle">${folderItemCount(folderPath)} item${folderItemCount(folderPath) === 1 ? "" : "s"}</span>

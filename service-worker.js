@@ -1,10 +1,11 @@
-const CACHE_NAME = "autodidact-player-controls-visible-v1";
+const CACHE_NAME = "autodidact-folder-icon-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/autodidact-icon-64.png",
   "./assets/downloaded.png",
+  "./assets/folder-icon-34.png",
   "./assets/google-no.png",
   "./assets/google-ok.png",
   "./assets/search_binoculars.png",
