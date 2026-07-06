@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-player-icons-v1";
+const CACHE_NAME = "autodidact-cassette-catalog-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,7 +16,17 @@ const APP_SHELL = [
   "./assets/stop-icon-34x34.png",
   "./assets/search_binoculars.png",
   "./assets/stats_tab.png",
-  "./assets/settings_fb2.png"
+  "./assets/settings_fb2.png",
+  "./assets/cassettes/starter/cassette-01-icon.png",
+  "./assets/cassettes/starter/cassette-01-large.png",
+  "./assets/cassettes/starter/cassette-02-icon.png",
+  "./assets/cassettes/starter/cassette-02-large.png",
+  "./assets/cassettes/starter/cassette-03-icon.png",
+  "./assets/cassettes/starter/cassette-03-large.png",
+  "./assets/cassettes/starter/cassette-04-icon.png",
+  "./assets/cassettes/starter/cassette-04-large.png",
+  "./assets/cassettes/starter/cassette-05-icon.png",
+  "./assets/cassettes/starter/cassette-05-large.png"
 ];
 
 self.addEventListener("install", (event) => {

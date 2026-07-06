@@ -814,12 +814,40 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "player-icons-1";
+      const APP_BUILD = "cassette-catalog-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
-      const TEST_CASSETTE_ART = {
-        icon: "assets/cassettes/test/test-01-icon.png",
-        large: "assets/cassettes/test/test-01-large.png"
-      };
+      const CASSETTE_ART = [
+        {
+          id: "starter-red-01",
+          pack: "Starter",
+          icon: "assets/cassettes/starter/cassette-01-icon.png",
+          large: "assets/cassettes/starter/cassette-01-large.png"
+        },
+        {
+          id: "starter-blue-01",
+          pack: "Starter",
+          icon: "assets/cassettes/starter/cassette-02-icon.png",
+          large: "assets/cassettes/starter/cassette-02-large.png"
+        },
+        {
+          id: "starter-yellow-01",
+          pack: "Starter",
+          icon: "assets/cassettes/starter/cassette-03-icon.png",
+          large: "assets/cassettes/starter/cassette-03-large.png"
+        },
+        {
+          id: "starter-orange-01",
+          pack: "Starter",
+          icon: "assets/cassettes/starter/cassette-04-icon.png",
+          large: "assets/cassettes/starter/cassette-04-large.png"
+        },
+        {
+          id: "starter-magenta-01",
+          pack: "Starter",
+          icon: "assets/cassettes/starter/cassette-05-icon.png",
+          large: "assets/cassettes/starter/cassette-05-large.png"
+        }
+      ];
       const FOLDER_ICON = "assets/folder-icon-34.png";
       const PLAYER_ICONS = {
         play: "assets/play-icon-34x34.png",
@@ -1524,8 +1552,25 @@
         $("playerProgressFill").style.width = `${percent}%`;
       }
 
-      function cassetteIconMarkup() {
-        return `<img class="audio-cassette-icon" src="${TEST_CASSETTE_ART.icon}" alt="">`;
+      function stableHash(value) {
+        let hash = 0;
+        const text = String(value || "");
+        for (let index = 0; index < text.length; index += 1) {
+          hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+        }
+        return Math.abs(hash);
+      }
+
+      function cassetteForFile(file) {
+        if (!CASSETTE_ART.length) return null;
+        const identity = file?.id || file?.name || "autodidact";
+        return CASSETTE_ART[stableHash(identity) % CASSETTE_ART.length];
+      }
+
+      function cassetteIconMarkup(file) {
+        const cassette = cassetteForFile(file);
+        if (!cassette) return "";
+        return `<img class="audio-cassette-icon" src="${cassette.icon}" alt="">`;
       }
 
       function folderIconMarkup() {
@@ -1537,7 +1582,8 @@
           $("playerArt").innerHTML = "";
           return;
         }
-        $("playerArt").innerHTML = `<img src="${TEST_CASSETTE_ART.large}" alt="">`;
+        const cassette = cassetteForFile(file);
+        $("playerArt").innerHTML = cassette ? `<img src="${cassette.large}" alt="">` : "";
       }
 
       function showMiniPlayer(file, sourceLabel = "local download") {
@@ -1731,7 +1777,7 @@
         const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
         return `
           <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
-            <span class="explorer-icon audio-icon">${cassetteIconMarkup()}</span>
+            <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(folderText)}${file.mimeType.replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
@@ -1749,7 +1795,7 @@
       function downloadedFileRow(file) {
         return `
           <div class="explorer-row playable-row" data-play-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Play ${escapeHtml(displayName(file.name))}">
-            <span class="explorer-icon audio-icon">${cassetteIconMarkup()}</span>
+            <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${formatBytes(file.size || file.blob?.size)} - saved ${new Date(file.savedAt).toLocaleDateString()}</span>
