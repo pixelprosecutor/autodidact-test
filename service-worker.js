@@ -1,9 +1,12 @@
-const CACHE_NAME = "autodidact-cassette-library-116-v1";
+const CACHE_NAME = "autodidact-app-icon-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/autodidact-icon-64.png",
+  "./assets/autodidact-icon-180.png",
+  "./assets/autodidact-icon-192.png",
+  "./assets/autodidact-icon-512.png",
   "./assets/downloaded.png",
   "./assets/folder-icon-34.png",
   "./assets/google-no.png",
