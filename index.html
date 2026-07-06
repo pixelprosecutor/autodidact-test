@@ -814,7 +814,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "app-icon-1";
+      const APP_BUILD = "local-playback-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_ART =       [
               {
@@ -2329,17 +2329,39 @@
 
       function togglePlayback() {
         if (!currentFile) return;
-        if (!$("player").src) {
+        const player = $("player");
+        if (!player.src) {
           setStatus("Audio is still loading. Try Play again in a moment.");
           return;
         }
-        if ($("player").paused) {
-          $("player").play().catch(() => {
-            setStatus("Tap play in the audio control if the browser blocks autoplay.");
-          });
+        if (player.paused) {
+          if (player.ended || (Number.isFinite(player.duration) && player.currentTime >= player.duration - 0.25)) {
+            player.currentTime = 0;
+            lastPosition = 0;
+            endingHandled = false;
+            playbackEndedNaturally = false;
+          }
+          attemptPlayback("Playing.");
         } else {
-          $("player").pause();
+          player.pause();
         }
+      }
+
+      function attemptPlayback(successMessage = "") {
+        const player = $("player");
+        return player.play()
+          .then(() => {
+            if (successMessage) setStatus(successMessage);
+            updatePlayButton();
+            updatePlayerProgress();
+            return true;
+          })
+          .catch(() => {
+            setStatus("Tap the large Play button to start audio. iPhone sometimes blocks automatic playback.");
+            updatePlayButton();
+            updatePlayerProgress();
+            return false;
+          });
       }
 
       async function stopPlayback() {
@@ -2590,13 +2612,16 @@
         playbackEndedNaturally = false;
         lastProgressAt = 0;
         lastPosition = 0;
-        $("player").src = currentObjectUrl;
+        const player = $("player");
+        suppressPause = true;
+        player.pause();
+        suppressPause = false;
+        player.src = currentObjectUrl;
+        player.load();
         showMiniPlayer(file);
         updatePlayerProgress();
-        $("player").play().catch(() => {
-          setStatus("Tap play in the audio control if the browser blocks autoplay.");
-          updatePlayButton();
-        });
+        setStatus(`Loading ${displayName(file.name)} from local storage...`);
+        attemptPlayback(`Playing ${displayName(file.name)} from local storage.`);
       }
 
       async function playOnline(file) {
@@ -2632,10 +2657,7 @@
           showMiniPlayer(currentFile, "online playback");
           updatePlayerProgress();
           setStatus(`Playing ${file.name} from Google Drive.`);
-          $("player").play().catch(() => {
-            setStatus("Tap play in the audio control if the browser blocks autoplay.");
-            updatePlayButton();
-          });
+          attemptPlayback(`Playing ${file.name} from Google Drive.`);
         } catch (error) {
           setStatus(error.message || "Online playback failed.");
           resetMiniPlayer();

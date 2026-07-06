@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-app-icon-v1";
+const CACHE_NAME = "autodidact-local-playback-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
