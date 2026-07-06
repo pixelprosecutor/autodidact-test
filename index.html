@@ -110,7 +110,6 @@
       }
 
       .toolbar,
-      .player-tools,
       .row-actions {
         display: flex;
         flex-wrap: wrap;
@@ -513,11 +512,14 @@
       .player-tools {
         margin-top: 14px;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        width: 100%;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 8px;
       }
 
       .player-tools button {
+        width: 100%;
+        min-width: 0;
         min-height: 64px;
         padding: 8px 6px;
         font-size: 13px;
@@ -816,7 +818,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "bottom-nav-center-1";
+      const APP_BUILD = "player-controls-center-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const TEST_CASSETTE_ART = {
         icon: "assets/cassettes/test/test-01-icon.png",
