@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-downloaded-row-cleanup-v1";
+const CACHE_NAME = "autodidact-google-button-sync-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

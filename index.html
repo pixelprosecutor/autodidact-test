@@ -814,7 +814,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "downloaded-row-cleanup-1";
+      const APP_BUILD = "google-button-sync-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_ART =       [
               {
@@ -2913,6 +2913,19 @@
         return started;
       }
 
+      function connectGoogleAndSyncStats() {
+        const unsynced = events.filter((event) => !event.syncedAt);
+        pendingGoogleAction = () => syncStatsToLedger();
+        setStatus(unsynced.length
+          ? `Connecting to Google. ${unsynced.length} saved event${unsynced.length === 1 ? "" : "s"} will sync after connection.`
+          : "Connecting to Google. Stats will be checked after connection.");
+        const promptMode = localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent";
+        const started = connectToGoogle(promptMode);
+        if (!started) {
+          pendingGoogleAction = null;
+        }
+      }
+
       function tryQuietGoogleReconnect() {
         if (!localStorage.getItem(GOOGLE_CONSENT_KEY) || accessToken) return;
         setStatus("Ready. Google access will be requested when streaming, downloading, refreshing Drive, or syncing stats.");
@@ -2926,7 +2939,7 @@
 
       $("googleStatusButton").addEventListener("click", () => {
         window.clearTimeout(quietReconnectTimer);
-        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
+        connectGoogleAndSyncStats();
       });
 
       $("settingsScanDrive").addEventListener("click", () => {
