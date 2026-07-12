@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-google-button-sync-v1";
+const CACHE_NAME = "autodidact-resume-button-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ const APP_SHELL = [
   "./assets/eject-icon-34x34.png",
   "./assets/pause-icon-34x34.png",
   "./assets/play-icon-34x34.png",
+  "./assets/resume-from-last.png",
   "./assets/seekback-icon-34x34.png",
   "./assets/seekforward-icon-34x34.png",
   "./assets/stop-icon-34x34.png",

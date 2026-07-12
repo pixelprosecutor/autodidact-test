@@ -219,7 +219,7 @@
 
       .episode-actions {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 10px;
       }
 
@@ -706,6 +706,9 @@
             <button class="primary episode-icon-button" id="episodePlay" type="button" aria-label="Play" title="Play">
               <img src="assets/play-icon-34x34.png" alt="">
             </button>
+            <button class="episode-icon-button" id="episodeResume" type="button" aria-label="Resume" title="Resume">
+              <img src="assets/resume-from-last.png" alt="">
+            </button>
             <button class="episode-icon-button" id="episodeDownload" type="button" aria-label="Download" title="Download">
               <img src="assets/downloaded.png" alt="">
             </button>
@@ -922,7 +925,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "episode-detail-1";
+      const APP_BUILD = "resume-button-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_ART =       [
               {
@@ -1894,6 +1897,16 @@
         };
       }
 
+      function resumableProgressForFile(fileId) {
+        const progress = progressForFile(fileId);
+        const nearStart = progress.position < 30;
+        const nearEnd = progress.duration && progress.position >= progress.duration * .95;
+        return {
+          ...progress,
+          canResume: Boolean(progress.duration && !nearStart && !nearEnd)
+        };
+      }
+
       function folderStatsRows() {
         const folderMap = new Map();
         for (const file of audioFiles) {
@@ -2493,6 +2506,24 @@
           });
       }
 
+      function cueStartPosition(seconds) {
+        const startAt = Math.max(0, Number(seconds || 0));
+        if (!startAt) return;
+        const player = $("player");
+        const applyStart = () => {
+          const duration = Number.isFinite(player.duration) ? player.duration : 0;
+          const target = duration ? Math.min(startAt, Math.max(0, duration - 1)) : startAt;
+          player.currentTime = target;
+          lastPosition = target;
+          updatePlayerProgress();
+        };
+        if (player.readyState >= 1) {
+          applyStart();
+        } else {
+          player.addEventListener("loadedmetadata", applyStart, { once: true });
+        }
+      }
+
       async function stopPlayback() {
         if (!currentFile || !$("player").src) return;
         const player = $("player");
@@ -2629,10 +2660,13 @@
           $("episodeProgressFill").style.width = "0%";
           $("episodeStats").innerHTML = "";
           $("episodePlay").disabled = true;
+          $("episodeResume").disabled = true;
           $("episodeDownload").disabled = true;
           $("episodeDownload").classList.remove("is-downloaded");
           $("episodePlay").setAttribute("aria-label", "Play");
           $("episodePlay").title = "Play";
+          $("episodeResume").setAttribute("aria-label", "Resume");
+          $("episodeResume").title = "Resume";
           $("episodeDownload").setAttribute("aria-label", "Download");
           $("episodeDownload").title = "Download";
           return;
@@ -2641,7 +2675,7 @@
         const saved = isDownloaded(file.id);
         const libraryFile = audioFiles.find((item) => item.id === file.id);
         const stats = statsForFile(file.id);
-        const progress = progressForFile(file.id);
+        const progress = resumableProgressForFile(file.id);
         const cassette = cassetteForFile(file);
         const type = extensionFor(file.name) || (file.mimeType || "audio").replace("audio/", "");
 
@@ -2652,6 +2686,9 @@
         $("episodePlay").disabled = false;
         $("episodePlay").setAttribute("aria-label", `Play ${displayName(file.name)}`);
         $("episodePlay").title = "Play";
+        $("episodeResume").disabled = !progress.canResume;
+        $("episodeResume").setAttribute("aria-label", progress.canResume ? `Resume ${displayName(file.name)} at ${formatDuration(progress.position)}` : "Resume unavailable");
+        $("episodeResume").title = progress.canResume ? `Resume at ${formatDuration(progress.position)}` : "Resume unavailable";
         $("episodeDownload").disabled = saved || !libraryFile;
         $("episodeDownload").classList.toggle("is-downloaded", saved);
         $("episodeDownload").setAttribute("aria-label", saved ? "Downloaded" : "Download");
@@ -2767,7 +2804,7 @@
         bindFileActions($("searchResults"));
       }
 
-      function playLocal(id) {
+      function playLocal(id, startAt = 0) {
         const file = downloads.find((item) => item.id === id);
         if (!file) {
           setStatus("That local download is not available.");
@@ -2786,15 +2823,18 @@
         suppressPause = false;
         player.src = currentObjectUrl;
         player.load();
+        cueStartPosition(startAt);
         showMiniPlayer(file);
         updatePlayerProgress();
         setStatus(`Loading ${displayName(file.name)} from local storage...`);
-        attemptPlayback(`Playing ${displayName(file.name)} from local storage.`);
+        attemptPlayback(startAt
+          ? `Resuming ${displayName(file.name)} at ${formatDuration(startAt)}.`
+          : `Playing ${displayName(file.name)} from local storage.`);
       }
 
-      async function playOnline(file) {
+      async function playOnline(file, startAt = 0) {
         if (!accessToken) {
-          requestGoogleAccess(() => playOnline(file), "Google access is needed to stream this file.");
+          requestGoogleAccess(() => playOnline(file, startAt), "Google access is needed to stream this file.");
           return;
         }
         currentFile = {
@@ -2822,20 +2862,23 @@
           currentObjectUrl = URL.createObjectURL(blob);
           currentFile.size = Number(file.size || blob.size || 0);
           $("player").src = currentObjectUrl;
+          cueStartPosition(startAt);
           showMiniPlayer(currentFile, "online playback");
           updatePlayerProgress();
           setStatus(`Playing ${file.name} from Google Drive.`);
-          attemptPlayback(`Playing ${file.name} from Google Drive.`);
+          attemptPlayback(startAt
+            ? `Resuming ${file.name} at ${formatDuration(startAt)}.`
+            : `Playing ${file.name} from Google Drive.`);
         } catch (error) {
           setStatus(error.message || "Online playback failed.");
           resetMiniPlayer();
         }
       }
 
-      function playFile(fileId) {
+      function playFile(fileId, startAt = 0) {
         const downloaded = downloads.find((item) => item.id === fileId);
         if (downloaded) {
-          playLocal(fileId);
+          playLocal(fileId, startAt);
           return;
         }
         const file = audioFiles.find((item) => item.id === fileId);
@@ -2843,7 +2886,7 @@
           setStatus("That audio file is not available in the loaded library.");
           return;
         }
-        playOnline(file);
+        playOnline(file, startAt);
       }
 
       function skipAudio(seconds) {
@@ -3139,6 +3182,15 @@
       });
       $("episodePlay").addEventListener("click", () => {
         if (selectedFileId) playFile(selectedFileId);
+      });
+      $("episodeResume").addEventListener("click", () => {
+        if (!selectedFileId) return;
+        const progress = resumableProgressForFile(selectedFileId);
+        if (!progress.canResume) {
+          setStatus("No resume point is available for this episode yet.");
+          return;
+        }
+        playFile(selectedFileId, progress.position);
       });
       $("episodeDownload").addEventListener("click", () => {
         const file = selectedFileId ? audioFiles.find((item) => item.id === selectedFileId) : null;
