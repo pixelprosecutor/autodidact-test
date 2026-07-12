@@ -2583,11 +2583,6 @@
       function fileRow(file, includeFolder = false) {
         const saved = isDownloaded(file.id);
         const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
-        const downloadAction = saved ? "" : `
-              <button class="icon-action" data-download="${escapeHtml(file.id)}" aria-label="Download" title="Download">
-                <img src="assets/downloaded.png" alt="">
-              </button>
-            `;
         return `
           <div class="explorer-row playable-row" data-episode-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(displayName(file.name))}">
             <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
@@ -2595,7 +2590,6 @@
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
               <span class="explorer-subtitle">${escapeHtml(folderText)}${(file.mimeType || "audio").replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
             </span>
-            ${downloadAction ? `<span class="row-actions">${downloadAction}</span>` : ""}
           </div>
         `;
       }
@@ -2673,13 +2667,6 @@
       }
 
       function bindFileActions(container) {
-        container.querySelectorAll("[data-download]").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            event.stopPropagation();
-            const file = audioFiles.find((item) => item.id === button.dataset.download);
-            if (file) downloadFile(file).catch(() => {});
-          });
-        });
         container.querySelectorAll("[data-episode-file], [data-play-file]").forEach((row) => {
           row.addEventListener("click", (event) => {
             if (event.target.closest("button")) return;
