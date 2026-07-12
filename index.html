@@ -223,6 +223,19 @@
         gap: 10px;
       }
 
+      .episode-icon-button {
+        display: inline-grid;
+        place-items: center;
+        min-height: 54px;
+      }
+
+      .episode-icon-button img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
       .episode-progress {
         height: 10px;
         overflow: hidden;
@@ -681,8 +694,12 @@
             <span id="episodeProgressFill"></span>
           </div>
           <div class="episode-actions">
-            <button class="primary" id="episodePlay" type="button">Play</button>
-            <button id="episodeDownload" type="button">Download</button>
+            <button class="primary episode-icon-button" id="episodePlay" type="button" aria-label="Play" title="Play">
+              <img src="assets/play-icon-34x34.png" alt="">
+            </button>
+            <button class="episode-icon-button" id="episodeDownload" type="button" aria-label="Download" title="Download">
+              <img src="assets/downloaded.png" alt="">
+            </button>
           </div>
           <div class="stats-list" id="episodeStats"></div>
         </section>
@@ -2611,7 +2628,10 @@
           $("episodeStats").innerHTML = "";
           $("episodePlay").disabled = true;
           $("episodeDownload").disabled = true;
-          $("episodeDownload").textContent = "Download";
+          $("episodePlay").setAttribute("aria-label", "Play");
+          $("episodePlay").title = "Play";
+          $("episodeDownload").setAttribute("aria-label", "Download");
+          $("episodeDownload").title = "Download";
           return;
         }
 
@@ -2631,8 +2651,11 @@
         $("episodeArt").innerHTML = cassette ? `<img src="${cassette.large}" alt="">` : "";
         $("episodeProgressFill").style.width = `${progress.percent}%`;
         $("episodePlay").disabled = false;
-        $("episodeDownload").disabled = saved || !libraryFile;
-        $("episodeDownload").textContent = saved ? "Downloaded" : "Download";
+        $("episodePlay").setAttribute("aria-label", `Play ${displayName(file.name)}`);
+        $("episodePlay").title = "Play";
+        $("episodeDownload").disabled = !libraryFile;
+        $("episodeDownload").setAttribute("aria-label", saved ? "Downloaded" : "Download");
+        $("episodeDownload").title = saved ? "Downloaded" : "Download";
         $("episodeStats").innerHTML = rows([
           ["Completed listens", String(stats.completions)],
           ["Total listening time", formatDuration(stats.seconds)],
@@ -3128,6 +3151,10 @@
       $("episodeDownload").addEventListener("click", () => {
         const file = selectedFileId ? audioFiles.find((item) => item.id === selectedFileId) : null;
         if (!file) return;
+        if (isDownloaded(file.id)) {
+          setStatus(`${file.name} is already downloaded on this device.`);
+          return;
+        }
         downloadFile(file).then(renderEpisode).catch(() => {});
       });
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
