@@ -186,7 +186,7 @@
       .episode-top {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
         gap: 12px;
       }
 
@@ -234,6 +234,16 @@
         height: 34px;
         object-fit: contain;
         image-rendering: pixelated;
+      }
+
+      .episode-icon-button.is-downloaded {
+        background: rgba(148, 163, 184, .22);
+        border-color: rgba(148, 163, 184, .45);
+      }
+
+      .episode-icon-button.is-downloaded img {
+        opacity: .45;
+        filter: grayscale(1);
       }
 
       .episode-progress {
@@ -683,7 +693,6 @@
         <section class="panel episode-card">
           <div class="episode-top">
             <button id="episodeBack" type="button">Back</button>
-            <small id="episodeStatus">Episode</small>
           </div>
           <div class="episode-art" id="episodeArt" aria-hidden="true"></div>
           <div>
@@ -2616,12 +2625,12 @@
         if (!file) {
           $("episodeTitle").textContent = "Episode";
           $("episodeMeta").textContent = "Choose an audio file from the library, downloads, or search.";
-          $("episodeStatus").textContent = "No episode selected";
           $("episodeArt").innerHTML = "";
           $("episodeProgressFill").style.width = "0%";
           $("episodeStats").innerHTML = "";
           $("episodePlay").disabled = true;
           $("episodeDownload").disabled = true;
+          $("episodeDownload").classList.remove("is-downloaded");
           $("episodePlay").setAttribute("aria-label", "Play");
           $("episodePlay").title = "Play";
           $("episodeDownload").setAttribute("aria-label", "Download");
@@ -2635,27 +2644,23 @@
         const progress = progressForFile(file.id);
         const cassette = cassetteForFile(file);
         const type = extensionFor(file.name) || (file.mimeType || "audio").replace("audio/", "");
-        const completionText = stats.completions
-          ? `${stats.completions} completed listen${stats.completions === 1 ? "" : "s"}`
-          : "Not completed yet";
 
         $("episodeTitle").textContent = displayName(file.name);
         $("episodeMeta").textContent = `${file.folderPath || "Podcast"} - ${type} - ${formatBytes(file.size || file.blob?.size)}`;
-        $("episodeStatus").textContent = saved ? `Downloaded - ${completionText}` : completionText;
         $("episodeArt").innerHTML = cassette ? `<img src="${cassette.large}" alt="">` : "";
         $("episodeProgressFill").style.width = `${progress.percent}%`;
         $("episodePlay").disabled = false;
         $("episodePlay").setAttribute("aria-label", `Play ${displayName(file.name)}`);
         $("episodePlay").title = "Play";
-        $("episodeDownload").disabled = !libraryFile;
+        $("episodeDownload").disabled = saved || !libraryFile;
+        $("episodeDownload").classList.toggle("is-downloaded", saved);
         $("episodeDownload").setAttribute("aria-label", saved ? "Downloaded" : "Download");
         $("episodeDownload").title = saved ? "Downloaded" : "Download";
         $("episodeStats").innerHTML = rows([
           ["Completed listens", String(stats.completions)],
           ["Total listening time", formatDuration(stats.seconds)],
           ["Current progress", progress.duration ? `${formatDuration(progress.position)} of ${formatDuration(progress.duration)}` : "Not started"],
-          ["Last listened", formatDateTime(stats.latest?.at)],
-          ["Local copy", saved ? "Saved on this device" : "Not downloaded"]
+          ["Last listened", formatDateTime(stats.latest?.at)]
         ]);
       }
 
