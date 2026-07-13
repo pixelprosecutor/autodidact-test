@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autodidact Cassette Metadata Editor</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #071327;
+        --panel: #102344;
+        --panel-2: #162d55;
+        --ink: #f4f8ff;
+        --muted: #aebcce;
+        --line: #2f4770;
+        --gold: #ffbf35;
+        --green: #6ff09e;
+        --red: #ff6d6d;
+        --focus: #63d9ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        color: var(--ink);
+        min-height: 42px;
+        border-radius: 8px;
+        padding: 0 14px;
+        cursor: pointer;
+      }
+
+      button:hover,
+      button:focus-visible,
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      button.primary {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #1a1300;
+        font-weight: 700;
+      }
+
+      button.danger {
+        border-color: #7d3547;
+        background: #3a1830;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+        background: #091a34;
+      }
+
+      .brand {
+        min-width: 220px;
+        margin-right: auto;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.1;
+      }
+
+      .brand p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .hidden-input {
+        display: none;
+      }
+
+      .status {
+        color: var(--muted);
+        font-size: 13px;
+        min-width: min(100%, 260px);
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+        min-height: 0;
+      }
+
+      .sidebar,
+      .editor {
+        min-height: 0;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      .sidebar {
+        border-right: 1px solid var(--line);
+        background: #0a1931;
+      }
+
+      .toolbar {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .toolbar-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: #071225;
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      textarea {
+        min-height: 96px;
+        resize: vertical;
+      }
+
+      .list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .cassette-row {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        min-height: 58px;
+        padding: 8px;
+      }
+
+      .cassette-row[aria-selected="true"] {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 1px var(--focus) inset;
+      }
+
+      .cassette-row img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .row-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 700;
+      }
+
+      .row-subtitle {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .editor {
+        background: var(--bg);
+      }
+
+      .panel {
+        max-width: 980px;
+        margin: 0 auto 16px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .preview {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        gap: 18px;
+        align-items: center;
+      }
+
+      .small-preview {
+        display: grid;
+        place-items: center;
+        min-height: 96px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+      }
+
+      .small-preview img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .large-preview {
+        display: grid;
+        place-items: center;
+        min-height: 230px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+        overflow: hidden;
+      }
+
+      .large-preview img {
+        width: min(100%, 576px);
+        max-height: 360px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .form-grid .wide {
+        grid-column: 1 / -1;
+      }
+
+      .check-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink);
+        min-height: 44px;
+      }
+
+      .check-row input {
+        width: 20px;
+        height: 20px;
+      }
+
+      .json-panel {
+        display: grid;
+        gap: 12px;
+      }
+
+      .json-output {
+        min-height: 180px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      .counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .empty {
+        color: var(--muted);
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      @media (max-width: 820px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          max-height: 45vh;
+        }
+
+        .form-grid,
+        .preview {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <h1>Autodidact Cassette Editor</h1>
+          <p>Edit names, packs, rarity, order, tags, and availability.</p>
+        </div>
+        <button id="loadDefault" class="primary">Load Metadata</button>
+        <button id="importButton">Import JSON</button>
+        <input id="importFile" class="hidden-input" type="file" accept="application/json,.json">
+        <button id="copyJson">Copy JSON</button>
+        <button id="downloadJson">Download JSON</button>
+        <span id="status" class="status">Ready.</span>
+      </header>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="toolbar">
+            <label>
+              Search
+              <input id="search" type="search" placeholder="Name, pack, color, style">
+            </label>
+            <div class="toolbar-row">
+              <label>
+                Pack
+                <select id="packFilter"></select>
+              </label>
+              <label>
+                Rarity
+                <select id="rarityFilter">
+                  <option value="">All</option>
+                  <option value="common">common</option>
+                  <option value="uncommon">uncommon</option>
+                  <option value="rare">rare</option>
+                  <option value="special">special</option>
+                </select>
+              </label>
+            </div>
+            <div id="counts" class="counts"></div>
+          </div>
+          <div id="cassetteList" class="list"></div>
+        </aside>
+
+        <section class="editor">
+          <div id="emptyState" class="panel empty">Load cassette metadata to begin.</div>
+
+          <section id="editPanel" class="panel" hidden>
+            <div class="preview">
+              <div class="small-preview">
+                <img id="iconPreview" alt="">
+              </div>
+              <div class="large-preview">
+                <img id="largePreview" alt="">
+              </div>
+            </div>
+          </section>
+
+          <section id="formPanel" class="panel" hidden>
+            <div class="form-grid">
+              <label>
+                ID
+                <input id="fieldId" disabled>
+              </label>
+              <label>
+                Name
+                <input id="fieldName">
+              </label>
+              <label>
+                Pack
+                <input id="fieldPack" list="packOptions">
+              </label>
+              <label>
+                Order Number
+                <input id="fieldOrderNumber" type="number" min="1" step="1">
+              </label>
+              <label>
+                Rarity
+                <select id="fieldRarity">
+                  <option value="common">common</option>
+                  <option value="uncommon">uncommon</option>
+                  <option value="rare">rare</option>
+                  <option value="special">special</option>
+                </select>
+              </label>
+              <label>
+                Color
+                <input id="fieldColor" list="colorOptions">
+              </label>
+              <label>
+                Style
+                <input id="fieldStyle" list="styleOptions">
+              </label>
+              <label class="check-row">
+                <input id="fieldEnabled" type="checkbox">
+                Enabled for assignment
+              </label>
+              <label class="wide">
+                Notes
+                <textarea id="fieldNotes"></textarea>
+              </label>
+              <label class="wide">
+                Icon Path
+                <input id="fieldIcon">
+              </label>
+              <label class="wide">
+                Large Art Path
+                <input id="fieldLarge">
+              </label>
+            </div>
+          </section>
+
+          <section class="panel json-panel">
+            <div class="counts" id="exportSummary"></div>
+            <textarea id="jsonOutput" class="json-output" readonly spellcheck="false"></textarea>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <datalist id="packOptions"></datalist>
+    <datalist id="colorOptions">
+      <option value="red"></option>
+      <option value="orange"></option>
+      <option value="yellow"></option>
+      <option value="green"></option>
+      <option value="blue"></option>
+      <option value="purple"></option>
+      <option value="black"></option>
+      <option value="white"></option>
+      <option value="silver"></option>
+      <option value="gold"></option>
+    </datalist>
+    <datalist id="styleOptions">
+      <option value="classic"></option>
+      <option value="chrome"></option>
+      <option value="neon"></option>
+      <option value="clean"></option>
+      <option value="worn"></option>
+      <option value="courtroom"></option>
+      <option value="noir"></option>
+      <option value="patriotic"></option>
+    </datalist>
+
+    <script>
+      const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
+      const $ = (id) => document.getElementById(id);
+
+      let metadata = { version: 2, updatedAt: "", cassettes: [] };
+      let selectedId = "";
+      let dirty = false;
+
+      function setStatus(message) {
+        $("status").textContent = message;
+      }
+
+      function assetUrl(path) {
+        if (!path) return "";
+        if (/^(https?:|data:|blob:)/.test(path)) return path;
+        return `../${path}`.replace(/\/+/g, "/").replace("..", "..");
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function normalizeCassette(cassette, index) {
+        return {
+          id: cassette.id || `library-${String(index + 1).padStart(3, "0")}`,
+          name: cassette.name || `Cassette ${String(index + 1).padStart(3, "0")}`,
+          pack: cassette.pack || "Unsorted",
+          orderNumber: Number.isFinite(Number(cassette.orderNumber)) ? Number(cassette.orderNumber) : index + 1,
+          rarity: cassette.rarity || "common",
+          color: cassette.color || "",
+          style: cassette.style || "",
+          enabled: cassette.enabled !== false,
+          icon: cassette.icon || "",
+          large: cassette.large || "",
+          notes: cassette.notes || ""
+        };
+      }
+
+      function normalizeMetadata(data) {
+        const cassettes = Array.isArray(data?.cassettes) ? data.cassettes : [];
+        return {
+          version: Number(data?.version || 2),
+          updatedAt: data?.updatedAt || new Date().toISOString().slice(0, 10),
+          cassettes: cassettes.map(normalizeCassette)
+        };
+      }
+
+      function currentCassette() {
+        return metadata.cassettes.find((cassette) => cassette.id === selectedId) || null;
+      }
+
+      function sortedCassettes(items = metadata.cassettes) {
+        return [...items].sort((a, b) =>
+          String(a.pack || "").localeCompare(String(b.pack || "")) ||
+          Number(a.orderNumber || 0) - Number(b.orderNumber || 0) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      }
+
+      function packNames() {
+        return [...new Set(metadata.cassettes.map((cassette) => cassette.pack || "Unsorted"))].sort();
+      }
+
+      function refreshPackControls() {
+        const selectedFilter = $("packFilter").value;
+        const options = ['<option value="">All</option>']
+          .concat(packNames().map((pack) => `<option value="${escapeHtml(pack)}">${escapeHtml(pack)}</option>`));
+        $("packFilter").innerHTML = options.join("");
+        $("packFilter").value = selectedFilter;
+        $("packOptions").innerHTML = packNames()
+          .map((pack) => `<option value="${escapeHtml(pack)}"></option>`)
+          .join("");
+      }
+
+      function filteredCassettes() {
+        const query = $("search").value.trim().toLowerCase();
+        const pack = $("packFilter").value;
+        const rarity = $("rarityFilter").value;
+        return sortedCassettes().filter((cassette) => {
+          const searchText = [
+            cassette.id,
+            cassette.name,
+            cassette.pack,
+            cassette.rarity,
+            cassette.color,
+            cassette.style,
+            cassette.notes
+          ].join(" ").toLowerCase();
+          return (!query || searchText.includes(query)) &&
+            (!pack || cassette.pack === pack) &&
+            (!rarity || cassette.rarity === rarity);
+        });
+      }
+
+      function renderCounts() {
+        const enabled = metadata.cassettes.filter((cassette) => cassette.enabled).length;
+        const packs = packNames().length;
+        $("counts").innerHTML = [
+          `<span class="pill">${metadata.cassettes.length} cassettes</span>`,
+          `<span class="pill">${enabled} enabled</span>`,
+          `<span class="pill">${packs} packs</span>`
+        ].join("");
+      }
+
+      function renderList() {
+        refreshPackControls();
+        renderCounts();
+        const items = filteredCassettes();
+        $("cassetteList").innerHTML = items.map((cassette) => `
+          <button class="cassette-row" data-id="${escapeHtml(cassette.id)}" aria-selected="${cassette.id === selectedId ? "true" : "false"}">
+            <img src="${escapeHtml(assetUrl(cassette.icon))}" alt="">
+            <span>
+              <span class="row-title">${escapeHtml(cassette.name)}</span>
+              <span class="row-subtitle">${escapeHtml(cassette.pack)} #${escapeHtml(cassette.orderNumber)} - ${escapeHtml(cassette.rarity)}${cassette.enabled ? "" : " - disabled"}</span>
+            </span>
+            <span class="pill">${escapeHtml(cassette.id.replace("library-", ""))}</span>
+          </button>
+        `).join("") || '<div class="empty">No cassettes match the current filters.</div>';
+
+        $("cassetteList").querySelectorAll("[data-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedId = button.dataset.id;
+            render();
+          });
+        });
+      }
+
+      function fillForm(cassette) {
+        $("fieldId").value = cassette.id;
+        $("fieldName").value = cassette.name;
+        $("fieldPack").value = cassette.pack;
+        $("fieldOrderNumber").value = cassette.orderNumber;
+        $("fieldRarity").value = cassette.rarity;
+        $("fieldColor").value = cassette.color;
+        $("fieldStyle").value = cassette.style;
+        $("fieldEnabled").checked = cassette.enabled;
+        $("fieldNotes").value = cassette.notes;
+        $("fieldIcon").value = cassette.icon;
+        $("fieldLarge").value = cassette.large;
+        $("iconPreview").src = assetUrl(cassette.icon);
+        $("largePreview").src = assetUrl(cassette.large);
+      }
+
+      function renderEditor() {
+        const cassette = currentCassette();
+        $("emptyState").hidden = !!cassette || metadata.cassettes.length > 0;
+        $("editPanel").hidden = !cassette;
+        $("formPanel").hidden = !cassette;
+        if (cassette) fillForm(cassette);
+      }
+
+      function outputJson() {
+        return JSON.stringify({
+          version: 2,
+          updatedAt: new Date().toISOString().slice(0, 10),
+          cassettes: sortedCassettes().map((cassette, index) => normalizeCassette(cassette, index))
+        }, null, 2);
+      }
+
+      function renderOutput() {
+        $("jsonOutput").value = metadata.cassettes.length ? outputJson() : "";
+        $("exportSummary").innerHTML = metadata.cassettes.length
+          ? [
+              `<span class="pill">${dirty ? "Unsaved changes" : "No unsaved edits"}</span>`,
+              `<span class="pill">Replace assets/cassettes/cassette-metadata.json</span>`
+            ].join("")
+          : "";
+      }
+
+      function render() {
+        renderList();
+        renderEditor();
+        renderOutput();
+      }
+
+      function updateSelected(updates) {
+        const cassette = currentCassette();
+        if (!cassette) return;
+        Object.assign(cassette, updates);
+        dirty = true;
+        render();
+        setStatus("Edited. Export JSON when you are ready.");
+      }
+
+      function bindField(id, key, transform = (value) => value) {
+        $(id).addEventListener("input", () => {
+          updateSelected({ [key]: transform($(id).value) });
+        });
+      }
+
+      async function loadDefaultMetadata() {
+        try {
+          const response = await fetch(`${METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Metadata load failed: ${response.status}`);
+          metadata = normalizeMetadata(await response.json());
+          selectedId = metadata.cassettes[0]?.id || "";
+          dirty = false;
+          render();
+          setStatus(`Loaded ${metadata.cassettes.length} cassettes.`);
+        } catch (error) {
+          setStatus(error.message || "Could not load metadata.");
+        }
+      }
+
+      function importJsonFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          try {
+            metadata = normalizeMetadata(JSON.parse(reader.result));
+            selectedId = metadata.cassettes[0]?.id || "";
+            dirty = false;
+            render();
+            setStatus(`Imported ${metadata.cassettes.length} cassettes.`);
+          } catch (error) {
+            setStatus(error.message || "Could not import JSON.");
+          }
+        });
+        reader.readAsText(file);
+      }
+
+      async function copyJson() {
+        if (!metadata.cassettes.length) return;
+        await navigator.clipboard.writeText(outputJson());
+        dirty = false;
+        renderOutput();
+        setStatus("JSON copied.");
+      }
+
+      function downloadJson() {
+        if (!metadata.cassettes.length) return;
+        const blob = new Blob([outputJson()], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "cassette-metadata.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        dirty = false;
+        renderOutput();
+        setStatus("cassette-metadata.json downloaded.");
+      }
+
+      $("loadDefault").addEventListener("click", loadDefaultMetadata);
+      $("importButton").addEventListener("click", () => $("importFile").click());
+      $("importFile").addEventListener("change", () => importJsonFile($("importFile").files[0]));
+      $("copyJson").addEventListener("click", () => copyJson().catch(() => setStatus("Could not copy JSON.")));
+      $("downloadJson").addEventListener("click", downloadJson);
+      $("search").addEventListener("input", renderList);
+      $("packFilter").addEventListener("change", renderList);
+      $("rarityFilter").addEventListener("change", renderList);
+
+      bindField("fieldName", "name");
+      bindField("fieldPack", "pack", (value) => value || "Unsorted");
+      bindField("fieldOrderNumber", "orderNumber", (value) => Math.max(1, Number(value) || 1));
+      bindField("fieldRarity", "rarity");
+      bindField("fieldColor", "color");
+      bindField("fieldStyle", "style");
+      bindField("fieldNotes", "notes");
+      bindField("fieldIcon", "icon");
+      bindField("fieldLarge", "large");
+      $("fieldEnabled").addEventListener("change", () => updateSelected({ enabled: $("fieldEnabled").checked }));
+
+      loadDefaultMetadata();
+    </script>
+  </body>
+</html>
