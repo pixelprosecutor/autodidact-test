@@ -193,10 +193,12 @@
       .episode-art {
         min-height: 150px;
         display: grid;
+        gap: 10px;
         place-items: center;
         overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 8px;
+        padding: 12px;
         background: rgba(7, 22, 47, .55);
       }
 
@@ -205,6 +207,23 @@
         max-height: 256px;
         object-fit: contain;
         image-rendering: pixelated;
+      }
+
+      .episode-cassette-caption {
+        width: 100%;
+        display: grid;
+        gap: 3px;
+        text-align: center;
+      }
+
+      .episode-cassette-name {
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .episode-cassette-meta {
+        color: var(--muted);
+        font-size: 12px;
       }
 
       .episode-title {
@@ -694,7 +713,7 @@
           <div class="episode-top">
             <button id="episodeBack" type="button">Back</button>
           </div>
-          <div class="episode-art" id="episodeArt" aria-hidden="true"></div>
+          <div class="episode-art" id="episodeArt"></div>
           <div>
             <h2 class="episode-title" id="episodeTitle">Episode</h2>
             <p class="episode-meta" id="episodeMeta"></p>
@@ -925,7 +944,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-metadata-2";
+      const APP_BUILD = "cassette-metadata-art-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const CASSETTE_ART_FALLBACK = [
@@ -3235,6 +3254,19 @@
         return audioFiles.find((item) => item.id === fileId) || downloads.find((item) => item.id === fileId);
       }
 
+      function cassetteArtMarkup(cassette) {
+        if (!cassette) return "";
+        const metaParts = [cassette.pack, cassette.rarity]
+          .filter((part) => part && part !== "Unsorted");
+        return `
+          <img src="${cassette.large}" alt="">
+          <div class="episode-cassette-caption">
+            <span class="episode-cassette-name">${escapeHtml(cassette.name || cassette.id || "Cassette")}</span>
+            ${metaParts.length ? `<span class="episode-cassette-meta">${escapeHtml(metaParts.join(" - "))}</span>` : ""}
+          </div>
+        `;
+      }
+
       function renderEpisode() {
         if (!$("episodeView")) return;
         const file = selectedFileId ? findEpisodeFile(selectedFileId) : null;
@@ -3266,7 +3298,7 @@
 
         $("episodeTitle").textContent = displayName(file.name);
         $("episodeMeta").textContent = `${file.folderPath || "Podcast"} - ${type} - ${formatBytes(file.size || file.blob?.size)}`;
-        $("episodeArt").innerHTML = cassette ? `<img src="${cassette.large}" alt="">` : "";
+        $("episodeArt").innerHTML = cassetteArtMarkup(cassette);
         $("episodeProgressFill").style.width = `${progress.percent}%`;
         $("episodePlay").disabled = false;
         $("episodePlay").setAttribute("aria-label", `Play ${displayName(file.name)}`);

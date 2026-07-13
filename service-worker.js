@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-cassette-metadata-v2";
+const CACHE_NAME = "autodidact-cassette-metadata-art-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
