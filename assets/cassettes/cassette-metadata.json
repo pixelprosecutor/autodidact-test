@@ -3,19 +3,6 @@
   "updatedAt": "2026-07-13",
   "cassettes": [
     {
-      "id": "library-067",
-      "name": "The Tux",
-      "pack": "Blank",
-      "orderNumber": 67,
-      "rarity": "common",
-      "color": "",
-      "style": "",
-      "enabled": true,
-      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-icon-34x34.png",
-      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-large-384x256.png",
-      "notes": ""
-    },
-    {
       "id": "library-001",
       "name": "The Standard",
       "pack": "Blank Tape",
@@ -211,6 +198,19 @@
       "notes": ""
     },
     {
+      "id": "library-067",
+      "name": "The Tux",
+      "pack": "Blank Tape",
+      "orderNumber": 67,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-icon-34x34.png",
+      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-large-384x256.png",
+      "notes": ""
+    },
+    {
       "id": "library-068",
       "name": "Parchment",
       "pack": "Blank Tape",
@@ -303,7 +303,7 @@
     },
     {
       "id": "library-039",
-      "name": "Cassette 039",
+      "name": "The Peach Pit",
       "pack": "Memphis Design",
       "orderNumber": 39,
       "rarity": "common",
@@ -520,6 +520,19 @@
       "enabled": true,
       "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-icon-34x34.png",
       "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-035",
+      "name": "Roller Rink",
+      "pack": "Mixtape",
+      "orderNumber": 35,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-icon-34x34.png",
+      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-large-384x256.png",
       "notes": ""
     },
     {
@@ -793,19 +806,6 @@
       "enabled": true,
       "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-icon-34x34.png",
       "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-large-384x256.png",
-      "notes": ""
-    },
-    {
-      "id": "library-035",
-      "name": "Roller Rink",
-      "pack": "New Wave Mix",
-      "orderNumber": 35,
-      "rarity": "common",
-      "color": "",
-      "style": "",
-      "enabled": true,
-      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-icon-34x34.png",
-      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-large-384x256.png",
       "notes": ""
     },
     {
