@@ -764,6 +764,60 @@
         image-rendering: pixelated;
       }
 
+      .announcement-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: grid;
+        place-items: center;
+        padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+        background: rgba(2, 6, 23, .82);
+      }
+
+      .announcement-overlay[hidden] {
+        display: none;
+      }
+
+      .announcement-card {
+        width: min(520px, 100%);
+        max-height: 100%;
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+      }
+
+      .announcement-art {
+        display: grid;
+        place-items: center;
+        min-height: 140px;
+        margin-bottom: 14px;
+      }
+
+      .announcement-art img {
+        width: min(100%, 384px);
+        height: auto;
+        image-rendering: pixelated;
+      }
+
+      .announcement-card h2,
+      .announcement-card p {
+        margin-top: 0;
+      }
+
+      .announcement-card small {
+        color: var(--muted);
+      }
+
+      .announcement-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 14px;
+      }
+
       .bottom-nav {
         position: fixed;
         right: 0;
@@ -1100,6 +1154,21 @@
       </button>
     </nav>
 
+    <aside class="announcement-overlay" id="announcementOverlay" hidden>
+      <section class="announcement-card" role="dialog" aria-modal="true" aria-labelledby="announcementTitle">
+        <div class="announcement-art" id="announcementArt"></div>
+        <small id="announcementCount"></small>
+        <h2 id="announcementTitle">Announcement</h2>
+        <p id="announcementMessage"></p>
+        <small id="announcementMeta"></small>
+        <div class="announcement-actions">
+          <button id="announcementAction" type="button">Open</button>
+          <button class="primary" id="announcementNext" type="button">Next</button>
+          <button class="danger" id="announcementDismissAll" type="button" hidden>Dismiss All</button>
+        </div>
+      </section>
+    </aside>
+
     <script>
       const CLIENT_ID = "300070172174-mkvnuqucmvgv6obsa4nf7imq7jugljbu.apps.googleusercontent.com";
       const STATS_SPREADSHEET_ID = "1YPCzXfvHYoa9UIQ1ypQk8xkXjLl6rGZRxMPM4W9gmZE";
@@ -1110,11 +1179,12 @@
       const DB_NAME = "autodidact-pwa-cache";
       const DOWNLOAD_STORE = "downloads";
       const EVENT_STORE = "events";
+      const ANNOUNCEMENT_STORE = "announcements";
       const LIBRARY_CACHE_KEY = "autodidact-pwa-library";
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-gallery-4";
+      const APP_BUILD = "announcements-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const MISSING_CASSETTE_IMAGE = "assets/cassettes/missing-cassette-384x256.png";
@@ -2418,6 +2488,8 @@
       let episodeReturnView = "library";
       let collectionViewMode = "small";
       let selectedCollectionCassetteId = "";
+      let announcements = [];
+      let activeAnnouncementIndex = 0;
 
       const $ = (id) => document.getElementById(id);
 
@@ -2522,13 +2594,16 @@
 
       function openDb() {
         return new Promise((resolve, reject) => {
-          const request = indexedDB.open(DB_NAME, 2);
+          const request = indexedDB.open(DB_NAME, 3);
           request.onupgradeneeded = () => {
             if (!request.result.objectStoreNames.contains(DOWNLOAD_STORE)) {
               request.result.createObjectStore(DOWNLOAD_STORE, { keyPath: "id" });
             }
             if (!request.result.objectStoreNames.contains(EVENT_STORE)) {
               request.result.createObjectStore(EVENT_STORE, { keyPath: "eventId" });
+            }
+            if (!request.result.objectStoreNames.contains(ANNOUNCEMENT_STORE)) {
+              request.result.createObjectStore(ANNOUNCEMENT_STORE, { keyPath: "id" });
             }
           };
           request.onsuccess = () => resolve(request.result);
@@ -2604,6 +2679,102 @@
           transaction.oncomplete = resolve;
           transaction.onerror = () => reject(transaction.error);
         });
+      }
+
+      async function storeAnnouncement(record) {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction(ANNOUNCEMENT_STORE, "readwrite");
+          transaction.objectStore(ANNOUNCEMENT_STORE).put(record);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error);
+        });
+      }
+
+      async function readAnnouncements() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction(ANNOUNCEMENT_STORE, "readonly");
+          const request = transaction.objectStore(ANNOUNCEMENT_STORE).getAll();
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      async function refreshAnnouncements(show = false) {
+        announcements = (await readAnnouncements())
+          .filter((announcement) => announcement.status !== "dismissed")
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        activeAnnouncementIndex = Math.min(activeAnnouncementIndex, Math.max(0, announcements.length - 1));
+        if (show || !$("announcementOverlay").hidden) {
+          renderAnnouncement();
+        }
+      }
+
+      function currentAnnouncement() {
+        return announcements[activeAnnouncementIndex] || null;
+      }
+
+      function hideAnnouncements() {
+        $("announcementOverlay").hidden = true;
+      }
+
+      function renderAnnouncement() {
+        const announcement = currentAnnouncement();
+        if (!announcement) {
+          hideAnnouncements();
+          return;
+        }
+
+        $("announcementOverlay").hidden = false;
+        $("announcementCount").textContent = announcements.length > 1
+          ? `${activeAnnouncementIndex + 1} of ${announcements.length}`
+          : "";
+        $("announcementTitle").textContent = announcement.title || "Announcement";
+        $("announcementMessage").textContent = announcement.message || "";
+        $("announcementMeta").textContent = announcement.meta || "";
+        $("announcementArt").innerHTML = announcement.image
+          ? `<img src="${escapeHtml(announcement.image)}" alt="">`
+          : "";
+        $("announcementAction").hidden = !announcement.action;
+        $("announcementAction").textContent = announcement.action?.label || "Open";
+        $("announcementNext").textContent = activeAnnouncementIndex < announcements.length - 1 ? "Next" : "Done";
+        $("announcementDismissAll").hidden = announcements.length <= 1;
+      }
+
+      async function dismissAnnouncement(announcement) {
+        if (!announcement) return;
+        await storeAnnouncement({
+          ...announcement,
+          status: "dismissed",
+          dismissedAt: new Date().toISOString()
+        });
+        await refreshAnnouncements(true);
+      }
+
+      async function dismissAllAnnouncements() {
+        const visible = [...announcements];
+        const dismissedAt = new Date().toISOString();
+        for (const announcement of visible) {
+          await storeAnnouncement({
+            ...announcement,
+            status: "dismissed",
+            dismissedAt
+          });
+        }
+        await refreshAnnouncements(true);
+      }
+
+      function runAnnouncementAction(announcement) {
+        if (!announcement?.action) return;
+        if (announcement.action.type === "episode" && announcement.action.fileId) {
+          openEpisode(announcement.action.fileId, "library");
+          hideAnnouncements();
+        } else if (announcement.action.type === "collection") {
+          renderCollection();
+          showView("collection");
+          hideAnnouncements();
+        }
       }
 
       async function refreshDownloads() {
@@ -3288,6 +3459,49 @@
         renderCollectionDetail(assignmentFiles);
       }
 
+      async function createAnnouncements(records) {
+        if (!records.length) return 0;
+        const existingIds = new Set((await readAnnouncements()).map((announcement) => announcement.id));
+        let created = 0;
+        for (const record of records) {
+          if (existingIds.has(record.id)) continue;
+          await storeAnnouncement({
+            ...record,
+            status: "unseen",
+            createdAt: record.createdAt || new Date().toISOString()
+          });
+          created += 1;
+        }
+        if (created) {
+          await refreshAnnouncements(true);
+        }
+        return created;
+      }
+
+      async function createCassetteRevealAnnouncements(newFiles) {
+        const records = newFiles.map((file) => {
+          const cassette = cassetteForFile(file);
+          const cassetteName = cassette?.name || "a new cassette";
+          const meta = [cassette?.pack, cassette?.rarity]
+            .filter((part) => part && part !== "Unsorted")
+            .join(" - ");
+          return {
+            id: `cassette-reveal-${file.id}`,
+            type: "cassette_reveal",
+            title: "New cassette discovered",
+            message: `${displayName(file.name)} was assigned ${cassetteName}.`,
+            meta,
+            image: cassette?.large || MISSING_CASSETTE_IMAGE,
+            action: {
+              type: "episode",
+              label: "View episode",
+              fileId: file.id
+            }
+          };
+        });
+        return createAnnouncements(records);
+      }
+
       function cassetteIconMarkup(file) {
         const cassette = cassetteForFile(file);
         if (!cassette) return "";
@@ -3898,9 +4112,14 @@
         }
 
         setStatus("Scanning Podcast recursively...");
+        const previousLibrary = readCachedLibrary();
+        const previousIds = new Set(previousLibrary.map((file) => file.id));
         const found = [];
         await scanFolder(podcast.id, "Podcast", found);
         audioFiles = found.sort((a, b) => a.folderPath.localeCompare(b.folderPath) || a.name.localeCompare(b.name));
+        const newFiles = previousIds.size
+          ? audioFiles.filter((file) => !previousIds.has(file.id))
+          : [];
         currentFolder = "Podcast";
         saveCachedLibrary(audioFiles);
         localStorage.setItem(LAST_DRIVE_SCAN_KEY, new Date().toISOString());
@@ -3909,7 +4128,10 @@
         renderEpisode();
         renderSettings();
         renderCollection();
-        setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Tap a file to open its episode card, or use the download icon for offline playback.`);
+        const revealCount = await createCassetteRevealAnnouncements(newFiles);
+        setStatus(revealCount
+          ? `Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"} and queued ${revealCount} new cassette reveal${revealCount === 1 ? "" : "s"}.`
+          : `Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Tap a file to open its episode card, or use the download icon for offline playback.`);
       }
 
       async function downloadFile(file, refreshAfter = true) {
@@ -4143,6 +4365,19 @@
         collectionViewMode = "large";
         renderCollection();
       });
+      $("announcementAction").addEventListener("click", () => {
+        runAnnouncementAction(currentAnnouncement());
+      });
+      $("announcementNext").addEventListener("click", () => {
+        dismissAnnouncement(currentAnnouncement()).catch(() => {
+          hideAnnouncements();
+        });
+      });
+      $("announcementDismissAll").addEventListener("click", () => {
+        dismissAllAnnouncements().catch(() => {
+          hideAnnouncements();
+        });
+      });
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshDownloadStorage").addEventListener("click", refreshStorageEstimate);
       $("requestStorageProtection").addEventListener("click", requestStorageProtection);
@@ -4267,7 +4502,7 @@
       $("player").addEventListener("durationchange", updatePlayerProgress);
 
       loadCassetteMetadata();
-      Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
+      Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
       syncMiniPlayerVisibility();
