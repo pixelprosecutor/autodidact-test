@@ -306,7 +306,10 @@
       .collection-grid {
         display: grid;
         gap: 10px;
-        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
       }
 
       .collection-grid.large {
@@ -317,10 +320,17 @@
         display: grid;
         gap: 8px;
         min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
         padding: 10px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: rgba(7, 22, 47, .8);
+      }
+
+      .collection-grid.small .cassette-card {
+        gap: 6px;
+        padding: 8px 4px;
       }
 
       .cassette-card.disabled {
@@ -335,6 +345,10 @@
         image-rendering: pixelated;
       }
 
+      .cassette-card span {
+        min-width: 0;
+      }
+
       .collection-grid.large .cassette-card img {
         width: min(100%, 192px);
         height: auto;
@@ -345,14 +359,33 @@
       .cassette-card small {
         display: block;
         overflow: hidden;
+        max-width: 100%;
         text-align: center;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
+      .collection-grid.small .cassette-card strong {
+        font-size: 11px;
+      }
+
+      .collection-grid.small .cassette-card small {
+        font-size: 10px;
+      }
+
       .cassette-card small {
         color: var(--muted);
         font-size: 11px;
+      }
+
+      @media (max-width: 430px) {
+        .collection-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .collection-grid.large {
+          grid-template-columns: 1fr;
+        }
       }
 
       .storage-meter {
@@ -1044,7 +1077,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-gallery-1";
+      const APP_BUILD = "cassette-gallery-2";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const CASSETTE_ART_FALLBACK = [
@@ -3089,12 +3122,28 @@
         );
       }
 
+      function cassetteAssignmentCounts() {
+        const counts = new Map();
+        for (const file of audioFiles) {
+          const cassette = cassetteForFile(file);
+          if (!cassette) continue;
+          const id = cassette.id || cassette.icon || cassette.large;
+          if (!id) continue;
+          counts.set(id, (counts.get(id) || 0) + 1);
+        }
+        return counts;
+      }
+
       function renderCollection() {
         if (!$("collectionList")) return;
         const cassettes = sortedCassettes();
-        const enabledCount = cassettes.filter((cassette) => cassette.enabled !== false).length;
         const packCount = new Set(cassettes.map((cassette) => cassette.pack || "Unsorted")).size;
-        $("collectionSummary").textContent = `${cassettes.length} cassette design${cassettes.length === 1 ? "" : "s"} across ${packCount} pack${packCount === 1 ? "" : "s"}. ${enabledCount} enabled for assignment.`;
+        const assignmentCounts = cassetteAssignmentCounts();
+        const collectedCount = assignmentCounts.size;
+        const duplicateCount = [...assignmentCounts.values()].reduce((total, count) => total + Math.max(0, count - 1), 0);
+        $("collectionSummary").textContent = audioFiles.length
+          ? `${cassettes.length} cassette design${cassettes.length === 1 ? "" : "s"}. ${collectedCount} collected from loaded Drive audio. ${duplicateCount} duplicate assignment${duplicateCount === 1 ? "" : "s"}. ${packCount} pack${packCount === 1 ? "" : "s"}.`
+          : `${cassettes.length} cassette design${cassettes.length === 1 ? "" : "s"} across ${packCount} pack${packCount === 1 ? "" : "s"}. Refresh Drive library to calculate collected and duplicate counts.`;
         $("collectionSmallView").classList.toggle("active", collectionViewMode === "small");
         $("collectionLargeView").classList.toggle("active", collectionViewMode === "large");
 
@@ -3111,6 +3160,7 @@
             <div class="collection-grid ${collectionViewMode === "large" ? "large" : "small"}">
               ${packCassettes.map((cassette) => {
                 const image = collectionViewMode === "large" ? cassette.large : cassette.icon;
+                const assignmentCount = assignmentCounts.get(cassette.id || cassette.icon || cassette.large) || 0;
                 const meta = [cassette.rarity, cassette.color, cassette.style]
                   .filter(Boolean)
                   .join(" - ");
@@ -3119,7 +3169,7 @@
                     <img src="${escapeHtml(image)}" alt="">
                     <span>
                       <strong>${escapeHtml(cassette.name || cassette.id || "Cassette")}</strong>
-                      <small>${escapeHtml(meta || `#${cassette.orderNumber || ""}`)}</small>
+                      <small>${escapeHtml(assignmentCount ? `collected x${assignmentCount}` : (meta || `#${cassette.orderNumber || ""}`))}</small>
                     </span>
                   </article>
                 `;
@@ -3749,6 +3799,7 @@
         renderSearch();
         renderEpisode();
         renderSettings();
+        renderCollection();
         setStatus(`Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Tap a file to open its episode card, or use the download icon for offline playback.`);
       }
 
