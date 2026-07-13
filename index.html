@@ -280,6 +280,81 @@
         background: var(--accent);
       }
 
+      .collection-controls {
+        display: grid;
+        grid-template-columns: auto auto 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .collection-controls button.active {
+        border-color: var(--accent);
+        background: rgba(125, 211, 252, .12);
+      }
+
+      .collection-pack {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .collection-pack h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .collection-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+      }
+
+      .collection-grid.large {
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      }
+
+      .cassette-card {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .8);
+      }
+
+      .cassette-card.disabled {
+        opacity: .45;
+      }
+
+      .cassette-card img {
+        justify-self: center;
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .collection-grid.large .cassette-card img {
+        width: min(100%, 192px);
+        height: auto;
+        max-height: 128px;
+      }
+
+      .cassette-card strong,
+      .cassette-card small {
+        display: block;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .cassette-card small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
       .storage-meter {
         height: 12px;
         margin: 12px 0;
@@ -775,6 +850,31 @@
             <button class="danger" id="clearLocalStats">Clear local stats</button>
           </div>
         </section>
+
+        <section class="panel">
+          <h2>Cassettes</h2>
+          <div class="toolbar">
+            <button class="primary" id="openCassetteCollection">Open cassette collection</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="collectionView" class="view">
+        <section class="panel">
+          <div class="episode-top">
+            <button id="collectionBack" type="button">Back</button>
+          </div>
+          <h2>Cassette Collection</h2>
+          <p id="collectionSummary">Loading cassette metadata.</p>
+          <div class="collection-controls">
+            <button id="collectionSmallView" type="button">Small</button>
+            <button id="collectionLargeView" type="button">Large</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div id="collectionList"></div>
+        </section>
       </section>
 
       <section id="settingsView" class="view">
@@ -944,7 +1044,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-metadata-art-1";
+      const APP_BUILD = "cassette-gallery-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const CASSETTE_ART_FALLBACK = [
@@ -2245,6 +2345,7 @@
       let refreshingForUpdate = false;
       let selectedFileId = "";
       let episodeReturnView = "library";
+      let collectionViewMode = "small";
 
       const $ = (id) => document.getElementById(id);
 
@@ -2968,6 +3069,7 @@
           renderSearch();
           renderDownloads();
           renderEpisode();
+          renderCollection();
         } catch (error) {
           console.warn(error.message || "Cassette metadata could not be loaded.");
         }
@@ -2977,6 +3079,54 @@
         if (!CASSETTE_ART.length) return null;
         const identity = file?.id || file?.name || "autodidact";
         return CASSETTE_ART[stableHash(identity) % CASSETTE_ART.length];
+      }
+
+      function sortedCassettes() {
+        return [...CASSETTE_ART].sort((a, b) =>
+          String(a.pack || "Unsorted").localeCompare(String(b.pack || "Unsorted")) ||
+          Number(a.orderNumber || 0) - Number(b.orderNumber || 0) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      }
+
+      function renderCollection() {
+        if (!$("collectionList")) return;
+        const cassettes = sortedCassettes();
+        const enabledCount = cassettes.filter((cassette) => cassette.enabled !== false).length;
+        const packCount = new Set(cassettes.map((cassette) => cassette.pack || "Unsorted")).size;
+        $("collectionSummary").textContent = `${cassettes.length} cassette design${cassettes.length === 1 ? "" : "s"} across ${packCount} pack${packCount === 1 ? "" : "s"}. ${enabledCount} enabled for assignment.`;
+        $("collectionSmallView").classList.toggle("active", collectionViewMode === "small");
+        $("collectionLargeView").classList.toggle("active", collectionViewMode === "large");
+
+        const grouped = new Map();
+        for (const cassette of cassettes) {
+          const pack = cassette.pack || "Unsorted";
+          if (!grouped.has(pack)) grouped.set(pack, []);
+          grouped.get(pack).push(cassette);
+        }
+
+        $("collectionList").innerHTML = [...grouped.entries()].map(([pack, packCassettes]) => `
+          <section class="collection-pack">
+            <h3>${escapeHtml(pack)} <small>${packCassettes.length}</small></h3>
+            <div class="collection-grid ${collectionViewMode === "large" ? "large" : "small"}">
+              ${packCassettes.map((cassette) => {
+                const image = collectionViewMode === "large" ? cassette.large : cassette.icon;
+                const meta = [cassette.rarity, cassette.color, cassette.style]
+                  .filter(Boolean)
+                  .join(" - ");
+                return `
+                  <article class="cassette-card ${cassette.enabled === false ? "disabled" : ""}">
+                    <img src="${escapeHtml(image)}" alt="">
+                    <span>
+                      <strong>${escapeHtml(cassette.name || cassette.id || "Cassette")}</strong>
+                      <small>${escapeHtml(meta || `#${cassette.orderNumber || ""}`)}</small>
+                    </span>
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          </section>
+        `).join("") || "<p>No cassette metadata loaded yet.</p>";
       }
 
       function cassetteIconMarkup(file) {
@@ -3818,6 +3968,21 @@
         }
         downloadFile(file).then(renderEpisode).catch(() => {});
       });
+      $("openCassetteCollection").addEventListener("click", () => {
+        renderCollection();
+        showView("collection");
+      });
+      $("collectionBack").addEventListener("click", () => {
+        showView("stats");
+      });
+      $("collectionSmallView").addEventListener("click", () => {
+        collectionViewMode = "small";
+        renderCollection();
+      });
+      $("collectionLargeView").addEventListener("click", () => {
+        collectionViewMode = "large";
+        renderCollection();
+      });
       $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshDownloadStorage").addEventListener("click", refreshStorageEstimate);
       $("requestStorageProtection").addEventListener("click", requestStorageProtection);
@@ -3948,6 +4113,7 @@
       syncMiniPlayerVisibility();
       renderFiles();
       renderSettings();
+      renderCollection();
       tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {
