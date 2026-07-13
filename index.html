@@ -326,6 +326,9 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         background: rgba(7, 22, 47, .8);
+        color: var(--ink);
+        font: inherit;
+        text-align: center;
       }
 
       .collection-grid.small .cassette-card {
@@ -339,6 +342,20 @@
 
       .cassette-card.undiscovered {
         border-style: dashed;
+      }
+
+      button.cassette-card {
+        cursor: pointer;
+      }
+
+      button.cassette-card:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      button.cassette-card.selected {
+        border-color: var(--accent);
+        background: rgba(125, 211, 252, .12);
       }
 
       .cassette-card img {
@@ -380,6 +397,18 @@
       .cassette-card small {
         color: var(--muted);
         font-size: 11px;
+      }
+
+      .cassette-detail-art {
+        display: grid;
+        place-items: center;
+        margin-bottom: 12px;
+      }
+
+      .cassette-detail-art img {
+        width: min(100%, 384px);
+        height: auto;
+        image-rendering: pixelated;
       }
 
       @media (max-width: 430px) {
@@ -912,6 +941,10 @@
         <section class="panel">
           <div id="collectionList"></div>
         </section>
+
+        <section class="panel" id="collectionDetailPanel" hidden>
+          <div id="collectionDetail"></div>
+        </section>
       </section>
 
       <section id="settingsView" class="view">
@@ -1081,7 +1114,7 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-gallery-3";
+      const APP_BUILD = "cassette-gallery-4";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const MISSING_CASSETTE_IMAGE = "assets/cassettes/missing-cassette-384x256.png";
@@ -2384,6 +2417,7 @@
       let selectedFileId = "";
       let episodeReturnView = "library";
       let collectionViewMode = "small";
+      let selectedCollectionCassetteId = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -3127,23 +3161,81 @@
         );
       }
 
-      function cassetteAssignmentCounts() {
-        const counts = new Map();
+      function cassetteKey(cassette) {
+        return cassette?.id || cassette?.icon || cassette?.large || "";
+      }
+
+      function cassetteAssignmentFiles() {
+        const assignments = new Map();
         for (const file of audioFiles) {
           const cassette = cassetteForFile(file);
-          if (!cassette) continue;
-          const id = cassette.id || cassette.icon || cassette.large;
+          const id = cassetteKey(cassette);
           if (!id) continue;
-          counts.set(id, (counts.get(id) || 0) + 1);
+          if (!assignments.has(id)) assignments.set(id, []);
+          assignments.get(id).push(file);
+        }
+        return assignments;
+      }
+
+      function cassetteAssignmentCounts() {
+        const counts = new Map();
+        for (const [id, files] of cassetteAssignmentFiles()) {
+          counts.set(id, files.length);
         }
         return counts;
+      }
+
+      function renderCollectionDetail(assignmentFiles = cassetteAssignmentFiles()) {
+        const panel = $("collectionDetailPanel");
+        const detail = $("collectionDetail");
+        if (!panel || !detail) return;
+        const cassette = CASSETTE_ART.find((item) => cassetteKey(item) === selectedCollectionCassetteId);
+        const assignedFiles = cassette ? (assignmentFiles.get(cassetteKey(cassette)) || []) : [];
+        if (!cassette || !assignedFiles.length) {
+          selectedCollectionCassetteId = "";
+          panel.hidden = true;
+          detail.innerHTML = "";
+          return;
+        }
+
+        const metaRows = [
+          ["Pack", cassette.pack || "Unsorted"],
+          ["Rarity", cassette.rarity || "Unknown"],
+          ["Style", cassette.style || "None"],
+          ["Color", cassette.color || "None"],
+          ["Assigned files", String(assignedFiles.length)],
+          ["Duplicates", String(Math.max(0, assignedFiles.length - 1))]
+        ];
+
+        panel.hidden = false;
+        detail.innerHTML = `
+          <div class="cassette-detail-art">
+            <img src="${escapeHtml(cassette.large)}" alt="">
+          </div>
+          <h2>${escapeHtml(cassette.name || cassette.id || "Cassette")}</h2>
+          <div class="stats-list">${rows(metaRows)}</div>
+          <h3>Assigned audio</h3>
+          <div class="grid">
+            ${assignedFiles.map((file) => `
+              <div class="explorer-row playable-row" data-episode-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(displayName(file.name))}">
+                <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
+                <span class="explorer-main">
+                  <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+                  <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")}</span>
+                </span>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        bindFileActions(detail);
       }
 
       function renderCollection() {
         if (!$("collectionList")) return;
         const cassettes = sortedCassettes();
         const packCount = new Set(cassettes.map((cassette) => cassette.pack || "Unsorted")).size;
-        const assignmentCounts = cassetteAssignmentCounts();
+        const assignmentFiles = cassetteAssignmentFiles();
+        const assignmentCounts = new Map([...assignmentFiles].map(([id, files]) => [id, files.length]));
         const collectedCount = assignmentCounts.size;
         const duplicateCount = [...assignmentCounts.values()].reduce((total, count) => total + Math.max(0, count - 1), 0);
         $("collectionSummary").textContent = audioFiles.length
@@ -3161,30 +3253,39 @@
 
         $("collectionList").innerHTML = [...grouped.entries()].map(([pack, packCassettes]) => `
           <section class="collection-pack">
-            <h3>${escapeHtml(pack)} <small>${packCassettes.length}</small></h3>
+            <h3>${escapeHtml(pack)} <small>${packCassettes.filter((cassette) => assignmentCounts.has(cassetteKey(cassette))).length}/${packCassettes.length} collected</small></h3>
             <div class="collection-grid ${collectionViewMode === "large" ? "large" : "small"}">
               ${packCassettes.map((cassette) => {
-                const assignmentCount = assignmentCounts.get(cassette.id || cassette.icon || cassette.large) || 0;
+                const id = cassetteKey(cassette);
+                const assignmentCount = assignmentCounts.get(id) || 0;
                 const collected = assignmentCount > 0;
                 const image = collected
                   ? (collectionViewMode === "large" ? cassette.large : cassette.icon)
                   : MISSING_CASSETTE_IMAGE;
-                const meta = [cassette.rarity, cassette.color, cassette.style]
-                  .filter(Boolean)
-                  .join(" - ");
-                return `
-                  <article class="cassette-card ${cassette.enabled === false ? "disabled" : ""} ${collected ? "" : "undiscovered"}">
-                    <img src="${escapeHtml(image)}" alt="">
+                const content = `
+                  <img src="${escapeHtml(image)}" alt="">
+                  ${collected ? `
                     <span>
-                      <strong>${escapeHtml(collected ? (cassette.name || cassette.id || "Cassette") : "Unknown cassette")}</strong>
-                      <small>${escapeHtml(collected ? `collected x${assignmentCount}` : "not collected yet")}</small>
+                      <strong>${escapeHtml(cassette.name || cassette.id || "Cassette")}</strong>
+                      <small>${escapeHtml(`collected x${assignmentCount}`)}</small>
                     </span>
-                  </article>
+                  ` : ""}
                 `;
+                return collected
+                  ? `<button class="cassette-card ${id === selectedCollectionCassetteId ? "selected" : ""}" type="button" data-cassette-id="${escapeHtml(id)}">${content}</button>`
+                  : `<article class="cassette-card undiscovered">${content}</article>`;
               }).join("")}
             </div>
           </section>
         `).join("") || "<p>No cassette metadata loaded yet.</p>";
+
+        $("collectionList").querySelectorAll("[data-cassette-id]").forEach((card) => {
+          card.addEventListener("click", () => {
+            selectedCollectionCassetteId = card.dataset.cassetteId;
+            renderCollection();
+          });
+        });
+        renderCollectionDetail(assignmentFiles);
       }
 
       function cassetteIconMarkup(file) {

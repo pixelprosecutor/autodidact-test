@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-cassette-gallery-v3";
+const CACHE_NAME = "autodidact-cassette-gallery-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
