@@ -337,6 +337,10 @@
         opacity: .45;
       }
 
+      .cassette-card.undiscovered {
+        border-style: dashed;
+      }
+
       .cassette-card img {
         justify-self: center;
         width: 34px;
@@ -1077,9 +1081,10 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-gallery-2";
+      const APP_BUILD = "cassette-gallery-3";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
+      const MISSING_CASSETTE_IMAGE = "assets/cassettes/missing-cassette-384x256.png";
       const CASSETTE_ART_FALLBACK = [
           {
                     "id": "library-001",
@@ -3159,17 +3164,20 @@
             <h3>${escapeHtml(pack)} <small>${packCassettes.length}</small></h3>
             <div class="collection-grid ${collectionViewMode === "large" ? "large" : "small"}">
               ${packCassettes.map((cassette) => {
-                const image = collectionViewMode === "large" ? cassette.large : cassette.icon;
                 const assignmentCount = assignmentCounts.get(cassette.id || cassette.icon || cassette.large) || 0;
+                const collected = assignmentCount > 0;
+                const image = collected
+                  ? (collectionViewMode === "large" ? cassette.large : cassette.icon)
+                  : MISSING_CASSETTE_IMAGE;
                 const meta = [cassette.rarity, cassette.color, cassette.style]
                   .filter(Boolean)
                   .join(" - ");
                 return `
-                  <article class="cassette-card ${cassette.enabled === false ? "disabled" : ""}">
+                  <article class="cassette-card ${cassette.enabled === false ? "disabled" : ""} ${collected ? "" : "undiscovered"}">
                     <img src="${escapeHtml(image)}" alt="">
                     <span>
-                      <strong>${escapeHtml(cassette.name || cassette.id || "Cassette")}</strong>
-                      <small>${escapeHtml(assignmentCount ? `collected x${assignmentCount}` : (meta || `#${cassette.orderNumber || ""}`))}</small>
+                      <strong>${escapeHtml(collected ? (cassette.name || cassette.id || "Cassette") : "Unknown cassette")}</strong>
+                      <small>${escapeHtml(collected ? `collected x${assignmentCount}` : "not collected yet")}</small>
                     </span>
                   </article>
                 `;
