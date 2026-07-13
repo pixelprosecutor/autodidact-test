@@ -1,8 +1,9 @@
-const CACHE_NAME = "autodidact-cassette-cleanup-v1";
+const CACHE_NAME = "autodidact-cassette-metadata-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./assets/cassettes/cassette-metadata.json",
   "./assets/autodidact-icon-64.png",
   "./assets/autodidact-icon-180.png",
   "./assets/autodidact-icon-192.png",

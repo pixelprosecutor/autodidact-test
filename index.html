@@ -925,592 +925,885 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "cassette-cleanup-1";
+      const APP_BUILD = "cassette-metadata-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
-      const CASSETTE_ART =       [
-              {
-                      "id": "library-001",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-large-384x256.png"
-              },
-              {
-                      "id": "library-002",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-003",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-004",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-005",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-006",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-007",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-008",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-009",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-010",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-011",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-06-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-06-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-012",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-36-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-36-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-013",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-014",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-015",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-016",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-017",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-018",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-019",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-020",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-021",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-022",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-023",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-024",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-025",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-35-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-35-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-026",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-027",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-028",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-029",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-030",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-031",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-032",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-033",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-034",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-035",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-036",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-037",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-038",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-039",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-040",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-041",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-042",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-08-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-08-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-043",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-044",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-045",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-046",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-047",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-048",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-049",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-050",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-051",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-052",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-053",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-054",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-055",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-056",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-43-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-43-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-057",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-058",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-059",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-060",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-45-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-45-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-061",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-062",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-063",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-064",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-065",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-066",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-10-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-10-large-384x256.png"
-              },
-              {
-                      "id": "library-067",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-068",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-7-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-7-large-384x256.png"
-              },
-              {
-                      "id": "library-069",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-8-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-8-large-384x256.png"
-              },
-              {
-                      "id": "library-070",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-large-384x256.png"
-              },
-              {
-                      "id": "library-071",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-072",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-073",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-074",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-075",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-7-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-7-large-384x256.png"
-              },
-              {
-                      "id": "library-076",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-8-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-8-large-384x256.png"
-              },
-              {
-                      "id": "library-077",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-10-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-10-large-384x256.png"
-              },
-              {
-                      "id": "library-078",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-9-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-9-large-384x256.png"
-              },
-              {
-                      "id": "library-079",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-46-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-46-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-080",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-081",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-082",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-083",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-084",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-085",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-10-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-10-large-384x256.png"
-              },
-              {
-                      "id": "library-086",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-7-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-7-large-384x256.png"
-              },
-              {
-                      "id": "library-087",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-8-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-8-large-384x256.png"
-              },
-              {
-                      "id": "library-088",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-9-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-9-large-384x256.png"
-              },
-              {
-                      "id": "library-089",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-09-pm-1-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-09-pm-1-large-384x256.png"
-              },
-              {
-                      "id": "library-090",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-2-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-2-large-384x256.png"
-              },
-              {
-                      "id": "library-091",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-3-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-3-large-384x256.png"
-              },
-              {
-                      "id": "library-092",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-4-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-4-large-384x256.png"
-              },
-              {
-                      "id": "library-093",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-5-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-5-large-384x256.png"
-              },
-              {
-                      "id": "library-094",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-large-384x256.png"
-              },
-              {
-                      "id": "library-095",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-large-384x256.png"
-              },
-              {
-                      "id": "library-096",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-10-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-10-large-384x256.png"
-              },
-              {
-                      "id": "library-097",
-                      "pack": "Unsorted",
-                      "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-9-icon-34x34.png",
-                      "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-9-large-384x256.png"
-              }
-      ];
+      const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
+      const CASSETTE_ART_FALLBACK = [
+          {
+                    "id": "library-001",
+                    "name": "Cassette 001",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-002",
+                    "name": "Cassette 002",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-003",
+                    "name": "Cassette 003",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-004",
+                    "name": "Cassette 004",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-005",
+                    "name": "Cassette 005",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-006",
+                    "name": "Cassette 006",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-43-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-007",
+                    "name": "Cassette 007",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-008",
+                    "name": "Cassette 008",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-009",
+                    "name": "Cassette 009",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-010",
+                    "name": "Cassette 010",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-05-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-011",
+                    "name": "Cassette 011",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-06-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-44-06-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-012",
+                    "name": "Cassette 012",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-36-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-36-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-013",
+                    "name": "Cassette 013",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-014",
+                    "name": "Cassette 014",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-015",
+                    "name": "Cassette 015",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-016",
+                    "name": "Cassette 016",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-017",
+                    "name": "Cassette 017",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-49-37-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-018",
+                    "name": "Cassette 018",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-019",
+                    "name": "Cassette 019",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-020",
+                    "name": "Cassette 020",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-39-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-021",
+                    "name": "Cassette 021",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-022",
+                    "name": "Cassette 022",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-02-59-40-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-023",
+                    "name": "Cassette 023",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-024",
+                    "name": "Cassette 024",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-34-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-025",
+                    "name": "Cassette 025",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-35-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-04-35-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-026",
+                    "name": "Cassette 026",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-027",
+                    "name": "Cassette 027",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-33-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-028",
+                    "name": "Cassette 028",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-029",
+                    "name": "Cassette 029",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-10-34-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-030",
+                    "name": "Cassette 030",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-031",
+                    "name": "Cassette 031",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-032",
+                    "name": "Cassette 032",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-42-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-033",
+                    "name": "Cassette 033",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-034",
+                    "name": "Cassette 034",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-035",
+                    "name": "Cassette 035",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-14-43-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-036",
+                    "name": "Cassette 036",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-037",
+                    "name": "Cassette 037",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-038",
+                    "name": "Cassette 038",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-32-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-039",
+                    "name": "Cassette 039",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-040",
+                    "name": "Cassette 040",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-041",
+                    "name": "Cassette 041",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-16-33-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-042",
+                    "name": "Cassette 042",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-08-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-08-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-043",
+                    "name": "Cassette 043",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-044",
+                    "name": "Cassette 044",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-045",
+                    "name": "Cassette 045",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-21-09-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-046",
+                    "name": "Cassette 046",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-047",
+                    "name": "Cassette 047",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-048",
+                    "name": "Cassette 048",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-049",
+                    "name": "Cassette 049",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-050",
+                    "name": "Cassette 050",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-24-40-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-051",
+                    "name": "Cassette 051",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-052",
+                    "name": "Cassette 052",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-053",
+                    "name": "Cassette 053",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-054",
+                    "name": "Cassette 054",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-055",
+                    "name": "Cassette 055",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-33-25-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-056",
+                    "name": "Cassette 056",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-43-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-43-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-057",
+                    "name": "Cassette 057",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-058",
+                    "name": "Cassette 058",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-059",
+                    "name": "Cassette 059",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-44-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-060",
+                    "name": "Cassette 060",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-45-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-35-45-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-061",
+                    "name": "Cassette 061",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-062",
+                    "name": "Cassette 062",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-28-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-063",
+                    "name": "Cassette 063",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-064",
+                    "name": "Cassette 064",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-065",
+                    "name": "Cassette 065",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-29-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-066",
+                    "name": "Cassette 066",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-10-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-10-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-067",
+                    "name": "Cassette 067",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-068",
+                    "name": "Cassette 068",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-7-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-7-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-069",
+                    "name": "Cassette 069",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-8-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-8-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-070",
+                    "name": "Cassette 070",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-071",
+                    "name": "Cassette 071",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-072",
+                    "name": "Cassette 072",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-26-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-073",
+                    "name": "Cassette 073",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-074",
+                    "name": "Cassette 074",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-075",
+                    "name": "Cassette 075",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-7-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-7-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-076",
+                    "name": "Cassette 076",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-8-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-27-pm-8-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-077",
+                    "name": "Cassette 077",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-10-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-10-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-078",
+                    "name": "Cassette 078",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-9-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-44-28-pm-9-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-079",
+                    "name": "Cassette 079",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-46-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-46-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-080",
+                    "name": "Cassette 080",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-081",
+                    "name": "Cassette 081",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-082",
+                    "name": "Cassette 082",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-083",
+                    "name": "Cassette 083",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-084",
+                    "name": "Cassette 084",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-47-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-085",
+                    "name": "Cassette 085",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-10-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-10-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-086",
+                    "name": "Cassette 086",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-7-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-7-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-087",
+                    "name": "Cassette 087",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-8-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-8-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-088",
+                    "name": "Cassette 088",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-9-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-46-48-pm-9-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-089",
+                    "name": "Cassette 089",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-09-pm-1-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-09-pm-1-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-090",
+                    "name": "Cassette 090",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-2-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-2-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-091",
+                    "name": "Cassette 091",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-3-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-3-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-092",
+                    "name": "Cassette 092",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-4-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-4-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-093",
+                    "name": "Cassette 093",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-5-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-5-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-094",
+                    "name": "Cassette 094",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-6-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-095",
+                    "name": "Cassette 095",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-10-pm-8-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-096",
+                    "name": "Cassette 096",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-10-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-10-large-384x256.png",
+                    "notes": ""
+          },
+          {
+                    "id": "library-097",
+                    "name": "Cassette 097",
+                    "pack": "Unsorted",
+                    "rarity": "common",
+                    "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-9-icon-34x34.png",
+                    "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-53-11-pm-9-large-384x256.png",
+                    "notes": ""
+          }
+];
+      let CASSETTE_ART = CASSETTE_ART_FALLBACK;
       const FOLDER_ICON = "assets/folder-icon-34.png";
       const PLAYER_ICONS = {
         play: "assets/play-icon-34x34.png",
@@ -2253,6 +2546,24 @@
           hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
         }
         return Math.abs(hash);
+      }
+
+      async function loadCassetteMetadata() {
+        try {
+          const response = await fetch(`${CASSETTE_METADATA_URL}?build=${APP_BUILD}`, { cache: "no-store" });
+          if (!response.ok) throw new Error("Cassette metadata could not be loaded.");
+          const data = await response.json();
+          const cassettes = Array.isArray(data.cassettes) ? data.cassettes : [];
+          const usable = cassettes.filter((cassette) => cassette?.icon && cassette?.large);
+          if (!usable.length) return;
+          CASSETTE_ART = usable;
+          renderFiles();
+          renderSearch();
+          renderDownloads();
+          renderEpisode();
+        } catch (error) {
+          console.warn(error.message || "Cassette metadata could not be loaded.");
+        }
       }
 
       function cassetteForFile(file) {
@@ -3210,6 +3521,7 @@
       $("player").addEventListener("loadedmetadata", updatePlayerProgress);
       $("player").addEventListener("durationchange", updatePlayerProgress);
 
+      loadCassetteMetadata();
       Promise.all([refreshDownloads(), refreshEvents()]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
