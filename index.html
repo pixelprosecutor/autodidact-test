@@ -977,6 +977,12 @@
             <button class="primary" id="openCassetteCollection">Open cassette collection</button>
           </div>
         </section>
+
+        <section class="panel">
+          <h2>Achievements</h2>
+          <p id="achievementSummary">Loading achievements.</p>
+          <div class="stats-list" id="achievementStats"></div>
+        </section>
       </section>
 
       <section id="collectionView" class="view">
@@ -1184,10 +1190,91 @@
       const GOOGLE_CONSENT_KEY = "autodidact-google-consent-ok-sheets-v1";
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
-      const APP_BUILD = "announcements-1";
+      const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
+      const APP_BUILD = "achievements-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
+      const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
       const MISSING_CASSETTE_IMAGE = "assets/cassettes/missing-cassette-384x256.png";
+      const ACHIEVEMENT_FALLBACK = [
+        {
+          id: "first_completion",
+          name: "First Completion",
+          description: "Complete one audio file.",
+          category: "Listening",
+          conditionType: "completed_listens_total",
+          target: 1,
+          enabled: true,
+          rarity: "common",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "getting_warmed_up",
+          name: "Getting Warmed Up",
+          description: "Record 30 minutes of listening time.",
+          category: "Listening Time",
+          conditionType: "total_listening_seconds",
+          target: 1800,
+          enabled: true,
+          rarity: "common",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "three_hour_day",
+          name: "Three-Hour Day",
+          description: "Listen for three hours in one calendar day.",
+          category: "Listening Time",
+          conditionType: "daily_listening_seconds",
+          target: 10800,
+          enabled: true,
+          rarity: "uncommon",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "repeat_customer",
+          name: "Repeat Customer",
+          description: "Complete the same audio file twice.",
+          category: "Replays",
+          conditionType: "same_file_completions",
+          target: 2,
+          enabled: true,
+          rarity: "uncommon",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "collector_spark",
+          name: "Collector Spark",
+          description: "Collect five cassette designs through current Drive assignments.",
+          category: "Collection",
+          conditionType: "unique_cassettes_collected",
+          target: 5,
+          enabled: true,
+          rarity: "common",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "duplicate_discovery",
+          name: "Duplicate Discovery",
+          description: "Have your first duplicate cassette assignment.",
+          category: "Collection",
+          conditionType: "duplicate_cassette_assignments",
+          target: 1,
+          enabled: true,
+          rarity: "common",
+          image: "assets/stats_tab.png"
+        },
+        {
+          id: "folder_momentum",
+          name: "Folder Momentum",
+          description: "Complete three audio files in one folder.",
+          category: "Folders",
+          conditionType: "completed_files_in_folder",
+          target: 3,
+          enabled: true,
+          rarity: "uncommon",
+          image: "assets/stats_tab.png"
+        }
+      ];
       const CASSETTE_ART_FALLBACK = [
           {
                     "id": "library-001",
@@ -2490,6 +2577,7 @@
       let selectedCollectionCassetteId = "";
       let announcements = [];
       let activeAnnouncementIndex = 0;
+      let ACHIEVEMENTS = ACHIEVEMENT_FALLBACK;
 
       const $ = (id) => document.getElementById(id);
 
@@ -2774,6 +2862,10 @@
           renderCollection();
           showView("collection");
           hideAnnouncements();
+        } else if (announcement.action.type === "stats") {
+          renderStats();
+          showView("stats");
+          hideAnnouncements();
         }
       }
 
@@ -2796,6 +2888,154 @@
         renderStats();
         renderSettings();
         renderOfflineReadiness();
+        evaluateAchievements().catch(() => {});
+      }
+
+      function achievementUnlocks() {
+        try {
+          const ids = JSON.parse(localStorage.getItem(ACHIEVEMENT_UNLOCK_KEY) || "[]");
+          return Array.isArray(ids) ? new Set(ids) : new Set();
+        } catch {
+          return new Set();
+        }
+      }
+
+      function saveAchievementUnlocks(ids) {
+        localStorage.setItem(ACHIEVEMENT_UNLOCK_KEY, JSON.stringify([...ids]));
+      }
+
+      function completionEvents() {
+        return events.filter((event) => event.type === "complete");
+      }
+
+      function maxDailyListeningSeconds() {
+        const byDay = new Map();
+        for (const event of events) {
+          const seconds = Number(event.seconds) || 0;
+          if (!seconds || !event.at) continue;
+          const day = new Date(event.at).toLocaleDateString();
+          byDay.set(day, (byDay.get(day) || 0) + seconds);
+        }
+        return Math.max(0, ...byDay.values());
+      }
+
+      function maxSameFileCompletions() {
+        const byFile = new Map();
+        for (const event of completionEvents()) {
+          if (!event.fileId) continue;
+          byFile.set(event.fileId, (byFile.get(event.fileId) || 0) + 1);
+        }
+        return Math.max(0, ...byFile.values());
+      }
+
+      function maxCompletedFilesInFolder() {
+        const byFolder = new Map();
+        for (const event of completionEvents()) {
+          const folderPath = event.folderPath || "Podcast";
+          if (!byFolder.has(folderPath)) byFolder.set(folderPath, new Set());
+          if (event.fileId) byFolder.get(folderPath).add(event.fileId);
+        }
+        return Math.max(0, ...[...byFolder.values()].map((set) => set.size));
+      }
+
+      function duplicateCassetteAssignmentCount() {
+        return [...cassetteAssignmentCounts().values()]
+          .reduce((total, count) => total + Math.max(0, count - 1), 0);
+      }
+
+      function achievementProgress(achievement) {
+        const target = Number(achievement.target || 1);
+        let current = 0;
+        switch (achievement.conditionType) {
+          case "completed_listens_total":
+            current = completionEvents().length;
+            break;
+          case "total_listening_seconds":
+            current = events.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
+            break;
+          case "daily_listening_seconds":
+            current = maxDailyListeningSeconds();
+            break;
+          case "same_file_completions":
+            current = maxSameFileCompletions();
+            break;
+          case "unique_cassettes_collected":
+            current = cassetteAssignmentCounts().size;
+            break;
+          case "duplicate_cassette_assignments":
+            current = duplicateCassetteAssignmentCount();
+            break;
+          case "completed_files_in_folder":
+            current = maxCompletedFilesInFolder();
+            break;
+          default:
+            current = 0;
+        }
+        return {
+          current,
+          target,
+          percent: target ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0,
+          unlocked: target ? current >= target : false
+        };
+      }
+
+      function formatAchievementProgress(achievement, progress) {
+        const secondsTypes = new Set(["total_listening_seconds", "daily_listening_seconds"]);
+        if (secondsTypes.has(achievement.conditionType)) {
+          return `${formatDuration(progress.current)} / ${formatDuration(progress.target)}`;
+        }
+        return `${Math.min(progress.current, progress.target)} / ${progress.target}`;
+      }
+
+      function renderAchievementStats() {
+        if (!$("achievementStats")) return;
+        const unlockedIds = achievementUnlocks();
+        const enabled = ACHIEVEMENTS.filter((achievement) => achievement.enabled !== false);
+        const unlockedCount = enabled.filter((achievement) => unlockedIds.has(achievement.id) || achievementProgress(achievement).unlocked).length;
+        $("achievementSummary").textContent = `${unlockedCount} of ${enabled.length} achievement${enabled.length === 1 ? "" : "s"} unlocked.`;
+        $("achievementStats").innerHTML = enabled.map((achievement) => {
+          const progress = achievementProgress(achievement);
+          const unlocked = unlockedIds.has(achievement.id) || progress.unlocked;
+          return `
+            <div class="stat-row">
+              <span>
+                ${escapeHtml(achievement.name)}
+                <small>${escapeHtml(achievement.description || achievement.conditionType || "")}</small>
+              </span>
+              <strong>${escapeHtml(unlocked ? "Unlocked" : formatAchievementProgress(achievement, progress))}</strong>
+            </div>
+          `;
+        }).join("") || "<p>No achievements configured yet.</p>";
+      }
+
+      async function evaluateAchievements() {
+        const unlockedIds = achievementUnlocks();
+        const newlyUnlocked = [];
+        for (const achievement of ACHIEVEMENTS) {
+          if (achievement.enabled === false || unlockedIds.has(achievement.id)) continue;
+          const progress = achievementProgress(achievement);
+          if (!progress.unlocked) continue;
+          unlockedIds.add(achievement.id);
+          newlyUnlocked.push({ achievement, progress });
+        }
+        if (!newlyUnlocked.length) {
+          renderAchievementStats();
+          return;
+        }
+        saveAchievementUnlocks(unlockedIds);
+        renderAchievementStats();
+        await createAnnouncements(newlyUnlocked.map(({ achievement }) => ({
+          id: `achievement-${achievement.id}`,
+          type: "achievement",
+          title: "Achievement unlocked",
+          message: achievement.name || "Achievement",
+          meta: achievement.description || "",
+          image: achievement.image || "assets/stats_tab.png",
+          action: {
+            type: "stats",
+            label: "View stats"
+          }
+        })));
       }
 
       function latestEventFor(fileId, type) {
@@ -2903,6 +3143,7 @@
         $("folderStats").innerHTML = folders.length
           ? rows(folders)
           : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
+        renderAchievementStats();
       }
 
       function renderSettings() {
@@ -2981,6 +3222,7 @@
         await storeEvent(event);
         renderEpisode();
         renderStats();
+        evaluateAchievements().catch(() => {});
       }
 
       function sheetRowFor(event) {
@@ -3299,6 +3541,22 @@
         return Math.abs(hash);
       }
 
+      async function loadAchievementMetadata() {
+        try {
+          const response = await fetch(`${ACHIEVEMENT_METADATA_URL}?build=${APP_BUILD}`, { cache: "no-store" });
+          if (!response.ok) throw new Error("Achievement metadata could not be loaded.");
+          const data = await response.json();
+          const achievements = Array.isArray(data.achievements) ? data.achievements : [];
+          if (!achievements.length) return;
+          ACHIEVEMENTS = achievements;
+          renderAchievementStats();
+          evaluateAchievements().catch(() => {});
+        } catch (error) {
+          console.warn(error.message || "Achievement metadata could not be loaded.");
+          renderAchievementStats();
+        }
+      }
+
       async function loadCassetteMetadata() {
         try {
           const response = await fetch(`${CASSETTE_METADATA_URL}?build=${APP_BUILD}`, { cache: "no-store" });
@@ -3313,6 +3571,7 @@
           renderDownloads();
           renderEpisode();
           renderCollection();
+          evaluateAchievements().catch(() => {});
         } catch (error) {
           console.warn(error.message || "Cassette metadata could not be loaded.");
         }
@@ -4129,6 +4388,7 @@
         renderSettings();
         renderCollection();
         const revealCount = await createCassetteRevealAnnouncements(newFiles);
+        await evaluateAchievements();
         setStatus(revealCount
           ? `Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"} and queued ${revealCount} new cassette reveal${revealCount === 1 ? "" : "s"}.`
           : `Found ${audioFiles.length} audio file${audioFiles.length === 1 ? "" : "s"}. Tap a file to open its episode card, or use the download icon for offline playback.`);
@@ -4501,6 +4761,7 @@
       $("player").addEventListener("loadedmetadata", updatePlayerProgress);
       $("player").addEventListener("durationchange", updatePlayerProgress);
 
+      loadAchievementMetadata();
       loadCassetteMetadata();
       Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");

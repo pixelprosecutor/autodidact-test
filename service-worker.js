@@ -1,8 +1,9 @@
-const CACHE_NAME = "autodidact-announcements-v1";
+const CACHE_NAME = "autodidact-achievements-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./assets/achievements/achievement-metadata.json",
   "./assets/cassettes/cassette-metadata.json",
   "./assets/cassettes/missing-cassette-384x256.png",
   "./assets/autodidact-icon-64.png",
