@@ -1,0 +1,102 @@
+{
+  "achievements": [
+    {
+      "id": "first_completion",
+      "name": "First Completion",
+      "description": "Complete one audio file.",
+      "category": "Listening",
+      "conditionType": "completed_listens_total",
+      "target": 1,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "common",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "getting_warmed_up",
+      "name": "Getting Warmed Up",
+      "description": "Record 30 minutes of listening time.",
+      "category": "Listening Time",
+      "conditionType": "total_listening_seconds",
+      "target": 1800,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "common",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "three_hour_day",
+      "name": "Three-Hour Day",
+      "description": "Listen for three hours in one calendar day.",
+      "category": "Listening Time",
+      "conditionType": "daily_listening_seconds",
+      "target": 10800,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "uncommon",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "repeat_customer",
+      "name": "Repeat Customer",
+      "description": "Complete the same audio file twice.",
+      "category": "Replays",
+      "conditionType": "same_file_completions",
+      "target": 2,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "uncommon",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "collector_spark",
+      "name": "Collector Spark",
+      "description": "Collect five cassette designs through current Drive assignments.",
+      "category": "Collection",
+      "conditionType": "unique_cassettes_collected",
+      "target": 5,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "common",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "duplicate_discovery",
+      "name": "Duplicate Discovery",
+      "description": "Have your first duplicate cassette assignment.",
+      "category": "Collection",
+      "conditionType": "duplicate_cassette_assignments",
+      "target": 1,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "common",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    },
+    {
+      "id": "folder_momentum",
+      "name": "Folder Momentum",
+      "description": "Complete three audio files in one folder.",
+      "category": "Folders",
+      "conditionType": "completed_files_in_folder",
+      "target": 3,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "uncommon",
+      "image": "assets/stats_tab.png",
+      "notes": ""
+    }
+  ]
+}
