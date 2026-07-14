@@ -72,7 +72,7 @@
       .app {
         min-height: 100vh;
         display: grid;
-        grid-template-rows: auto 1fr;
+        grid-template-rows: auto auto 1fr;
       }
 
       .topbar {
@@ -110,6 +110,29 @@
         color: var(--muted);
         font-size: 13px;
         min-width: min(100%, 260px);
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px 0;
+        background: #091a34;
+      }
+
+      .tab-button[aria-selected="true"] {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #1a1300;
+        font-weight: 700;
+      }
+
+      .tab-panel {
+        min-height: 0;
+      }
+
+      .tab-panel:not(.active) {
+        display: none;
       }
 
       .workspace {
@@ -170,7 +193,8 @@
         gap: 8px;
       }
 
-      .cassette-row {
+      .cassette-row,
+      .achievement-row {
         display: grid;
         grid-template-columns: 42px minmax(0, 1fr) auto;
         gap: 10px;
@@ -181,12 +205,14 @@
         padding: 8px;
       }
 
-      .cassette-row[aria-selected="true"] {
+      .cassette-row[aria-selected="true"],
+      .achievement-row[aria-selected="true"] {
         border-color: var(--focus);
         box-shadow: 0 0 0 1px var(--focus) inset;
       }
 
-      .cassette-row img {
+      .cassette-row img,
+      .achievement-row img {
         width: 34px;
         height: 34px;
         object-fit: contain;
@@ -318,6 +344,10 @@
         padding: 20px;
       }
 
+      .placeholder-panel {
+        max-width: 760px;
+      }
+
       @media (max-width: 820px) {
         .workspace {
           grid-template-columns: 1fr;
@@ -340,122 +370,267 @@
     <main class="app">
       <header class="topbar">
         <div class="brand">
-          <h1>Autodidact Cassette Editor</h1>
-          <p>Edit names, packs, rarity, order, tags, and availability.</p>
+          <h1>Autodidact Management</h1>
+          <p>Edit cassette art metadata and achievement definitions.</p>
         </div>
-        <button id="loadDefault" class="primary">Load Metadata</button>
-        <button id="importButton">Import JSON</button>
-        <input id="importFile" class="hidden-input" type="file" accept="application/json,.json">
-        <button id="copyJson">Copy JSON</button>
-        <button id="downloadJson">Download JSON</button>
+        <button id="loadDefault" class="primary">Load Cassettes</button>
+        <button id="loadAchievements">Load Achievements</button>
         <span id="status" class="status">Ready.</span>
       </header>
 
-      <section class="workspace">
-        <aside class="sidebar">
-          <div class="toolbar">
-            <label>
-              Search
-              <input id="search" type="search" placeholder="Name, pack, color, style">
-            </label>
-            <div class="toolbar-row">
-              <label>
-                Pack
-                <select id="packFilter"></select>
-              </label>
-              <label>
-                Rarity
-                <select id="rarityFilter">
-                  <option value="">All</option>
-                  <option value="common">common</option>
-                  <option value="uncommon">uncommon</option>
-                  <option value="rare">rare</option>
-                  <option value="special">special</option>
-                </select>
-              </label>
-            </div>
-            <div id="counts" class="counts"></div>
-          </div>
-          <div id="cassetteList" class="list"></div>
-        </aside>
+      <nav class="tabs" aria-label="Management sections">
+        <button class="tab-button" data-tab="cassettes" aria-selected="true">Cassettes</button>
+        <button class="tab-button" data-tab="achievements" aria-selected="false">Achievements</button>
+        <button class="tab-button" data-tab="stores" aria-selected="false">Stores</button>
+      </nav>
 
+      <section id="cassettesTab" class="tab-panel active">
+        <section class="workspace">
+          <aside class="sidebar">
+            <div class="toolbar">
+              <label>
+                Search
+                <input id="search" type="search" placeholder="Name, pack, color, style">
+              </label>
+              <div class="toolbar-row">
+                <label>
+                  Pack
+                  <select id="packFilter"></select>
+                </label>
+                <label>
+                  Rarity
+                  <select id="rarityFilter">
+                    <option value="">All</option>
+                    <option value="common">common</option>
+                    <option value="uncommon">uncommon</option>
+                    <option value="rare">rare</option>
+                    <option value="special">special</option>
+                  </select>
+                </label>
+              </div>
+              <div id="counts" class="counts"></div>
+            </div>
+            <div id="cassetteList" class="list"></div>
+          </aside>
+
+          <section class="editor">
+            <div id="emptyState" class="panel empty">Load cassette metadata to begin.</div>
+
+            <section id="editPanel" class="panel" hidden>
+              <div class="preview">
+                <div class="small-preview">
+                  <img id="iconPreview" alt="">
+                </div>
+                <div class="large-preview">
+                  <img id="largePreview" alt="">
+                </div>
+              </div>
+            </section>
+
+            <section id="formPanel" class="panel" hidden>
+              <div class="form-grid">
+                <label>
+                  ID
+                  <input id="fieldId" disabled>
+                </label>
+                <label>
+                  Name
+                  <input id="fieldName">
+                </label>
+                <label>
+                  Pack
+                  <input id="fieldPack" list="packOptions">
+                </label>
+                <label>
+                  Order Number
+                  <input id="fieldOrderNumber" type="number" min="1" step="1">
+                </label>
+                <label>
+                  Rarity
+                  <select id="fieldRarity">
+                    <option value="common">common</option>
+                    <option value="uncommon">uncommon</option>
+                    <option value="rare">rare</option>
+                    <option value="special">special</option>
+                  </select>
+                </label>
+                <label>
+                  Color
+                  <input id="fieldColor" list="colorOptions">
+                </label>
+                <label>
+                  Style
+                  <input id="fieldStyle" list="styleOptions">
+                </label>
+                <label class="check-row">
+                  <input id="fieldEnabled" type="checkbox">
+                  Enabled for assignment
+                </label>
+                <label class="wide">
+                  Notes
+                  <textarea id="fieldNotes"></textarea>
+                </label>
+                <label class="wide">
+                  Icon Path
+                  <input id="fieldIcon">
+                </label>
+                <label class="wide">
+                  Large Art Path
+                  <input id="fieldLarge">
+                </label>
+              </div>
+            </section>
+
+            <section class="panel json-panel">
+              <div class="counts">
+                <button id="importButton">Import Cassette JSON</button>
+                <input id="importFile" class="hidden-input" type="file" accept="application/json,.json">
+                <button id="copyJson">Copy Cassette JSON</button>
+                <button id="downloadJson">Download Cassette JSON</button>
+              </div>
+              <div class="counts" id="exportSummary"></div>
+              <textarea id="jsonOutput" class="json-output" readonly spellcheck="false"></textarea>
+            </section>
+          </section>
+        </section>
+      </section>
+
+      <section id="achievementsTab" class="tab-panel">
+        <section class="workspace">
+          <aside class="sidebar">
+            <div class="toolbar">
+              <label>
+                Search
+                <input id="achievementSearch" type="search" placeholder="Name, category, condition">
+              </label>
+              <div class="toolbar-row">
+                <label>
+                  Category
+                  <select id="achievementCategoryFilter"></select>
+                </label>
+                <label>
+                  Rarity
+                  <select id="achievementRarityFilter">
+                    <option value="">All</option>
+                    <option value="common">common</option>
+                    <option value="uncommon">uncommon</option>
+                    <option value="rare">rare</option>
+                    <option value="special">special</option>
+                  </select>
+                </label>
+              </div>
+              <div id="achievementCounts" class="counts"></div>
+            </div>
+            <div id="achievementList" class="list"></div>
+          </aside>
+
+          <section class="editor">
+            <div id="achievementEmptyState" class="panel empty">Load achievement metadata to begin.</div>
+
+            <section id="achievementPreviewPanel" class="panel" hidden>
+              <div class="preview">
+                <div class="small-preview">
+                  <img id="achievementImagePreview" alt="">
+                </div>
+                <div class="counts" id="achievementProgressSummary"></div>
+              </div>
+            </section>
+
+            <section id="achievementFormPanel" class="panel" hidden>
+              <div class="form-grid">
+                <label>
+                  ID
+                  <input id="achievementFieldId" disabled>
+                </label>
+                <label>
+                  Name
+                  <input id="achievementFieldName">
+                </label>
+                <label>
+                  Category
+                  <input id="achievementFieldCategory" list="achievementCategoryOptions">
+                </label>
+                <label>
+                  Condition Type
+                  <select id="achievementFieldConditionType">
+                    <option value="completed_listens_total">completed_listens_total</option>
+                    <option value="total_listening_seconds">total_listening_seconds</option>
+                    <option value="daily_listening_seconds">daily_listening_seconds</option>
+                    <option value="same_file_completions">same_file_completions</option>
+                    <option value="unique_cassettes_collected">unique_cassettes_collected</option>
+                    <option value="duplicate_cassette_assignments">duplicate_cassette_assignments</option>
+                    <option value="completed_files_in_folder">completed_files_in_folder</option>
+                  </select>
+                </label>
+                <label>
+                  Target
+                  <input id="achievementFieldTarget" type="number" min="1" step="1">
+                </label>
+                <label>
+                  Rarity
+                  <select id="achievementFieldRarity">
+                    <option value="common">common</option>
+                    <option value="uncommon">uncommon</option>
+                    <option value="rare">rare</option>
+                    <option value="special">special</option>
+                  </select>
+                </label>
+                <label class="check-row">
+                  <input id="achievementFieldEnabled" type="checkbox">
+                  Enabled
+                </label>
+                <label class="check-row">
+                  <input id="achievementFieldHidden" type="checkbox">
+                  Hidden until unlocked
+                </label>
+                <label class="check-row">
+                  <input id="achievementFieldRepeatable" type="checkbox">
+                  Repeatable
+                </label>
+                <label class="wide">
+                  Description
+                  <textarea id="achievementFieldDescription"></textarea>
+                </label>
+                <label class="wide">
+                  Image Path
+                  <input id="achievementFieldImage">
+                </label>
+                <label class="wide">
+                  Notes
+                  <textarea id="achievementFieldNotes"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="panel json-panel">
+              <div class="counts">
+                <button id="achievementImportButton">Import Achievement JSON</button>
+                <input id="achievementImportFile" class="hidden-input" type="file" accept="application/json,.json">
+                <button id="achievementCopyJson">Copy Achievement JSON</button>
+                <button id="achievementDownloadJson">Download Achievement JSON</button>
+              </div>
+              <div class="counts" id="achievementExportSummary"></div>
+              <textarea id="achievementJsonOutput" class="json-output" readonly spellcheck="false"></textarea>
+            </section>
+          </section>
+        </section>
+      </section>
+
+      <section id="storesTab" class="tab-panel">
         <section class="editor">
-          <div id="emptyState" class="panel empty">Load cassette metadata to begin.</div>
-
-          <section id="editPanel" class="panel" hidden>
-            <div class="preview">
-              <div class="small-preview">
-                <img id="iconPreview" alt="">
-              </div>
-              <div class="large-preview">
-                <img id="largePreview" alt="">
-              </div>
+          <section class="panel placeholder-panel">
+            <h2>Store Management</h2>
+            <p class="row-subtitle">This tab is reserved for the cassette store system.</p>
+            <div class="empty">
+              Later, this can manage store names, unlock conditions, cassette inventories, prices, trade-in rules, rarity odds, and whether a store is currently available.
             </div>
-          </section>
-
-          <section id="formPanel" class="panel" hidden>
-            <div class="form-grid">
-              <label>
-                ID
-                <input id="fieldId" disabled>
-              </label>
-              <label>
-                Name
-                <input id="fieldName">
-              </label>
-              <label>
-                Pack
-                <input id="fieldPack" list="packOptions">
-              </label>
-              <label>
-                Order Number
-                <input id="fieldOrderNumber" type="number" min="1" step="1">
-              </label>
-              <label>
-                Rarity
-                <select id="fieldRarity">
-                  <option value="common">common</option>
-                  <option value="uncommon">uncommon</option>
-                  <option value="rare">rare</option>
-                  <option value="special">special</option>
-                </select>
-              </label>
-              <label>
-                Color
-                <input id="fieldColor" list="colorOptions">
-              </label>
-              <label>
-                Style
-                <input id="fieldStyle" list="styleOptions">
-              </label>
-              <label class="check-row">
-                <input id="fieldEnabled" type="checkbox">
-                Enabled for assignment
-              </label>
-              <label class="wide">
-                Notes
-                <textarea id="fieldNotes"></textarea>
-              </label>
-              <label class="wide">
-                Icon Path
-                <input id="fieldIcon">
-              </label>
-              <label class="wide">
-                Large Art Path
-                <input id="fieldLarge">
-              </label>
-            </div>
-          </section>
-
-          <section class="panel json-panel">
-            <div class="counts" id="exportSummary"></div>
-            <textarea id="jsonOutput" class="json-output" readonly spellcheck="false"></textarea>
           </section>
         </section>
       </section>
     </main>
 
     <datalist id="packOptions"></datalist>
+    <datalist id="achievementCategoryOptions"></datalist>
     <datalist id="colorOptions">
       <option value="red"></option>
       <option value="orange"></option>
@@ -481,11 +656,15 @@
 
     <script>
       const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
+      const ACHIEVEMENT_METADATA_URL = "../assets/achievements/achievement-metadata.json";
       const $ = (id) => document.getElementById(id);
 
       let metadata = { version: 2, updatedAt: "", cassettes: [] };
       let selectedId = "";
       let dirty = false;
+      let achievementMetadata = { version: 1, updatedAt: "", achievements: [] };
+      let selectedAchievementId = "";
+      let achievementDirty = false;
 
       function setStatus(message) {
         $("status").textContent = message;
@@ -673,6 +852,184 @@
         });
       }
 
+      function normalizeAchievement(achievement, index) {
+        return {
+          id: achievement.id || `achievement-${String(index + 1).padStart(3, "0")}`,
+          name: achievement.name || `Achievement ${String(index + 1).padStart(3, "0")}`,
+          description: achievement.description || "",
+          category: achievement.category || "Listening",
+          conditionType: achievement.conditionType || "completed_listens_total",
+          target: Number.isFinite(Number(achievement.target)) ? Number(achievement.target) : 1,
+          enabled: achievement.enabled !== false,
+          hiddenUntilUnlocked: achievement.hiddenUntilUnlocked === true,
+          repeatable: achievement.repeatable === true,
+          rarity: achievement.rarity || "common",
+          image: achievement.image || "assets/stats_tab.png",
+          notes: achievement.notes || ""
+        };
+      }
+
+      function normalizeAchievementMetadata(data) {
+        const achievements = Array.isArray(data?.achievements) ? data.achievements : [];
+        return {
+          version: Number(data?.version || 1),
+          updatedAt: data?.updatedAt || new Date().toISOString().slice(0, 10),
+          achievements: achievements.map(normalizeAchievement)
+        };
+      }
+
+      function currentAchievement() {
+        return achievementMetadata.achievements.find((achievement) => achievement.id === selectedAchievementId) || null;
+      }
+
+      function sortedAchievements(items = achievementMetadata.achievements) {
+        return [...items].sort((a, b) =>
+          String(a.category || "").localeCompare(String(b.category || "")) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      }
+
+      function achievementCategoryNames() {
+        return [...new Set(achievementMetadata.achievements.map((achievement) => achievement.category || "Listening"))].sort();
+      }
+
+      function refreshAchievementCategoryControls() {
+        const selectedFilter = $("achievementCategoryFilter").value;
+        const options = ['<option value="">All</option>']
+          .concat(achievementCategoryNames().map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`));
+        $("achievementCategoryFilter").innerHTML = options.join("");
+        $("achievementCategoryFilter").value = selectedFilter;
+        $("achievementCategoryOptions").innerHTML = achievementCategoryNames()
+          .map((category) => `<option value="${escapeHtml(category)}"></option>`)
+          .join("");
+      }
+
+      function filteredAchievements() {
+        const query = $("achievementSearch").value.trim().toLowerCase();
+        const category = $("achievementCategoryFilter").value;
+        const rarity = $("achievementRarityFilter").value;
+        return sortedAchievements().filter((achievement) => {
+          const searchText = [
+            achievement.id,
+            achievement.name,
+            achievement.description,
+            achievement.category,
+            achievement.conditionType,
+            achievement.rarity,
+            achievement.notes
+          ].join(" ").toLowerCase();
+          return (!query || searchText.includes(query)) &&
+            (!category || achievement.category === category) &&
+            (!rarity || achievement.rarity === rarity);
+        });
+      }
+
+      function achievementProgressText(achievement) {
+        const target = Number(achievement.target || 1);
+        return `Target ${target} - progress calculated in the app`;
+      }
+
+      function renderAchievementCounts() {
+        const enabled = achievementMetadata.achievements.filter((achievement) => achievement.enabled).length;
+        const hidden = achievementMetadata.achievements.filter((achievement) => achievement.hiddenUntilUnlocked).length;
+        $("achievementCounts").innerHTML = [
+          `<span class="pill">${achievementMetadata.achievements.length} achievements</span>`,
+          `<span class="pill">${enabled} enabled</span>`,
+          `<span class="pill">${hidden} hidden</span>`
+        ].join("");
+      }
+
+      function renderAchievementList() {
+        refreshAchievementCategoryControls();
+        renderAchievementCounts();
+        const items = filteredAchievements();
+        $("achievementList").innerHTML = items.map((achievement) => `
+          <button class="achievement-row" data-achievement-id="${escapeHtml(achievement.id)}" aria-selected="${achievement.id === selectedAchievementId ? "true" : "false"}">
+            <img src="${escapeHtml(assetUrl(achievement.image))}" alt="">
+            <span>
+              <span class="row-title">${escapeHtml(achievement.name)}</span>
+              <span class="row-subtitle">${escapeHtml(achievement.category)} - ${escapeHtml(achievement.conditionType)} - ${escapeHtml(achievement.rarity)}${achievement.enabled ? "" : " - disabled"}</span>
+            </span>
+            <span class="pill">${escapeHtml(achievement.target)}</span>
+          </button>
+        `).join("") || '<div class="empty">No achievements match the current filters.</div>';
+
+        $("achievementList").querySelectorAll("[data-achievement-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedAchievementId = button.dataset.achievementId;
+            renderAchievements();
+          });
+        });
+      }
+
+      function fillAchievementForm(achievement) {
+        $("achievementFieldId").value = achievement.id;
+        $("achievementFieldName").value = achievement.name;
+        $("achievementFieldDescription").value = achievement.description;
+        $("achievementFieldCategory").value = achievement.category;
+        $("achievementFieldConditionType").value = achievement.conditionType;
+        $("achievementFieldTarget").value = achievement.target;
+        $("achievementFieldEnabled").checked = achievement.enabled;
+        $("achievementFieldHidden").checked = achievement.hiddenUntilUnlocked;
+        $("achievementFieldRepeatable").checked = achievement.repeatable;
+        $("achievementFieldRarity").value = achievement.rarity;
+        $("achievementFieldImage").value = achievement.image;
+        $("achievementFieldNotes").value = achievement.notes;
+        $("achievementImagePreview").src = assetUrl(achievement.image);
+        $("achievementProgressSummary").innerHTML = [
+          `<span class="pill">${escapeHtml(achievementProgressText(achievement))}</span>`,
+          `<span class="pill">${achievement.hiddenUntilUnlocked ? "Hidden until unlocked" : "Visible"}</span>`,
+          `<span class="pill">${achievement.repeatable ? "Repeatable" : "One-time"}</span>`
+        ].join("");
+      }
+
+      function renderAchievementEditor() {
+        const achievement = currentAchievement();
+        $("achievementEmptyState").hidden = !!achievement || achievementMetadata.achievements.length > 0;
+        $("achievementPreviewPanel").hidden = !achievement;
+        $("achievementFormPanel").hidden = !achievement;
+        if (achievement) fillAchievementForm(achievement);
+      }
+
+      function achievementOutputJson() {
+        return JSON.stringify({
+          version: 1,
+          updatedAt: new Date().toISOString().slice(0, 10),
+          achievements: sortedAchievements().map((achievement, index) => normalizeAchievement(achievement, index))
+        }, null, 2);
+      }
+
+      function renderAchievementOutput() {
+        $("achievementJsonOutput").value = achievementMetadata.achievements.length ? achievementOutputJson() : "";
+        $("achievementExportSummary").innerHTML = achievementMetadata.achievements.length
+          ? [
+              `<span class="pill">${achievementDirty ? "Unsaved changes" : "No unsaved edits"}</span>`,
+              `<span class="pill">Replace assets/achievements/achievement-metadata.json</span>`
+            ].join("")
+          : "";
+      }
+
+      function renderAchievements() {
+        renderAchievementList();
+        renderAchievementEditor();
+        renderAchievementOutput();
+      }
+
+      function updateSelectedAchievement(updates) {
+        const achievement = currentAchievement();
+        if (!achievement) return;
+        Object.assign(achievement, updates);
+        achievementDirty = true;
+        renderAchievements();
+        setStatus("Edited achievement metadata. Export JSON when you are ready.");
+      }
+
+      function bindAchievementField(id, key, transform = (value) => value) {
+        $(id).addEventListener("input", () => {
+          updateSelectedAchievement({ [key]: transform($(id).value) });
+        });
+      }
+
       async function loadDefaultMetadata() {
         try {
           const response = await fetch(`${METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
@@ -728,7 +1085,75 @@
         setStatus("cassette-metadata.json downloaded.");
       }
 
+      async function loadAchievementMetadata() {
+        try {
+          const response = await fetch(`${ACHIEVEMENT_METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Achievement metadata load failed: ${response.status}`);
+          achievementMetadata = normalizeAchievementMetadata(await response.json());
+          selectedAchievementId = achievementMetadata.achievements[0]?.id || "";
+          achievementDirty = false;
+          renderAchievements();
+          setStatus(`Loaded ${achievementMetadata.achievements.length} achievements.`);
+        } catch (error) {
+          setStatus(error.message || "Could not load achievement metadata.");
+        }
+      }
+
+      function importAchievementJsonFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          try {
+            achievementMetadata = normalizeAchievementMetadata(JSON.parse(reader.result));
+            selectedAchievementId = achievementMetadata.achievements[0]?.id || "";
+            achievementDirty = false;
+            renderAchievements();
+            setStatus(`Imported ${achievementMetadata.achievements.length} achievements.`);
+          } catch (error) {
+            setStatus(error.message || "Could not import achievement JSON.");
+          }
+        });
+        reader.readAsText(file);
+      }
+
+      async function copyAchievementJson() {
+        if (!achievementMetadata.achievements.length) return;
+        await navigator.clipboard.writeText(achievementOutputJson());
+        achievementDirty = false;
+        renderAchievementOutput();
+        setStatus("Achievement JSON copied.");
+      }
+
+      function downloadAchievementJson() {
+        if (!achievementMetadata.achievements.length) return;
+        const blob = new Blob([achievementOutputJson()], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "achievement-metadata.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        achievementDirty = false;
+        renderAchievementOutput();
+        setStatus("achievement-metadata.json downloaded.");
+      }
+
+      function activateTab(tabName) {
+        document.querySelectorAll(".tab-button").forEach((button) => {
+          button.setAttribute("aria-selected", String(button.dataset.tab === tabName));
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.id === `${tabName}Tab`);
+        });
+      }
+
       $("loadDefault").addEventListener("click", loadDefaultMetadata);
+      $("loadAchievements").addEventListener("click", () => {
+        activateTab("achievements");
+        loadAchievementMetadata();
+      });
       $("importButton").addEventListener("click", () => $("importFile").click());
       $("importFile").addEventListener("change", () => importJsonFile($("importFile").files[0]));
       $("copyJson").addEventListener("click", () => copyJson().catch(() => setStatus("Could not copy JSON.")));
@@ -736,6 +1161,16 @@
       $("search").addEventListener("input", renderList);
       $("packFilter").addEventListener("change", renderList);
       $("rarityFilter").addEventListener("change", renderList);
+      $("achievementImportButton").addEventListener("click", () => $("achievementImportFile").click());
+      $("achievementImportFile").addEventListener("change", () => importAchievementJsonFile($("achievementImportFile").files[0]));
+      $("achievementCopyJson").addEventListener("click", () => copyAchievementJson().catch(() => setStatus("Could not copy achievement JSON.")));
+      $("achievementDownloadJson").addEventListener("click", downloadAchievementJson);
+      $("achievementSearch").addEventListener("input", renderAchievementList);
+      $("achievementCategoryFilter").addEventListener("change", renderAchievementList);
+      $("achievementRarityFilter").addEventListener("change", renderAchievementList);
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => activateTab(button.dataset.tab));
+      });
 
       bindField("fieldName", "name");
       bindField("fieldPack", "pack", (value) => value || "Unsorted");
@@ -747,8 +1182,20 @@
       bindField("fieldIcon", "icon");
       bindField("fieldLarge", "large");
       $("fieldEnabled").addEventListener("change", () => updateSelected({ enabled: $("fieldEnabled").checked }));
+      bindAchievementField("achievementFieldName", "name");
+      bindAchievementField("achievementFieldDescription", "description");
+      bindAchievementField("achievementFieldCategory", "category", (value) => value || "Listening");
+      bindAchievementField("achievementFieldConditionType", "conditionType");
+      bindAchievementField("achievementFieldTarget", "target", (value) => Math.max(1, Number(value) || 1));
+      bindAchievementField("achievementFieldRarity", "rarity");
+      bindAchievementField("achievementFieldImage", "image");
+      bindAchievementField("achievementFieldNotes", "notes");
+      $("achievementFieldEnabled").addEventListener("change", () => updateSelectedAchievement({ enabled: $("achievementFieldEnabled").checked }));
+      $("achievementFieldHidden").addEventListener("change", () => updateSelectedAchievement({ hiddenUntilUnlocked: $("achievementFieldHidden").checked }));
+      $("achievementFieldRepeatable").addEventListener("change", () => updateSelectedAchievement({ repeatable: $("achievementFieldRepeatable").checked }));
 
       loadDefaultMetadata();
+      loadAchievementMetadata();
     </script>
   </body>
 </html>
