@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-settings-cleanup-v1";
+const CACHE_NAME = "autodidact-settings-cleanup-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
