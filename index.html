@@ -1191,7 +1191,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "achievements-1";
+      const APP_BUILD = "achievements-2";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2557,6 +2557,7 @@
       let downloads = [];
       let events = [];
       let currentFile = null;
+      let currentPlaybackSource = "";
       let currentObjectUrl = "";
       let lastProgressAt = 0;
       let lastPosition = 0;
@@ -2879,6 +2880,7 @@
         renderStats();
         renderSettings();
         refreshStorageEstimate();
+        evaluateAchievements().catch(() => {});
       }
 
       async function refreshEvents() {
@@ -2943,6 +2945,93 @@
           .reduce((total, count) => total + Math.max(0, count - 1), 0);
       }
 
+      function dayKey(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function listeningDaySet() {
+        const days = new Set();
+        for (const event of events) {
+          const active = (Number(event.seconds) || 0) > 0 || ["play", "complete"].includes(event.type);
+          const key = active ? dayKey(event.at) : "";
+          if (key) days.add(key);
+        }
+        return days;
+      }
+
+      function maxListeningStreakDays() {
+        const times = [...listeningDaySet()]
+          .map((key) => new Date(`${key}T00:00:00`).getTime())
+          .sort((a, b) => a - b);
+        let best = 0;
+        let current = 0;
+        let previous = 0;
+        for (const time of times) {
+          const distance = previous ? Math.round((time - previous) / 86400000) : 0;
+          current = distance === 1 ? current + 1 : 1;
+          best = Math.max(best, current);
+          previous = time;
+        }
+        return best;
+      }
+
+      function weekendSessionCount() {
+        const weekends = new Map();
+        for (const key of listeningDaySet()) {
+          const date = new Date(`${key}T00:00:00`);
+          const day = date.getDay();
+          if (day !== 0 && day !== 6) continue;
+          const saturday = new Date(date);
+          if (day === 0) saturday.setDate(date.getDate() - 1);
+          const weekendKey = dayKey(saturday);
+          const entry = weekends.get(weekendKey) || { saturday: false, sunday: false };
+          if (day === 6) entry.saturday = true;
+          if (day === 0) entry.sunday = true;
+          weekends.set(weekendKey, entry);
+        }
+        return [...weekends.values()].filter((entry) => entry.saturday && entry.sunday).length;
+      }
+
+      function completedLongFileCount(minSeconds) {
+        return completionEvents()
+          .filter((event) => (Number(event.duration) || 0) >= minSeconds)
+          .length;
+      }
+
+      function offlineLocalPlayCount() {
+        return events.filter((event) =>
+          event.type === "play" &&
+          event.playbackSource === "local" &&
+          event.isOffline === true
+        ).length;
+      }
+
+      function assignedCassetteDetails() {
+        return [...cassetteAssignmentFiles().keys()]
+          .map((id) => CASSETTE_ART.find((cassette) => cassetteKey(cassette) === id))
+          .filter(Boolean);
+      }
+
+      function assignedRareCassetteCount() {
+        return assignedCassetteDetails()
+          .filter((cassette) => ["rare", "special"].includes(String(cassette.rarity || "").toLowerCase()))
+          .length;
+      }
+
+      function maxAssignedCassettesInPack() {
+        const byPack = new Map();
+        for (const cassette of assignedCassetteDetails()) {
+          const pack = cassette.pack || "Unsorted";
+          byPack.set(pack, (byPack.get(pack) || 0) + 1);
+        }
+        return Math.max(0, ...byPack.values());
+      }
+
       function achievementProgress(achievement) {
         const target = Number(achievement.target || 1);
         let current = 0;
@@ -2967,6 +3056,32 @@
             break;
           case "completed_files_in_folder":
             current = maxCompletedFilesInFolder();
+            break;
+          case "complete_long_file_seconds":
+            current = completedLongFileCount(target);
+            return {
+              current,
+              target: 1,
+              percent: current ? 100 : 0,
+              unlocked: current >= 1
+            };
+          case "weekend_listening_sessions":
+            current = weekendSessionCount();
+            break;
+          case "listening_streak_days":
+            current = maxListeningStreakDays();
+            break;
+          case "downloaded_files_total":
+            current = downloads.length;
+            break;
+          case "offline_local_plays":
+            current = offlineLocalPlayCount();
+            break;
+          case "rare_cassettes_collected":
+            current = assignedRareCassetteCount();
+            break;
+          case "cassettes_collected_in_pack":
+            current = maxAssignedCassettesInPack();
             break;
           default:
             current = 0;
@@ -3215,6 +3330,8 @@
           previousPosition: Math.round(extra.previousPosition ?? 0),
           delta: Math.round(extra.delta ?? 0),
           trigger: extra.trigger || "",
+          playbackSource: extra.playbackSource || currentPlaybackSource || "",
+          isOffline: navigator.onLine === false,
           syncedAt: "",
           at: new Date().toISOString()
         };
@@ -3817,6 +3934,7 @@
         $("nowPlaying").textContent = "No local file selected";
         $("nowPlayingMeta").textContent = "Select a downloaded file to begin.";
         setPlayerArt(null);
+        currentPlaybackSource = "";
         hideMiniPlayerChrome();
         updatePlayButton();
         updatePlayerProgress();
@@ -4212,6 +4330,7 @@
         if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
         currentObjectUrl = URL.createObjectURL(file.blob);
         currentFile = file;
+        currentPlaybackSource = "local";
         endingHandled = false;
         playbackEndedNaturally = false;
         lastProgressAt = 0;
@@ -4240,6 +4359,7 @@
           ...file,
           size: Number(file.size || 0)
         };
+        currentPlaybackSource = "online";
         endingHandled = false;
         playbackEndedNaturally = false;
         lastProgressAt = 0;
