@@ -758,6 +758,18 @@
                   <input id="storeFieldTheme">
                 </label>
                 <label>
+                  Status
+                  <select id="storeFieldStatus">
+                    <option value="comingSoon">comingSoon</option>
+                    <option value="unlocked">unlocked</option>
+                    <option value="locked">locked</option>
+                  </select>
+                </label>
+                <label>
+                  Store Type
+                  <input id="storeFieldStoreType">
+                </label>
+                <label>
                   Unlock Condition
                   <input id="storeFieldUnlockCondition">
                 </label>
@@ -772,6 +784,10 @@
                 <label class="wide">
                   Description
                   <textarea id="storeFieldDescription"></textarea>
+                </label>
+                <label class="wide">
+                  Flavor Text
+                  <textarea id="storeFieldFlavorText"></textarea>
                 </label>
                 <label class="wide">
                   Large Art Path
@@ -1299,10 +1315,13 @@
           id: store.id || `store-${String(index + 1).padStart(3, "0")}`,
           name: store.name || `Store ${String(index + 1).padStart(3, "0")}`,
           description: store.description || "",
+          flavorText: store.flavorText || "",
           large: store.large || "",
           enabled: store.enabled !== false,
+          status: store.status || (store.lockedByDefault === true ? "locked" : "comingSoon"),
           lockedByDefault: store.lockedByDefault === true,
           unlockCondition: store.unlockCondition || "",
+          storeType: store.storeType || "Cassette shop",
           theme: store.theme || "",
           notes: store.notes || ""
         };
@@ -1335,7 +1354,10 @@
             store.id,
             store.name,
             store.description,
+            store.flavorText,
             store.theme,
+            store.status,
+            store.storeType,
             store.unlockCondition,
             store.notes
           ].join(" ").toLowerCase();
@@ -1345,10 +1367,12 @@
 
       function renderStoreList() {
         const enabled = storeMetadata.stores.filter((store) => store.enabled).length;
-        const locked = storeMetadata.stores.filter((store) => store.lockedByDefault).length;
+        const locked = storeMetadata.stores.filter((store) => store.status === "locked" || store.lockedByDefault).length;
+        const comingSoon = storeMetadata.stores.filter((store) => store.status === "comingSoon").length;
         $("storeCounts").innerHTML = [
           `<span class="pill">${storeMetadata.stores.length} stores</span>`,
           `<span class="pill">${enabled} enabled</span>`,
+          `<span class="pill">${comingSoon} coming soon</span>`,
           `<span class="pill">${locked} locked</span>`
         ].join("");
         const items = filteredStores();
@@ -1357,7 +1381,7 @@
             <img src="${escapeHtml(assetUrl(store.large))}" alt="">
             <span>
               <span class="row-title">${escapeHtml(store.name)}</span>
-              <span class="row-subtitle">${escapeHtml(store.theme || "No theme")}${store.enabled ? "" : " - disabled"}${store.lockedByDefault ? " - locked" : ""}</span>
+              <span class="row-subtitle">${escapeHtml(store.status || "comingSoon")} - ${escapeHtml(store.storeType || "Cassette shop")}${store.enabled ? "" : " - disabled"}${store.lockedByDefault ? " - locked by default" : ""}</span>
             </span>
             <span class="pill">${escapeHtml(store.id)}</span>
           </button>
@@ -1375,10 +1399,13 @@
         $("storeFieldId").value = store.id;
         $("storeFieldName").value = store.name;
         $("storeFieldTheme").value = store.theme;
+        $("storeFieldStatus").value = store.status || "comingSoon";
+        $("storeFieldStoreType").value = store.storeType;
         $("storeFieldUnlockCondition").value = store.unlockCondition;
         $("storeFieldEnabled").checked = store.enabled;
         $("storeFieldLocked").checked = store.lockedByDefault;
         $("storeFieldDescription").value = store.description;
+        $("storeFieldFlavorText").value = store.flavorText;
         $("storeFieldLarge").value = store.large;
         $("storeFieldNotes").value = store.notes;
         $("storeImagePreview").src = assetUrl(store.large);
@@ -1674,8 +1701,11 @@
       $("achievementFieldRepeatable").addEventListener("change", () => updateSelectedAchievement({ repeatable: $("achievementFieldRepeatable").checked }));
       bindStoreField("storeFieldName", "name");
       bindStoreField("storeFieldTheme", "theme");
+      bindStoreField("storeFieldStatus", "status");
+      bindStoreField("storeFieldStoreType", "storeType");
       bindStoreField("storeFieldUnlockCondition", "unlockCondition");
       bindStoreField("storeFieldDescription", "description");
+      bindStoreField("storeFieldFlavorText", "flavorText");
       bindStoreField("storeFieldLarge", "large");
       bindStoreField("storeFieldNotes", "notes");
       $("storeFieldEnabled").addEventListener("change", () => updateSelectedStore({ enabled: $("storeFieldEnabled").checked }));
