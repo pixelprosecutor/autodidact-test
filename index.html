@@ -391,6 +391,10 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         background: rgba(7, 22, 47, .8);
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
       }
 
       .store-card.locked {
@@ -411,6 +415,31 @@
 
       .store-card p {
         margin: 0;
+      }
+
+      .store-detail-art {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(7, 22, 47, .55);
+      }
+
+      .store-detail-art img {
+        width: min(100%, 384px);
+        max-height: 256px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .future-slot {
+        border: 1px dashed rgba(125, 211, 252, .5);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(7, 22, 47, .45);
       }
 
       .cassette-card strong,
@@ -1052,6 +1081,24 @@
         </section>
       </section>
 
+      <section id="storeDetailView" class="view">
+        <section class="panel episode-card">
+          <div class="episode-top">
+            <button id="storeDetailBack" type="button">Back</button>
+          </div>
+          <div class="store-detail-art" id="storeDetailArt"></div>
+          <div>
+            <h2 class="episode-title" id="storeDetailTitle">Store</h2>
+            <p class="episode-meta" id="storeDetailMeta"></p>
+          </div>
+          <div class="stats-list" id="storeDetailStats"></div>
+          <section class="future-slot">
+            <h2>Inventory</h2>
+            <p>Store inventory and cassette trading will live here later.</p>
+          </section>
+        </section>
+      </section>
+
       <section id="settingsView" class="view">
         <div class="summary-grid">
           <div>
@@ -1239,7 +1286,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "stores-1";
+      const APP_BUILD = "stores-2";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2629,6 +2676,7 @@
       let activeAnnouncementIndex = 0;
       let ACHIEVEMENTS = ACHIEVEMENT_FALLBACK;
       let STORES = [];
+      let selectedStoreId = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -3752,9 +3800,11 @@
           const data = await response.json();
           STORES = Array.isArray(data.stores) ? data.stores.filter((store) => store.enabled !== false) : [];
           renderStores();
+          renderStoreDetail();
         } catch (error) {
           console.warn(error.message || "Store metadata could not be loaded.");
           renderStores();
+          renderStoreDetail();
         }
       }
 
@@ -3776,16 +3826,53 @@
             locked ? (store.unlockCondition ? `Unlock: ${store.unlockCondition}` : "Locked") : "Unlocked"
           ].filter(Boolean).join(" - ");
           return `
-            <article class="store-card ${locked ? "locked" : ""}">
+            <button class="store-card ${locked ? "locked" : ""}" type="button" data-store-id="${escapeHtml(store.id || "")}" aria-label="Open ${escapeHtml(store.name || store.id || "Store")}">
               ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
               <div>
                 <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
                 <p>${escapeHtml(details)}</p>
               </div>
               ${store.description ? `<p>${escapeHtml(store.description)}</p>` : ""}
-            </article>
+            </button>
           `;
         }).join("");
+        list.querySelectorAll("[data-store-id]").forEach((button) => {
+          button.addEventListener("click", () => openStoreDetail(button.dataset.storeId));
+        });
+      }
+
+      function currentStore() {
+        return STORES.find((store) => store.id === selectedStoreId) || null;
+      }
+
+      function renderStoreDetail() {
+        const store = currentStore();
+        if (!store) {
+          $("storeDetailArt").innerHTML = "";
+          $("storeDetailTitle").textContent = "Store";
+          $("storeDetailMeta").textContent = "Choose a store from the Stores tab.";
+          $("storeDetailStats").innerHTML = "";
+          return;
+        }
+        const locked = store.lockedByDefault === true;
+        $("storeDetailArt").innerHTML = store.large
+          ? `<img src="${escapeHtml(store.large)}" alt="">`
+          : "<p>No store art assigned yet.</p>";
+        $("storeDetailTitle").textContent = store.name || store.id || "Store";
+        $("storeDetailMeta").textContent = store.description || (locked ? "Locked store." : "Unlocked store.");
+        $("storeDetailStats").innerHTML = rows([
+          ["Status", locked ? "Locked" : "Unlocked"],
+          ["Theme", store.theme || "None"],
+          ["Unlock condition", store.unlockCondition || (locked ? "Not specified" : "Already available")],
+          ["Store ID", store.id || "None"],
+          ["Notes", store.notes || "None"]
+        ]);
+      }
+
+      function openStoreDetail(storeId) {
+        selectedStoreId = storeId || "";
+        renderStoreDetail();
+        showView("storeDetail");
       }
 
       function cassetteForFile(file) {
@@ -4843,6 +4930,9 @@
         collectionViewMode = "large";
         renderCollection();
       });
+      $("storeDetailBack").addEventListener("click", () => {
+        showView("stores");
+      });
       $("announcementAction").addEventListener("click", () => {
         runAnnouncementAction(currentAnnouncement());
       });
@@ -4990,6 +5080,7 @@
       renderSettings();
       renderCollection();
       renderStores();
+      renderStoreDetail();
       tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {
