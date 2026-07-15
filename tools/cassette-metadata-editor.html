@@ -194,7 +194,8 @@
       }
 
       .cassette-row,
-      .achievement-row {
+      .achievement-row,
+      .store-row {
         display: grid;
         grid-template-columns: 42px minmax(0, 1fr) auto;
         gap: 10px;
@@ -206,13 +207,15 @@
       }
 
       .cassette-row[aria-selected="true"],
-      .achievement-row[aria-selected="true"] {
+      .achievement-row[aria-selected="true"],
+      .store-row[aria-selected="true"] {
         border-color: var(--focus);
         box-shadow: 0 0 0 1px var(--focus) inset;
       }
 
       .cassette-row img,
-      .achievement-row img {
+      .achievement-row img,
+      .store-row img {
         width: 34px;
         height: 34px;
         object-fit: contain;
@@ -315,6 +318,23 @@
       .achievement-art-preview img {
         width: min(100%, 240px);
         max-height: 220px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .store-art-preview {
+        display: grid;
+        place-items: center;
+        min-height: 230px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+        overflow: hidden;
+      }
+
+      .store-art-preview img {
+        width: min(100%, 520px);
+        max-height: 320px;
         object-fit: contain;
         image-rendering: pixelated;
       }
@@ -702,12 +722,79 @@
       </section>
 
       <section id="storesTab" class="tab-panel">
-        <section class="editor">
-          <section class="panel placeholder-panel">
-            <h2>Store Management</h2>
-            <p class="row-subtitle">This tab is reserved for the cassette store system.</p>
-            <div class="empty">
-              Later, this can manage store names, unlock conditions, cassette inventories, prices, trade-in rules, rarity odds, and whether a store is currently available.
+        <section class="workspace">
+          <aside class="sidebar">
+            <div class="toolbar">
+              <label>
+                Search
+                <input id="storeSearch" type="search" placeholder="Name, theme, condition">
+              </label>
+              <div id="storeCounts" class="counts"></div>
+            </div>
+            <div id="storeList" class="list"></div>
+          </aside>
+
+          <section class="editor">
+            <div id="storeEmptyState" class="panel empty">Load store metadata to begin.</div>
+
+            <section id="storePreviewPanel" class="panel" hidden>
+              <div class="store-art-preview">
+                <img id="storeImagePreview" alt="">
+              </div>
+            </section>
+
+            <section id="storeFormPanel" class="panel" hidden>
+              <div class="form-grid">
+                <label>
+                  ID
+                  <input id="storeFieldId" disabled>
+                </label>
+                <label>
+                  Name
+                  <input id="storeFieldName">
+                </label>
+                <label>
+                  Theme
+                  <input id="storeFieldTheme">
+                </label>
+                <label>
+                  Unlock Condition
+                  <input id="storeFieldUnlockCondition">
+                </label>
+                <label class="check-row">
+                  <input id="storeFieldEnabled" type="checkbox">
+                  Enabled
+                </label>
+                <label class="check-row">
+                  <input id="storeFieldLocked" type="checkbox">
+                  Locked by default
+                </label>
+                <label class="wide">
+                  Description
+                  <textarea id="storeFieldDescription"></textarea>
+                </label>
+                <label class="wide">
+                  Large Art Path
+                  <input id="storeFieldLarge">
+                </label>
+                <label class="wide">
+                  Notes
+                  <textarea id="storeFieldNotes"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="panel json-panel">
+              <div class="counts">
+                <button id="loadStores" type="button">Load Stores</button>
+                <button id="storeDownloadJson" type="button">Download Store JSON</button>
+              </div>
+              <div class="counts" id="storeExportSummary"></div>
+              <textarea id="storeJsonOutput" class="json-output" readonly spellcheck="false"></textarea>
+            </section>
+          </section>
+        </section>
+      </section>
             </div>
           </section>
         </section>
@@ -743,6 +830,7 @@
       const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "../assets/achievements/achievement-metadata.json";
       const ACHIEVEMENT_ART_URL = "../assets/achievements/achievement-art.json";
+      const STORE_METADATA_URL = "../assets/stores/store-metadata.json";
       const $ = (id) => document.getElementById(id);
 
       let metadata = { version: 2, updatedAt: "", cassettes: [] };
@@ -752,6 +840,9 @@
       let selectedAchievementId = "";
       let achievementDirty = false;
       let achievementArt = { version: 1, updatedAt: "", images: [] };
+      let storeMetadata = { version: 1, updatedAt: "", stores: [] };
+      let selectedStoreId = "";
+      let storeDirty = false;
 
       function setStatus(message) {
         $("status").textContent = message;
@@ -1203,6 +1294,143 @@
         });
       }
 
+      function normalizeStore(store, index) {
+        return {
+          id: store.id || `store-${String(index + 1).padStart(3, "0")}`,
+          name: store.name || `Store ${String(index + 1).padStart(3, "0")}`,
+          description: store.description || "",
+          large: store.large || "",
+          enabled: store.enabled !== false,
+          lockedByDefault: store.lockedByDefault === true,
+          unlockCondition: store.unlockCondition || "",
+          theme: store.theme || "",
+          notes: store.notes || ""
+        };
+      }
+
+      function normalizeStoreMetadata(data) {
+        const stores = Array.isArray(data?.stores) ? data.stores : [];
+        return {
+          version: Number(data?.version || 1),
+          updatedAt: data?.updatedAt || new Date().toISOString().slice(0, 10),
+          stores: stores.map(normalizeStore)
+        };
+      }
+
+      function currentStore() {
+        return storeMetadata.stores.find((store) => store.id === selectedStoreId) || null;
+      }
+
+      function sortedStores(items = storeMetadata.stores) {
+        return [...items].sort((a, b) =>
+          String(a.theme || "").localeCompare(String(b.theme || "")) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      }
+
+      function filteredStores() {
+        const query = $("storeSearch").value.trim().toLowerCase();
+        return sortedStores().filter((store) => {
+          const searchText = [
+            store.id,
+            store.name,
+            store.description,
+            store.theme,
+            store.unlockCondition,
+            store.notes
+          ].join(" ").toLowerCase();
+          return !query || searchText.includes(query);
+        });
+      }
+
+      function renderStoreList() {
+        const enabled = storeMetadata.stores.filter((store) => store.enabled).length;
+        const locked = storeMetadata.stores.filter((store) => store.lockedByDefault).length;
+        $("storeCounts").innerHTML = [
+          `<span class="pill">${storeMetadata.stores.length} stores</span>`,
+          `<span class="pill">${enabled} enabled</span>`,
+          `<span class="pill">${locked} locked</span>`
+        ].join("");
+        const items = filteredStores();
+        $("storeList").innerHTML = items.map((store) => `
+          <button class="store-row" data-store-id="${escapeHtml(store.id)}" aria-selected="${store.id === selectedStoreId ? "true" : "false"}">
+            <img src="${escapeHtml(assetUrl(store.large))}" alt="">
+            <span>
+              <span class="row-title">${escapeHtml(store.name)}</span>
+              <span class="row-subtitle">${escapeHtml(store.theme || "No theme")}${store.enabled ? "" : " - disabled"}${store.lockedByDefault ? " - locked" : ""}</span>
+            </span>
+            <span class="pill">${escapeHtml(store.id)}</span>
+          </button>
+        `).join("") || '<div class="empty">No stores match the current filters.</div>';
+
+        $("storeList").querySelectorAll("[data-store-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedStoreId = button.dataset.storeId;
+            renderStores();
+          });
+        });
+      }
+
+      function fillStoreForm(store) {
+        $("storeFieldId").value = store.id;
+        $("storeFieldName").value = store.name;
+        $("storeFieldTheme").value = store.theme;
+        $("storeFieldUnlockCondition").value = store.unlockCondition;
+        $("storeFieldEnabled").checked = store.enabled;
+        $("storeFieldLocked").checked = store.lockedByDefault;
+        $("storeFieldDescription").value = store.description;
+        $("storeFieldLarge").value = store.large;
+        $("storeFieldNotes").value = store.notes;
+        $("storeImagePreview").src = assetUrl(store.large);
+      }
+
+      function renderStoreEditor() {
+        const store = currentStore();
+        $("storeEmptyState").hidden = !!store || storeMetadata.stores.length > 0;
+        $("storePreviewPanel").hidden = !store;
+        $("storeFormPanel").hidden = !store;
+        if (store) fillStoreForm(store);
+      }
+
+      function storeOutputJson() {
+        return JSON.stringify({
+          version: 1,
+          updatedAt: new Date().toISOString().slice(0, 10),
+          stores: sortedStores().map((store, index) => normalizeStore(store, index))
+        }, null, 2);
+      }
+
+      function renderStoreOutput() {
+        $("storeJsonOutput").value = storeMetadata.stores.length ? storeOutputJson() : "";
+        $("storeExportSummary").innerHTML = storeMetadata.stores.length
+          ? [
+              `<span class="pill">${storeDirty ? "Unsaved changes" : "No unsaved edits"}</span>`,
+              `<span class="pill">Replace assets/stores/store-metadata.json</span>`
+            ].join("")
+          : "";
+      }
+
+      function renderStores() {
+        renderStoreList();
+        renderStoreEditor();
+        renderStoreOutput();
+      }
+
+      function updateSelectedStore(updates) {
+        const store = currentStore();
+        if (!store) return;
+        Object.assign(store, updates);
+        storeDirty = true;
+        renderStores();
+        setStatus("Edited store metadata. Download Store JSON when you are ready.");
+      }
+
+      function bindStoreField(id, key, transform = (value) => value) {
+        $(id).addEventListener("input", () => {
+          updateSelectedStore({ [key]: transform($(id).value) });
+        });
+      }
+
       async function loadDefaultMetadata() {
         try {
           const response = await fetch(`${METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
@@ -1346,6 +1574,36 @@
         setStatus("achievement-metadata.json downloaded.");
       }
 
+      async function loadStoreMetadata() {
+        try {
+          const response = await fetch(`${STORE_METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Store metadata load failed: ${response.status}`);
+          storeMetadata = normalizeStoreMetadata(await response.json());
+          selectedStoreId = storeMetadata.stores[0]?.id || "";
+          storeDirty = false;
+          renderStores();
+          setStatus(`Loaded ${storeMetadata.stores.length} stores.`);
+        } catch (error) {
+          setStatus(error.message || "Could not load store metadata.");
+        }
+      }
+
+      function downloadStoreJson() {
+        if (!storeMetadata.stores.length) return;
+        const blob = new Blob([storeOutputJson()], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "store-metadata.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        storeDirty = false;
+        renderStoreOutput();
+        setStatus("store-metadata.json downloaded.");
+      }
+
       function activateTab(tabName) {
         document.querySelectorAll(".tab-button").forEach((button) => {
           button.setAttribute("aria-selected", String(button.dataset.tab === tabName));
@@ -1360,6 +1618,7 @@
         activateTab("achievements");
         loadAchievementMetadata();
       });
+      $("loadStores").addEventListener("click", loadStoreMetadata);
       $("importButton").addEventListener("click", () => $("importFile").click());
       $("importFile").addEventListener("change", () => importJsonFile($("importFile").files[0]));
       $("copyJson").addEventListener("click", () => copyJson().catch(() => setStatus("Could not copy JSON.")));
@@ -1377,6 +1636,8 @@
       $("achievementSearch").addEventListener("input", renderAchievementList);
       $("achievementCategoryFilter").addEventListener("change", renderAchievementList);
       $("achievementRarityFilter").addEventListener("change", renderAchievementList);
+      $("storeDownloadJson").addEventListener("click", downloadStoreJson);
+      $("storeSearch").addEventListener("input", renderStoreList);
       document.querySelectorAll(".tab-button").forEach((button) => {
         button.addEventListener("click", () => activateTab(button.dataset.tab));
       });
@@ -1402,10 +1663,19 @@
       $("achievementFieldEnabled").addEventListener("change", () => updateSelectedAchievement({ enabled: $("achievementFieldEnabled").checked }));
       $("achievementFieldHidden").addEventListener("change", () => updateSelectedAchievement({ hiddenUntilUnlocked: $("achievementFieldHidden").checked }));
       $("achievementFieldRepeatable").addEventListener("change", () => updateSelectedAchievement({ repeatable: $("achievementFieldRepeatable").checked }));
+      bindStoreField("storeFieldName", "name");
+      bindStoreField("storeFieldTheme", "theme");
+      bindStoreField("storeFieldUnlockCondition", "unlockCondition");
+      bindStoreField("storeFieldDescription", "description");
+      bindStoreField("storeFieldLarge", "large");
+      bindStoreField("storeFieldNotes", "notes");
+      $("storeFieldEnabled").addEventListener("change", () => updateSelectedStore({ enabled: $("storeFieldEnabled").checked }));
+      $("storeFieldLocked").addEventListener("change", () => updateSelectedStore({ lockedByDefault: $("storeFieldLocked").checked }));
 
       loadDefaultMetadata();
       loadAchievementMetadata();
       loadAchievementArt();
+      loadStoreMetadata();
     </script>
   </body>
 </html>
