@@ -1494,19 +1494,22 @@
           selectedAchievementId = achievementMetadata.achievements[0]?.id || "";
           achievementDirty = false;
           renderAchievements();
-          setStatus(`Loaded ${achievementMetadata.achievements.length} achievements.`);
+          await loadAchievementArt({ scroll: false });
+          setStatus(`Loaded ${achievementMetadata.achievements.length} achievements and ${achievementArt.images.length} art files.`);
         } catch (error) {
           setStatus(error.message || "Could not load achievement metadata.");
         }
       }
 
-      async function loadAchievementArt() {
+      async function loadAchievementArt(options = {}) {
         try {
           const response = await fetch(`${ACHIEVEMENT_ART_URL}?t=${Date.now()}`, { cache: "no-store" });
           if (!response.ok) throw new Error(`Achievement art load failed: ${response.status}`);
           achievementArt = normalizeAchievementArt(await response.json());
           renderAchievementArtPicker();
-          $("achievementArtGrid").scrollIntoView({ behavior: "smooth", block: "start" });
+          if (options.scroll !== false) {
+            $("achievementArtGrid").scrollIntoView({ behavior: "smooth", block: "start" });
+          }
           setStatus(`Loaded ${achievementArt.images.length} achievement art file${achievementArt.images.length === 1 ? "" : "s"}.`);
         } catch (error) {
           const message = error.message || "Could not load achievement art.";
@@ -1674,7 +1677,6 @@
 
       loadDefaultMetadata();
       loadAchievementMetadata();
-      loadAchievementArt();
       loadStoreMetadata();
     </script>
   </body>
