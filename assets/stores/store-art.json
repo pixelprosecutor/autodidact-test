@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-14",
+  "stores": [
+    {
+      "id": "barbershop",
+      "name": "Barbershop",
+      "large": "assets/stores/barbershop-large-384x256.png"
+    },
+    {
+      "id": "bookstore-1",
+      "name": "Bookstore 1",
+      "large": "assets/stores/bookstore-1-large-384x256.png"
+    },
+    {
+      "id": "bookstore-2",
+      "name": "Bookstore 2",
+      "large": "assets/stores/bookstore-2-large-384x256.png"
+    },
+    {
+      "id": "church-basement",
+      "name": "Church Basement",
+      "large": "assets/stores/church-basement-large-384x256.png"
+    },
+    {
+      "id": "college-bookstore",
+      "name": "College Bookstore",
+      "large": "assets/stores/college-bookstore-large-384x256.png"
+    },
+    {
+      "id": "concert",
+      "name": "Concert",
+      "large": "assets/stores/concert-large-384x256.png"
+    },
+    {
+      "id": "gas-station-1",
+      "name": "Gas Station 1",
+      "large": "assets/stores/gas-station-1-large-384x256.png"
+    },
+    {
+      "id": "gas-station-2",
+      "name": "Gas Station 2",
+      "large": "assets/stores/gas-station-2-large-384x256.png"
+    },
+    {
+      "id": "library",
+      "name": "Library",
+      "large": "assets/stores/library-large-384x256.png"
+    },
+    {
+      "id": "locker-1",
+      "name": "Locker 1",
+      "large": "assets/stores/locker-1-large-384x256.png"
+    },
+    {
+      "id": "locker-2",
+      "name": "Locker 2",
+      "large": "assets/stores/locker-2-large-384x256.png"
+    },
+    {
+      "id": "locker-3",
+      "name": "Locker 3",
+      "large": "assets/stores/locker-3-large-384x256.png"
+    },
+    {
+      "id": "roller-rink",
+      "name": "Roller Rink",
+      "large": "assets/stores/roller-rink-large-384x256.png"
+    },
+    {
+      "id": "store-exterior-1",
+      "name": "Store Exterior 1",
+      "large": "assets/stores/store-exterior-1-large-384x256.png"
+    },
+    {
+      "id": "store-exterior-2",
+      "name": "Store Exterior 2",
+      "large": "assets/stores/store-exterior-2-large-384x256.png"
+    },
+    {
+      "id": "store-exterior-3",
+      "name": "Store Exterior 3",
+      "large": "assets/stores/store-exterior-3-large-384x256.png"
+    },
+    {
+      "id": "store-exterior-4",
+      "name": "Store Exterior 4",
+      "large": "assets/stores/store-exterior-4-large-384x256.png"
+    },
+    {
+      "id": "store-interior-1",
+      "name": "Store Interior 1",
+      "large": "assets/stores/store-interior-1-large-384x256.png"
+    },
+    {
+      "id": "store-interior-2",
+      "name": "Store Interior 2",
+      "large": "assets/stores/store-interior-2-large-384x256.png"
+    },
+    {
+      "id": "store-interior-3",
+      "name": "Store Interior 3",
+      "large": "assets/stores/store-interior-3-large-384x256.png"
+    },
+    {
+      "id": "store-interior-4",
+      "name": "Store Interior 4",
+      "large": "assets/stores/store-interior-4-large-384x256.png"
+    },
+    {
+      "id": "street-1",
+      "name": "Street 1",
+      "large": "assets/stores/street-1-large-384x256.png"
+    },
+    {
+      "id": "street-2",
+      "name": "Street 2",
+      "large": "assets/stores/street-2-large-384x256.png"
+    },
+    {
+      "id": "the-car",
+      "name": "The Car",
+      "large": "assets/stores/the-car-large-384x256.png"
+    },
+    {
+      "id": "the-couch",
+      "name": "The Couch",
+      "large": "assets/stores/the-couch-large-384x256.png"
+    }
+  ]
+}
