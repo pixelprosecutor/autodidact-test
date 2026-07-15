@@ -264,6 +264,11 @@
         align-items: center;
       }
 
+      .achievement-preview {
+        grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+        align-items: start;
+      }
+
       .small-preview {
         display: grid;
         place-items: center;
@@ -293,6 +298,23 @@
       .large-preview img {
         width: min(100%, 576px);
         max-height: 360px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .achievement-art-preview {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+        overflow: hidden;
+      }
+
+      .achievement-art-preview img {
+        width: min(100%, 240px);
+        max-height: 220px;
         object-fit: contain;
         image-rendering: pixelated;
       }
@@ -346,6 +368,50 @@
 
       .placeholder-panel {
         max-width: 760px;
+      }
+
+      .art-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .art-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+        gap: 10px;
+        max-height: 520px;
+        overflow: auto;
+      }
+
+      .art-card {
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+        min-height: 142px;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .art-card[aria-selected="true"] {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 1px var(--focus) inset;
+      }
+
+      .art-card img {
+        width: 86px;
+        height: 86px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .art-card small {
+        display: block;
+        width: 100%;
+        color: var(--muted);
+        font-size: 11px;
+        overflow-wrap: anywhere;
       }
 
       @media (max-width: 820px) {
@@ -528,11 +594,18 @@
             <div id="achievementEmptyState" class="panel empty">Load achievement metadata to begin.</div>
 
             <section id="achievementPreviewPanel" class="panel" hidden>
-              <div class="preview">
-                <div class="small-preview">
+              <div class="preview achievement-preview">
+                <div class="achievement-art-preview">
                   <img id="achievementImagePreview" alt="">
                 </div>
-                <div class="counts" id="achievementProgressSummary"></div>
+                <div>
+                  <div class="counts" id="achievementProgressSummary"></div>
+                  <div class="art-tools">
+                    <button id="cleanAchievementImagePath" type="button">Clean Image Path</button>
+                    <button id="openAchievementImage" type="button">Open Image</button>
+                    <button id="loadAchievementArt" type="button">Load Art Picker</button>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -619,6 +692,11 @@
               <div class="counts" id="achievementExportSummary"></div>
               <textarea id="achievementJsonOutput" class="json-output" readonly spellcheck="false"></textarea>
             </section>
+
+            <section class="panel json-panel">
+              <div class="counts" id="achievementArtSummary"></div>
+              <div id="achievementArtGrid" class="art-grid"></div>
+            </section>
           </section>
         </section>
       </section>
@@ -664,6 +742,7 @@
     <script>
       const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "../assets/achievements/achievement-metadata.json";
+      const ACHIEVEMENT_ART_URL = "../assets/achievements/achievement-art.json";
       const $ = (id) => document.getElementById(id);
 
       let metadata = { version: 2, updatedAt: "", cassettes: [] };
@@ -672,6 +751,7 @@
       let achievementMetadata = { version: 1, updatedAt: "", achievements: [] };
       let selectedAchievementId = "";
       let achievementDirty = false;
+      let achievementArt = { version: 1, updatedAt: "", images: [] };
 
       function setStatus(message) {
         $("status").textContent = message;
@@ -1020,6 +1100,87 @@
         renderAchievementList();
         renderAchievementEditor();
         renderAchievementOutput();
+        renderAchievementArtPicker();
+      }
+
+      function normalizeImagePath(value) {
+        let path = String(value || "").trim().replaceAll("\\", "/");
+        if (!path) return "";
+        try {
+          if (/^https?:\/\//i.test(path)) {
+            const url = new URL(path);
+            path = decodeURIComponent(url.pathname);
+          }
+        } catch {
+          // Keep the original text if the pasted URL is malformed.
+        }
+        const assetIndex = path.toLowerCase().lastIndexOf("/assets/");
+        if (assetIndex >= 0) path = path.slice(assetIndex + 1);
+        const bareAssetIndex = path.toLowerCase().lastIndexOf("assets/");
+        if (bareAssetIndex >= 0) path = path.slice(bareAssetIndex);
+        path = path.replace(/^\/+/, "");
+        return path;
+      }
+
+      function assignedAchievementArtCounts() {
+        const counts = new Map();
+        for (const achievement of achievementMetadata.achievements) {
+          const path = normalizeImagePath(achievement.image);
+          if (!path) continue;
+          counts.set(path, (counts.get(path) || 0) + 1);
+        }
+        return counts;
+      }
+
+      function normalizeAchievementArt(data) {
+        const images = Array.isArray(data?.images) ? data.images : [];
+        return {
+          version: Number(data?.version || 1),
+          updatedAt: data?.updatedAt || "",
+          images: images
+            .map((image) => {
+              const path = normalizeImagePath(image.path || image.file || image);
+              if (!path) return null;
+              return {
+                path,
+                file: image.file || path.split("/").pop(),
+                label: image.label || (image.file || path.split("/").pop()).replace(/\.[^.]+$/, "")
+              };
+            })
+            .filter(Boolean)
+        };
+      }
+
+      function renderAchievementArtPicker() {
+        const grid = $("achievementArtGrid");
+        const summary = $("achievementArtSummary");
+        if (!grid || !summary) return;
+        const assigned = assignedAchievementArtCounts();
+        const currentPath = normalizeImagePath(currentAchievement()?.image || "");
+        const imagePaths = new Set(achievementArt.images.map((image) => image.path));
+        const missing = [...assigned.keys()].filter((path) => path && !imagePaths.has(path));
+        const used = achievementArt.images.filter((image) => assigned.has(image.path)).length;
+        summary.innerHTML = [
+          `<span class="pill">${achievementArt.images.length} art file${achievementArt.images.length === 1 ? "" : "s"}</span>`,
+          `<span class="pill">${used} used</span>`,
+          `<span class="pill">${Math.max(0, achievementArt.images.length - used)} unused</span>`,
+          missing.length ? `<span class="pill">${missing.length} missing path${missing.length === 1 ? "" : "s"}</span>` : ""
+        ].filter(Boolean).join("");
+        grid.innerHTML = achievementArt.images.map((image) => {
+          const count = assigned.get(image.path) || 0;
+          return `
+            <button class="art-card" data-art-path="${escapeHtml(image.path)}" aria-selected="${image.path === currentPath ? "true" : "false"}" type="button">
+              <img src="${escapeHtml(assetUrl(image.path))}" alt="">
+              <small>${escapeHtml(image.label)}</small>
+              <span class="pill">${count ? `${count} assigned` : "unused"}</span>
+            </button>
+          `;
+        }).join("") || '<div class="empty">No achievement art manifest loaded yet.</div>';
+        grid.querySelectorAll("[data-art-path]").forEach((button) => {
+          button.addEventListener("click", () => {
+            updateSelectedAchievement({ image: button.dataset.artPath });
+          });
+        });
       }
 
       function updateSelectedAchievement(updates) {
@@ -1106,6 +1267,36 @@
         }
       }
 
+      async function loadAchievementArt() {
+        try {
+          const response = await fetch(`${ACHIEVEMENT_ART_URL}?t=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`Achievement art load failed: ${response.status}`);
+          achievementArt = normalizeAchievementArt(await response.json());
+          renderAchievementArtPicker();
+          setStatus(`Loaded ${achievementArt.images.length} achievement art file${achievementArt.images.length === 1 ? "" : "s"}.`);
+        } catch (error) {
+          setStatus(error.message || "Could not load achievement art.");
+        }
+      }
+
+      function cleanSelectedAchievementImagePath() {
+        const achievement = currentAchievement();
+        if (!achievement) return;
+        const cleaned = normalizeImagePath($("achievementFieldImage").value);
+        updateSelectedAchievement({ image: cleaned });
+        setStatus(cleaned ? `Cleaned image path to ${cleaned}.` : "Image path cleared.");
+      }
+
+      function openSelectedAchievementImage() {
+        const achievement = currentAchievement();
+        const path = normalizeImagePath(achievement?.image || $("achievementFieldImage").value);
+        if (!path) {
+          setStatus("No achievement image path to open.");
+          return;
+        }
+        window.open(assetUrl(path), "_blank", "noopener");
+      }
+
       function importAchievementJsonFile(file) {
         if (!file) return;
         const reader = new FileReader();
@@ -1172,6 +1363,9 @@
       $("achievementImportFile").addEventListener("change", () => importAchievementJsonFile($("achievementImportFile").files[0]));
       $("achievementCopyJson").addEventListener("click", () => copyAchievementJson().catch(() => setStatus("Could not copy achievement JSON.")));
       $("achievementDownloadJson").addEventListener("click", downloadAchievementJson);
+      $("cleanAchievementImagePath").addEventListener("click", cleanSelectedAchievementImagePath);
+      $("openAchievementImage").addEventListener("click", openSelectedAchievementImage);
+      $("loadAchievementArt").addEventListener("click", loadAchievementArt);
       $("achievementSearch").addEventListener("input", renderAchievementList);
       $("achievementCategoryFilter").addEventListener("change", renderAchievementList);
       $("achievementRarityFilter").addEventListener("change", renderAchievementList);
@@ -1203,6 +1397,7 @@
 
       loadDefaultMetadata();
       loadAchievementMetadata();
+      loadAchievementArt();
     </script>
   </body>
 </html>
