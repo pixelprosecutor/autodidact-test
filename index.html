@@ -569,6 +569,15 @@
         text-align: right;
       }
 
+      .folder-stat-row strong {
+        text-align: left;
+      }
+
+      .folder-stat-row span {
+        color: var(--muted);
+        text-align: right;
+      }
+
       .status {
         margin-bottom: 0;
         color: var(--warn);
@@ -999,7 +1008,7 @@
 
       <section id="statsView" class="view">
         <section class="panel">
-          <h2>Local stats</h2>
+          <h2>Statistics</h2>
           <div class="summary-grid">
             <div>
               <span id="statsAudioCount">0</span>
@@ -1016,11 +1025,6 @@
           </div>
           <p id="statsStatus">No local listening events recorded yet.</p>
           <div class="stats-list" id="coreStats"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Recent activity</h2>
-          <div class="stats-list" id="recentStats"></div>
         </section>
 
         <section class="panel">
@@ -1282,7 +1286,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "stores-3";
+      const APP_BUILD = "stores-4";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2765,6 +2769,15 @@
         `).join("");
       }
 
+      function folderRows(items) {
+        return items.map(([label, value]) => `
+          <div class="stat-row folder-stat-row">
+            <strong>${escapeHtml(label)}</strong>
+            <span>${escapeHtml(value)}</span>
+          </div>
+        `).join("");
+      }
+
       function readinessItems(items) {
         return items.map((item) => `
           <div class="readiness-item ${escapeHtml(item.level)}">
@@ -3293,12 +3306,11 @@
         for (const file of audioFiles) {
           const folderPath = file.folderPath || "Podcast";
           if (!folderMap.has(folderPath)) {
-            folderMap.set(folderPath, { files: 0, downloads: 0, seconds: 0, completions: 0 });
+            folderMap.set(folderPath, { files: 0, seconds: 0, completions: 0 });
           }
           const entry = folderMap.get(folderPath);
           const stats = statsForFile(file.id);
           entry.files += 1;
-          entry.downloads += isDownloaded(file.id) ? 1 : 0;
           entry.seconds += stats.seconds;
           entry.completions += stats.completions;
         }
@@ -3308,7 +3320,7 @@
           .slice(0, 8)
           .map(([folderPath, entry]) => [
             folderLabel(folderPath),
-            `${formatDuration(entry.seconds)} - ${entry.completions} complete - ${entry.downloads}/${entry.files} saved`
+            `${formatDuration(entry.seconds)} - ${entry.completions} complete`
           ]);
       }
 
@@ -3316,13 +3328,7 @@
         const unsynced = events.filter((event) => !event.syncedAt);
         const playEvents = events.filter((event) => event.type === "play");
         const completeEvents = events.filter((event) => event.type === "complete");
-        const pauseEvents = events.filter((event) => event.type === "pause");
-        const seekBacks = events.filter((event) => event.type === "seek" && event.delta < 0);
-        const seekForwards = events.filter((event) => event.type === "seek" && event.delta > 0);
         const listeningSeconds = events.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
-        const firstEvent = events[0];
-        const lastEvent = events[events.length - 1];
-        const downloadedBytes = downloads.reduce((total, item) => total + (item.size || item.blob?.size || 0), 0);
         const progress = currentFile ? latestEventFor(currentFile.id, "progress") : null;
         const progressText = progress
           ? ` Current progress for ${displayName(currentFile.name)}: ${Math.round(progress.position || 0)}s.`
@@ -3330,29 +3336,16 @@
         $("statsAudioCount").textContent = audioFiles.length;
         $("statsCompletedCount").textContent = completeEvents.length;
         $("statsListeningTime").textContent = formatDuration(listeningSeconds);
-        $("statsStatus").textContent = `${events.length} local event${events.length === 1 ? "" : "s"} recorded. ${unsynced.length} waiting to sync later. ${playEvents.length} play${playEvents.length === 1 ? "" : "s"}, ${completeEvents.length} completion${completeEvents.length === 1 ? "" : "s"}.${progressText}`;
+        $("statsStatus").textContent = `${events.length} listening event${events.length === 1 ? "" : "s"} recorded. ${unsynced.length} waiting to sync later.${progressText}`;
         $("coreStats").innerHTML = rows([
-          ["Downloaded files", `${downloads.length} (${formatBytes(downloadedBytes)})`],
-          ["Total plays", String(playEvents.length)],
           ["Completed listens", String(completeEvents.length)],
           ["Completion rate", `${playEvents.length ? Math.round((completeEvents.length / playEvents.length) * 100) : 0}%`],
-          ["Pauses", String(pauseEvents.length)],
-          ["Seek-backs", String(seekBacks.length)],
-          ["Seek-forwards", String(seekForwards.length)],
-          ["First event", formatDateTime(firstEvent?.at)],
-          ["Last event", formatDateTime(lastEvent?.at)]
+          ["Stats waiting to sync", String(unsynced.length)]
         ]);
-
-        $("recentStats").innerHTML = events.length
-          ? rows([...events].slice(-8).reverse().map((event) => [
-            displayName(event.name),
-            `${event.type}${event.position ? ` at ${formatDuration(event.position)}` : ""}`
-          ]))
-          : `<p>No recent activity yet.</p>`;
 
         const folders = folderStatsRows();
         $("folderStats").innerHTML = folders.length
-          ? rows(folders)
+          ? folderRows(folders)
           : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
         renderAchievementStats();
       }
