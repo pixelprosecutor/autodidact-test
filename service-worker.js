@@ -3,6 +3,7 @@ const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./assets/achievements/achievement-art.json",
   "./assets/achievements/achievement-metadata.json",
   "./assets/cassettes/cassette-metadata.json",
   "./assets/cassettes/missing-cassette-384x256.png",
