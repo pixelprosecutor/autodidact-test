@@ -62,7 +62,7 @@
     <main class="panel">
       <h1>Refreshing Autodidact</h1>
       <p id="status">Clearing the old app shell cache.</p>
-      <a id="openApp" href="index.html?v=stores-2" hidden>Open Autodidact</a>
+      <a id="openApp" href="index.html?v=stores-3" hidden>Open Autodidact</a>
     </main>
 
     <script>
@@ -84,7 +84,7 @@
           status.textContent = "Old app shell cache cleared. Opening the newest build.";
           openApp.hidden = false;
           window.setTimeout(() => {
-            window.location.replace("index.html?v=stores-2");
+            window.location.replace("index.html?v=stores-3");
           }, 900);
         } catch {
           status.textContent = "Cache reset could not finish automatically. Tap Open Autodidact.";
