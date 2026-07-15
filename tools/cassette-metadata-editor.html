@@ -1183,6 +1183,11 @@
         });
       }
 
+      function showAchievementArtError(message) {
+        $("achievementArtSummary").innerHTML = `<span class="pill">${escapeHtml(message)}</span>`;
+        $("achievementArtGrid").innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+      }
+
       function updateSelectedAchievement(updates) {
         const achievement = currentAchievement();
         if (!achievement) return;
@@ -1273,9 +1278,12 @@
           if (!response.ok) throw new Error(`Achievement art load failed: ${response.status}`);
           achievementArt = normalizeAchievementArt(await response.json());
           renderAchievementArtPicker();
+          $("achievementArtGrid").scrollIntoView({ behavior: "smooth", block: "start" });
           setStatus(`Loaded ${achievementArt.images.length} achievement art file${achievementArt.images.length === 1 ? "" : "s"}.`);
         } catch (error) {
-          setStatus(error.message || "Could not load achievement art.");
+          const message = error.message || "Could not load achievement art.";
+          showAchievementArtError(message);
+          setStatus(message);
         }
       }
 
