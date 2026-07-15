@@ -150,6 +150,10 @@
         margin-bottom: 12px;
       }
 
+      .stats-summary-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
       .summary-grid div {
         min-width: 0;
         padding: 12px 10px;
@@ -171,6 +175,12 @@
         margin-top: 4px;
         color: var(--muted);
         font-size: 11px;
+      }
+
+      @media (max-width: 430px) {
+        .stats-summary-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
       }
 
       .stats-list {
@@ -1009,7 +1019,7 @@
       <section id="statsView" class="view">
         <section class="panel">
           <h2>Statistics</h2>
-          <div class="summary-grid">
+          <div class="summary-grid stats-summary-grid">
             <div>
               <span id="statsAudioCount">0</span>
               <small>audio files</small>
@@ -1022,23 +1032,16 @@
               <span id="statsListeningTime">0m</span>
               <small>listening time</small>
             </div>
+            <div>
+              <span id="statsCompletionRate">0%</span>
+              <small>completion rate</small>
+            </div>
           </div>
-          <p id="statsStatus">No local listening events recorded yet.</p>
-          <div class="stats-list" id="coreStats"></div>
         </section>
 
         <section class="panel">
           <h2>Folders</h2>
           <div class="stats-list" id="folderStats"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Sync</h2>
-          <div class="toolbar">
-            <button id="syncStats">Sync stats to ledger</button>
-            <button id="refreshStats">Refresh stats</button>
-            <button class="danger" id="clearLocalStats">Clear local stats</button>
-          </div>
         </section>
 
         <section class="panel">
@@ -1180,7 +1183,7 @@
         </section>
 
         <section class="panel">
-          <h2>Stats</h2>
+          <h2>Sync</h2>
           <div class="stats-list" id="statsSettings"></div>
           <div class="toolbar">
             <button id="settingsSyncStats">Sync stats to ledger</button>
@@ -1286,7 +1289,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "stores-4";
+      const APP_BUILD = "stats-cleanup-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3325,23 +3328,14 @@
       }
 
       function renderStats() {
-        const unsynced = events.filter((event) => !event.syncedAt);
         const playEvents = events.filter((event) => event.type === "play");
         const completeEvents = events.filter((event) => event.type === "complete");
         const listeningSeconds = events.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
-        const progress = currentFile ? latestEventFor(currentFile.id, "progress") : null;
-        const progressText = progress
-          ? ` Current progress for ${displayName(currentFile.name)}: ${Math.round(progress.position || 0)}s.`
-          : "";
+        const completionRate = playEvents.length ? Math.round((completeEvents.length / playEvents.length) * 100) : 0;
         $("statsAudioCount").textContent = audioFiles.length;
         $("statsCompletedCount").textContent = completeEvents.length;
         $("statsListeningTime").textContent = formatDuration(listeningSeconds);
-        $("statsStatus").textContent = `${events.length} listening event${events.length === 1 ? "" : "s"} recorded. ${unsynced.length} waiting to sync later.${progressText}`;
-        $("coreStats").innerHTML = rows([
-          ["Completed listens", String(completeEvents.length)],
-          ["Completion rate", `${playEvents.length ? Math.round((completeEvents.length / playEvents.length) * 100) : 0}%`],
-          ["Stats waiting to sync", String(unsynced.length)]
-        ]);
+        $("statsCompletionRate").textContent = `${completionRate}%`;
 
         const folders = folderStatsRows();
         $("folderStats").innerHTML = folders.length
@@ -3462,7 +3456,7 @@
           return;
         }
 
-        $("syncStats").disabled = true;
+        $("settingsSyncStats").disabled = true;
         setStatus(`Syncing ${unsynced.length} local event${unsynced.length === 1 ? "" : "s"} to the Google Sheet...`);
 
         try {
@@ -3492,7 +3486,7 @@
         } catch (error) {
           setStatus(error.message || "Stats sync failed.");
         } finally {
-          $("syncStats").disabled = false;
+          $("settingsSyncStats").disabled = false;
         }
       }
 
@@ -4959,8 +4953,6 @@
       $("requestStorageProtection").addEventListener("click", requestStorageProtection);
       $("checkForUpdate").addEventListener("click", checkForAppUpdate);
       $("reloadApp").addEventListener("click", reloadApp);
-      $("refreshStats").addEventListener("click", refreshEvents);
-      $("syncStats").addEventListener("click", syncStatsToLedger);
       $("settingsRefreshStats").addEventListener("click", refreshEvents);
       $("settingsSyncStats").addEventListener("click", syncStatsToLedger);
       $("downloadCurrentFolder").addEventListener("click", downloadCurrentFolderFiles);
@@ -4971,17 +4963,6 @@
         button.addEventListener("click", () => {
           showView(button.dataset.view);
         });
-      });
-
-      $("clearLocalStats").addEventListener("click", async () => {
-        const confirmed = window.confirm("Clear local listening events from this test page? Downloads will stay saved.");
-        if (!confirmed) return;
-        await clearEvents();
-        events = [];
-        renderEpisode();
-        renderStats();
-        renderSettings();
-        setStatus("Local stats cleared. Downloads were not deleted.");
       });
 
       $("settingsClearLocalStats").addEventListener("click", async () => {
