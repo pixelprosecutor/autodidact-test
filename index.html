@@ -429,6 +429,29 @@
         opacity: .62;
       }
 
+      .store-status-badge {
+        justify-self: start;
+        padding: 4px 7px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(125, 211, 252, .12);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .store-status-badge.locked {
+        border-color: rgba(248, 113, 113, .5);
+        background: rgba(248, 113, 113, .12);
+        color: #fecaca;
+      }
+
+      .store-status-badge.coming-soon {
+        border-color: rgba(250, 204, 21, .5);
+        background: rgba(250, 204, 21, .12);
+        color: #fde68a;
+      }
+
       .store-card img {
         width: 100%;
         max-height: 160px;
@@ -1303,7 +1326,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "stats-icons-3";
+      const APP_BUILD = "store-status-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3791,22 +3814,29 @@
           list.innerHTML = "";
           return;
         }
-        const lockedCount = STORES.filter((store) => store.lockedByDefault).length;
-        summary.textContent = `${STORES.length} store${STORES.length === 1 ? "" : "s"} available. ${lockedCount} locked for later.`;
+        const statusCounts = STORES.reduce((counts, store) => {
+          const status = storeStatus(store).key;
+          counts[status] = (counts[status] || 0) + 1;
+          return counts;
+        }, {});
+        summary.textContent = `${STORES.length} store${STORES.length === 1 ? "" : "s"}. ${statusCounts.unlocked || 0} unlocked, ${statusCounts.comingSoon || 0} coming soon, ${statusCounts.locked || 0} locked.`;
         list.innerHTML = STORES.map((store) => {
-          const locked = store.lockedByDefault === true;
+          const status = storeStatus(store);
+          const locked = status.key === "locked";
           const details = [
+            store.storeType || "Cassette shop",
             store.theme ? `Theme: ${store.theme}` : "",
-            locked ? (store.unlockCondition ? `Unlock: ${store.unlockCondition}` : "Locked") : "Unlocked"
+            store.unlockCondition ? `Unlock: ${store.unlockCondition}` : ""
           ].filter(Boolean).join(" - ");
           return `
             <button class="store-card ${locked ? "locked" : ""}" type="button" data-store-id="${escapeHtml(store.id || "")}" aria-label="Open ${escapeHtml(store.name || store.id || "Store")}">
               ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
               <div>
                 <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
+                <span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>
                 <p>${escapeHtml(details)}</p>
               </div>
-              ${store.description ? `<p>${escapeHtml(store.description)}</p>` : ""}
+              ${store.flavorText ? `<p>${escapeHtml(store.flavorText)}</p>` : ""}
             </button>
           `;
         }).join("");
@@ -3819,6 +3849,17 @@
         return STORES.find((store) => store.id === selectedStoreId) || null;
       }
 
+      function storeStatus(store) {
+        const rawStatus = String(store?.status || "").trim();
+        if (rawStatus === "locked" || store?.lockedByDefault === true) {
+          return { key: "locked", label: "Locked", className: "locked" };
+        }
+        if (rawStatus === "comingSoon" || rawStatus === "coming-soon") {
+          return { key: "comingSoon", label: "Coming soon", className: "coming-soon" };
+        }
+        return { key: "unlocked", label: "Unlocked", className: "unlocked" };
+      }
+
       function renderStoreDetail() {
         const store = currentStore();
         if (!store) {
@@ -3828,16 +3869,18 @@
           $("storeDetailStats").innerHTML = "";
           return;
         }
-        const locked = store.lockedByDefault === true;
+        const status = storeStatus(store);
         $("storeDetailArt").innerHTML = store.large
           ? `<img src="${escapeHtml(store.large)}" alt="">`
           : "<p>No store art assigned yet.</p>";
         $("storeDetailTitle").textContent = store.name || store.id || "Store";
-        $("storeDetailMeta").textContent = store.description || (locked ? "Locked store." : "Unlocked store.");
+        $("storeDetailMeta").innerHTML = `<span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>`;
         $("storeDetailStats").innerHTML = rows([
-          ["Status", locked ? "Locked" : "Unlocked"],
+          ["Store type", store.storeType || "Cassette shop"],
+          ["Status", status.label],
           ["Theme", store.theme || "None"],
-          ["Unlock condition", store.unlockCondition || (locked ? "Not specified" : "Already available")],
+          ["Unlock condition", store.unlockCondition || (status.key === "unlocked" ? "Already available" : "Not specified")],
+          ["Flavor text", store.flavorText || store.description || "None"],
           ["Store ID", store.id || "None"],
           ["Notes", store.notes || "None"]
         ]);
