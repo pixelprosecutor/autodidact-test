@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-15",
+  "images": [
+    {
+      "file": "beanbag.png",
+      "path": "assets/achievements/beanbag.png",
+      "label": "beanbag"
+    },
+    {
+      "file": "cassette24.png",
+      "path": "assets/achievements/cassette24.png",
+      "label": "cassette24"
+    },
+    {
+      "file": "cassette3.png",
+      "path": "assets/achievements/cassette3.png",
+      "label": "cassette3"
+    },
+    {
+      "file": "cassette5.png",
+      "path": "assets/achievements/cassette5.png",
+      "label": "cassette5"
+    },
+    {
+      "file": "fire1.png",
+      "path": "assets/achievements/fire1.png",
+      "label": "fire1"
+    },
+    {
+      "file": "fire2.png",
+      "path": "assets/achievements/fire2.png",
+      "label": "fire2"
+    },
+    {
+      "file": "fire3.png",
+      "path": "assets/achievements/fire3.png",
+      "label": "fire3"
+    },
+    {
+      "file": "Skeleton (1).png",
+      "path": "assets/achievements/Skeleton (1).png",
+      "label": "Skeleton (1)"
+    },
+    {
+      "file": "Skeleton (2).png",
+      "path": "assets/achievements/Skeleton (2).png",
+      "label": "Skeleton (2)"
+    },
+    {
+      "file": "Skeleton (3).png",
+      "path": "assets/achievements/Skeleton (3).png",
+      "label": "Skeleton (3)"
+    },
+    {
+      "file": "Skeleton (4).png",
+      "path": "assets/achievements/Skeleton (4).png",
+      "label": "Skeleton (4)"
+    },
+    {
+      "file": "Skeleton (5).png",
+      "path": "assets/achievements/Skeleton (5).png",
+      "label": "Skeleton (5)"
+    },
+    {
+      "file": "skeleton1.png",
+      "path": "assets/achievements/skeleton1.png",
+      "label": "skeleton1"
+    },
+    {
+      "file": "threedays.png",
+      "path": "assets/achievements/threedays.png",
+      "label": "threedays"
+    },
+    {
+      "file": "trophy.png",
+      "path": "assets/achievements/trophy.png",
+      "label": "trophy"
+    },
+    {
+      "file": "trophy1.png",
+      "path": "assets/achievements/trophy1.png",
+      "label": "trophy1"
+    },
+    {
+      "file": "Watch (1).png",
+      "path": "assets/achievements/Watch (1).png",
+      "label": "Watch (1)"
+    },
+    {
+      "file": "Watch (2).png",
+      "path": "assets/achievements/Watch (2).png",
+      "label": "Watch (2)"
+    },
+    {
+      "file": "Watch (3).png",
+      "path": "assets/achievements/Watch (3).png",
+      "label": "Watch (3)"
+    }
+  ]
+}
