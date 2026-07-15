@@ -2,7 +2,7 @@
   "name": "Autodidact",
   "short_name": "Autodidact",
   "description": "A private podcast player for Google Drive audio, offline phone playback, and listening stats.",
-  "start_url": "./?v=achievements-2",
+  "start_url": "./?v=stores-1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#07162f",

@@ -376,6 +376,43 @@
         max-height: 128px;
       }
 
+      .store-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+
+      .store-card {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        overflow: hidden;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .8);
+      }
+
+      .store-card.locked {
+        opacity: .62;
+      }
+
+      .store-card img {
+        width: 100%;
+        max-height: 160px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .store-card h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .store-card p {
+        margin: 0;
+      }
+
       .cassette-card strong,
       .cassette-card small {
         display: block;
@@ -1007,6 +1044,14 @@
         </section>
       </section>
 
+      <section id="storesView" class="view">
+        <section class="panel">
+          <h2>Stores</h2>
+          <p id="storeSummary">Loading stores.</p>
+          <div class="store-grid" id="storeList"></div>
+        </section>
+      </section>
+
       <section id="settingsView" class="view">
         <div class="summary-grid">
           <div>
@@ -1050,6 +1095,9 @@
         <section class="panel">
           <h2>Library</h2>
           <div class="stats-list" id="librarySettings"></div>
+          <div class="toolbar">
+            <button id="settingsOpenSearch" type="button">Search library</button>
+          </div>
         </section>
 
         <section class="panel">
@@ -1142,9 +1190,9 @@
         <img src="assets/downloaded.png" alt="">
         <span>Downloads</span>
       </button>
-      <button class="nav-button" data-view="search" type="button" aria-label="Search" title="Search">
-        <img src="assets/search_binoculars.png" alt="">
-        <span>Search</span>
+      <button class="nav-button" data-view="stores" type="button" aria-label="Stores" title="Stores">
+        <img src="assets/stores_tab.png" alt="">
+        <span>Stores</span>
       </button>
       <button class="nav-button" id="googleStatusButton" type="button" aria-label="Google access unavailable" title="Google access unavailable">
         <img id="googleStatusIcon" src="assets/google-no.png" alt="">
@@ -1191,10 +1239,11 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "achievements-2";
+      const APP_BUILD = "stores-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
+      const STORE_METADATA_URL = "assets/stores/store-metadata.json";
       const MISSING_CASSETTE_IMAGE = "assets/cassettes/missing-cassette-384x256.png";
       const ACHIEVEMENT_FALLBACK = [
         {
@@ -2579,6 +2628,7 @@
       let announcements = [];
       let activeAnnouncementIndex = 0;
       let ACHIEVEMENTS = ACHIEVEMENT_FALLBACK;
+      let STORES = [];
 
       const $ = (id) => document.getElementById(id);
 
@@ -2601,6 +2651,7 @@
         const button = document.querySelector(`.nav-button[data-view="${viewName}"]`);
         if (view) view.classList.add("active");
         if (button) button.classList.add("active");
+        if (viewName === "stores") renderStores();
       }
 
       function readCachedLibrary() {
@@ -3694,6 +3745,49 @@
         }
       }
 
+      async function loadStoreMetadata() {
+        try {
+          const response = await fetch(`${STORE_METADATA_URL}?build=${APP_BUILD}`, { cache: "no-store" });
+          if (!response.ok) throw new Error("Store metadata could not be loaded.");
+          const data = await response.json();
+          STORES = Array.isArray(data.stores) ? data.stores.filter((store) => store.enabled !== false) : [];
+          renderStores();
+        } catch (error) {
+          console.warn(error.message || "Store metadata could not be loaded.");
+          renderStores();
+        }
+      }
+
+      function renderStores() {
+        const summary = $("storeSummary");
+        const list = $("storeList");
+        if (!summary || !list) return;
+        if (!STORES.length) {
+          summary.textContent = "No stores are available yet.";
+          list.innerHTML = "";
+          return;
+        }
+        const lockedCount = STORES.filter((store) => store.lockedByDefault).length;
+        summary.textContent = `${STORES.length} store${STORES.length === 1 ? "" : "s"} available. ${lockedCount} locked for later.`;
+        list.innerHTML = STORES.map((store) => {
+          const locked = store.lockedByDefault === true;
+          const details = [
+            store.theme ? `Theme: ${store.theme}` : "",
+            locked ? (store.unlockCondition ? `Unlock: ${store.unlockCondition}` : "Locked") : "Unlocked"
+          ].filter(Boolean).join(" - ");
+          return `
+            <article class="store-card ${locked ? "locked" : ""}">
+              ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
+              <div>
+                <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
+                <p>${escapeHtml(details)}</p>
+              </div>
+              ${store.description ? `<p>${escapeHtml(store.description)}</p>` : ""}
+            </article>
+          `;
+        }).join("");
+      }
+
       function cassetteForFile(file) {
         if (!CASSETTE_ART.length) return null;
         const identity = file?.id || file?.name || "autodidact";
@@ -4694,6 +4788,10 @@
           setStatus(error.message || "Drive scan failed.");
         });
       });
+      $("settingsOpenSearch").addEventListener("click", () => {
+        renderSearch();
+        showView("search");
+      });
 
       $("togglePlay").addEventListener("click", togglePlayback);
       $("skipBack").addEventListener("click", () => skipAudio(-15));
@@ -4883,6 +4981,7 @@
 
       loadAchievementMetadata();
       loadCassetteMetadata();
+      loadStoreMetadata();
       Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
@@ -4890,6 +4989,7 @@
       renderFiles();
       renderSettings();
       renderCollection();
+      renderStores();
       tryQuietGoogleReconnect();
 
       if ("serviceWorker" in navigator) {

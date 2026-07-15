@@ -1,10 +1,12 @@
-const CACHE_NAME = "autodidact-achievements-v2";
+const CACHE_NAME = "autodidact-stores-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/achievements/achievement-art.json",
   "./assets/achievements/achievement-metadata.json",
+  "./assets/stores/store-art.json",
+  "./assets/stores/store-metadata.json",
   "./assets/cassettes/cassette-metadata.json",
   "./assets/cassettes/missing-cassette-384x256.png",
   "./assets/autodidact-icon-64.png",
@@ -23,6 +25,7 @@ const APP_SHELL = [
   "./assets/seekforward-icon-34x34.png",
   "./assets/stop-icon-34x34.png",
   "./assets/search_binoculars.png",
+  "./assets/stores_tab.png",
   "./assets/stats_tab.png",
   "./assets/settings_fb2.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-icon-34x34.png",
