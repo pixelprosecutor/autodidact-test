@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-stats-icons-v2";
+const CACHE_NAME = "autodidact-stats-icons-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,6 +28,9 @@ const APP_SHELL = [
   "./assets/stores_tab.png",
   "./assets/stats_tab.png",
   "./assets/four.png",
+  "./assets/statstab (1).png",
+  "./assets/statstab (3).png",
+  "./assets/statstab (4).png",
   "./assets/settings_fb2.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-large-384x256.png",
