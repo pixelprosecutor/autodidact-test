@@ -1614,6 +1614,12 @@
         document.querySelectorAll(".tab-panel").forEach((panel) => {
           panel.classList.toggle("active", panel.id === `${tabName}Tab`);
         });
+        if (tabName === "stores" && !storeMetadata.stores.length) {
+          loadStoreMetadata();
+        }
+        if (tabName === "achievements" && !achievementMetadata.achievements.length) {
+          loadAchievementMetadata();
+        }
       }
 
       $("loadDefault").addEventListener("click", loadDefaultMetadata);
