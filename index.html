@@ -563,6 +563,17 @@
         gap: 8px;
       }
 
+      .settings-action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .settings-action-grid button {
+        width: 100%;
+      }
+
       .stat-row {
         display: flex;
         justify-content: space-between;
@@ -1123,95 +1134,68 @@
         </div>
 
         <section class="panel">
-          <h2>Connection</h2>
-          <div class="stats-list" id="connectionSettings"></div>
-          <div class="toolbar">
-            <button class="primary" id="settingsSignIn">Sign in to Google</button>
-            <button id="settingsScanDrive">Refresh Drive library</button>
+          <h2>Important Actions</h2>
+          <div class="settings-action-grid">
+            <button class="primary" id="checkForUpdate">Check for update</button>
+            <button id="reloadApp">Reload app</button>
+            <button class="primary" id="settingsSignIn">Connect Google</button>
+            <button class="primary" id="settingsScanDrive">Refresh Drive library</button>
+            <button class="primary" id="settingsSyncStats">Sync stats to ledger</button>
           </div>
         </section>
 
         <section class="panel">
-          <h2>Status</h2>
+          <h2>Current Status</h2>
           <p class="status" id="status">Ready. Google access will be requested when needed.</p>
-        </section>
-
-        <section class="panel">
-          <h2>Version</h2>
           <p id="buildStatus">Checking app version.</p>
           <div class="stats-list" id="buildSettings"></div>
-          <div class="toolbar">
-            <button id="checkForUpdate">Check for update</button>
-            <button id="reloadApp">Reload app</button>
-          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Connection</h2>
+          <div class="stats-list" id="connectionSettings"></div>
         </section>
 
         <section class="panel">
           <h2>Library</h2>
           <div class="stats-list" id="librarySettings"></div>
-          <div class="toolbar">
+          <div class="settings-action-grid">
             <button id="settingsOpenSearch" type="button">Search library</button>
           </div>
         </section>
 
         <section class="panel">
-          <h2>Downloads</h2>
+          <h2>Offline & Downloads</h2>
           <p id="downloadSummary">No local audio saved yet.</p>
-          <div class="toolbar">
+          <div class="readiness-list" id="offlineReadinessList"></div>
+          <p id="downloadStorageStatus">Storage estimate not loaded yet.</p>
+          <div class="storage-meter" aria-hidden="true"><span id="downloadStorageFill"></span></div>
+          <div class="stats-list" id="downloadStorageStats"></div>
+          <div class="settings-action-grid">
             <button id="downloadCurrentFolder">Download this folder</button>
             <button class="danger" id="deleteCurrentFolderDownloads">Delete this folder's downloads</button>
+            <button id="requestStorageProtection">Protect downloads if possible</button>
+            <button id="refreshDownloadStorage">Refresh storage</button>
           </div>
           <div class="stats-list" id="downloadFolderStats"></div>
           <div class="stats-list" id="downloadFolderList"></div>
         </section>
 
         <section class="panel">
-          <h2>Offline readiness</h2>
-          <p id="offlineReadinessSummary">Checking local files and sync status.</p>
-          <div class="readiness-list" id="offlineReadinessList"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Storage safety</h2>
-          <p id="downloadStorageStatus">Storage estimate not loaded yet.</p>
-          <div class="storage-meter" aria-hidden="true"><span id="downloadStorageFill"></span></div>
-          <div class="stats-list" id="downloadStorageStats"></div>
-          <div class="toolbar">
-            <button id="requestStorageProtection">Protect downloads if possible</button>
-            <button id="refreshDownloadStorage">Refresh storage</button>
-          </div>
-        </section>
-
-        <section class="panel">
           <h2>Sync</h2>
           <div class="stats-list" id="statsSettings"></div>
-          <div class="toolbar">
-            <button id="settingsSyncStats">Sync stats to ledger</button>
+          <div class="settings-action-grid">
             <button id="settingsRefreshStats">Refresh local stats</button>
           </div>
         </section>
 
         <section class="panel">
-          <h2>Storage</h2>
-          <p id="storageStatus">Storage estimate not loaded yet.</p>
-          <div class="stats-list" id="storageSettings"></div>
-          <div class="toolbar">
-            <button id="refreshStorage">Refresh storage</button>
+          <h2>Danger Zone</h2>
+          <div class="settings-action-grid">
+            <button class="danger" id="settingsClearLocalStats">Clear local stats</button>
             <button class="danger" id="clearAllDownloads">Delete all downloads</button>
           </div>
-        </section>
-
-        <section class="panel">
-          <h2>Cleanup</h2>
-          <div class="action-stack">
-            <button class="danger" id="settingsClearLocalStats">Clear local stats</button>
-            <small>Downloads stay saved. Google Sheet rows are not deleted by this PWA action.</small>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>Offline</h2>
-          <div class="stats-list" id="offlineSettings"></div>
+          <small>Local cleanup actions affect this device. Google Sheet rows are not deleted by these buttons.</small>
         </section>
       </section>
     </main>
@@ -1289,7 +1273,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "stats-cleanup-1";
+      const APP_BUILD = "settings-cleanup-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3350,6 +3334,7 @@
         const savedFolders = new Set(downloads.map((file) => file.folderPath || "Podcast"));
         const lastDriveScan = localStorage.getItem(LAST_DRIVE_SCAN_KEY);
         const lastLedgerSync = localStorage.getItem(LAST_LEDGER_SYNC_KEY);
+        const online = navigator.onLine !== false;
         $("settingsGoogleStatus").textContent = accessToken ? "OK" : "!";
         $("settingsDownloadCount").textContent = downloads.length;
         $("settingsUnsyncedCount").textContent = unsynced.length;
@@ -3358,18 +3343,19 @@
         updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
+          ["Internet", online ? "Online" : "Offline"],
           ["Google", accessToken ? "Connected" : "Tap to sign in"],
           ["Drive refresh", accessToken ? "Ready" : "Needs Google sign-in"],
           ["Stats ledger", accessToken ? "Ready to sync" : "Needs Google sign-in"],
-          ["Offline playback", downloads.length ? "Ready for saved files" : "Download files first"]
+          ["Last Drive refresh", formatDateTime(lastDriveScan)],
+          ["Last ledger sync", formatDateTime(lastLedgerSync)]
         ]);
 
         $("librarySettings").innerHTML = rows([
           ["Audio files loaded", String(audioFiles.length)],
           ["Current folder", folderLabel(currentFolder)],
           ["Downloaded files", String(downloads.length)],
-          ["Downloaded folders", String(savedFolders.size || 0)],
-          ["Last Drive refresh", formatDateTime(lastDriveScan)]
+          ["Downloaded folders", String(savedFolders.size || 0)]
         ]);
 
         $("statsSettings").innerHTML = rows([
@@ -3378,20 +3364,6 @@
           ["Completed listens", String(events.filter((event) => event.type === "complete").length)],
           ["Last event", formatDateTime(events[events.length - 1]?.at)],
           ["Last ledger sync", formatDateTime(lastLedgerSync)]
-        ]);
-
-        $("storageSettings").innerHTML = rows([
-          ["Saved audio size", formatBytes(downloadedBytes)],
-          ["Browser usage", storageEstimate ? formatBytes(storageEstimate.usage) : "Not checked"],
-          ["Browser quota", storageEstimate ? formatBytes(storageEstimate.quota) : "Not checked"],
-          ["Storage protection", storageProtectionLabel()]
-        ]);
-
-        $("offlineSettings").innerHTML = rows([
-          ["Works offline", "Downloaded audio playback"],
-          ["Works offline", "Local stats recording"],
-          ["Needs internet", "Drive refresh"],
-          ["Needs internet", "Google Sheet sync"]
         ]);
         renderBuildStatus();
       }
@@ -3592,13 +3564,6 @@
               : "Refresh Drive after signing in."
           }
         ];
-        const problemCount = items.filter((item) => item.level === "problem").length;
-        const warningCount = items.filter((item) => item.level === "warning").length;
-        $("offlineReadinessSummary").textContent = problemCount
-          ? "Not ready for offline listening yet."
-          : warningCount
-            ? "Mostly ready, with a few things to check."
-            : "Ready for offline listening.";
         $("offlineReadinessList").innerHTML = readinessItems(items);
       }
 
@@ -3609,10 +3574,6 @@
         const status = storageEstimate
           ? `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser storage is ${health.toLowerCase()}.`
           : `${downloads.length} local file${downloads.length === 1 ? "" : "s"} saved. Refresh storage to check browser space.`;
-
-        $("storageStatus").textContent = storageEstimate
-          ? `${downloads.length} local file${downloads.length === 1 ? "" : "s"} using about ${formatBytes(downloadedBytes)}. Browser reports ${formatBytes(storageEstimate.usage)} used out of ${formatBytes(storageEstimate.quota)} available for this site.`
-          : "Storage estimate not loaded yet.";
 
         $("downloadStorageStatus").textContent = status;
         $("downloadStorageFill").style.width = `${percent}%`;
@@ -3627,7 +3588,6 @@
 
       async function refreshStorageEstimate() {
         if (!navigator.storage?.estimate) {
-          $("storageStatus").textContent = `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally. Browser storage estimate is unavailable.`;
           $("downloadStorageStatus").textContent = `${downloads.length} file${downloads.length === 1 ? "" : "s"} saved locally. Browser storage estimate is unavailable.`;
           return;
         }
@@ -4948,7 +4908,6 @@
           hideAnnouncements();
         });
       });
-      $("refreshStorage").addEventListener("click", refreshStorageEstimate);
       $("refreshDownloadStorage").addEventListener("click", refreshStorageEstimate);
       $("requestStorageProtection").addEventListener("click", requestStorageProtection);
       $("checkForUpdate").addEventListener("click", checkForAppUpdate);
