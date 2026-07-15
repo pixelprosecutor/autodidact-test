@@ -154,12 +154,30 @@
         grid-template-columns: repeat(4, 1fr);
       }
 
-      .summary-grid div {
+      .summary-grid > div {
         min-width: 0;
         padding: 12px 10px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: rgba(7, 22, 47, .8);
+      }
+
+      .summary-grid .stat-tile-art {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 46px;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .stat-tile-text {
+        min-width: 0;
+      }
+
+      .stat-tile-icon {
+        width: 46px;
+        height: 46px;
+        object-fit: contain;
+        image-rendering: pixelated;
       }
 
       .summary-grid span {
@@ -1031,9 +1049,12 @@
         <section class="panel">
           <h2>Statistics</h2>
           <div class="summary-grid stats-summary-grid">
-            <div>
-              <span id="statsAudioCount">0</span>
-              <small>audio files</small>
+            <div class="stat-tile-art">
+              <div class="stat-tile-text">
+                <span id="statsAudioCount">0</span>
+                <small>audio files</small>
+              </div>
+              <img class="stat-tile-icon" src="assets/four.png" alt="">
             </div>
             <div>
               <span id="statsCompletedCount">0</span>
@@ -1273,7 +1294,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "settings-cleanup-2";
+      const APP_BUILD = "stats-icons-2";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
