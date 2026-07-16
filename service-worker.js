@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-store-clean-rows-v1";
+const CACHE_NAME = "autodidact-store-buy-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

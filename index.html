@@ -1458,7 +1458,9 @@
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
       const COIN_BALANCE_KEY = "autodidact-coin-balance-v1";
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
-      const APP_BUILD = "store-clean-rows-1";
+      const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
+      const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
+      const APP_BUILD = "store-buy-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2851,6 +2853,7 @@
       let selectedStoreId = "";
       let selectedDuplicateFileId = "";
       let selectedStoreOptionId = "";
+      let selectedStoreAction = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -3222,6 +3225,32 @@
 
       function saveCoinLedger(records) {
         localStorage.setItem(COIN_LEDGER_KEY, JSON.stringify(records));
+      }
+
+      function cassetteAssignmentOverrides() {
+        try {
+          const records = JSON.parse(localStorage.getItem(CASSETTE_ASSIGNMENT_OVERRIDES_KEY) || "{}");
+          return records && typeof records === "object" && !Array.isArray(records) ? records : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function saveCassetteAssignmentOverrides(records) {
+        localStorage.setItem(CASSETTE_ASSIGNMENT_OVERRIDES_KEY, JSON.stringify(records || {}));
+      }
+
+      function storeTransactions() {
+        try {
+          const records = JSON.parse(localStorage.getItem(STORE_TRANSACTION_LEDGER_KEY) || "[]");
+          return Array.isArray(records) ? records : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveStoreTransactions(records) {
+        localStorage.setItem(STORE_TRANSACTION_LEDGER_KEY, JSON.stringify(records || []));
       }
 
       function awardCoinForCompletion(event) {
@@ -4112,6 +4141,7 @@
         selectedStoreId = storeId || "";
         selectedDuplicateFileId = "";
         selectedStoreOptionId = "";
+        selectedStoreAction = "";
         renderStoreDetail();
         showView("storeDetail");
       }
@@ -4202,16 +4232,34 @@
         container.querySelectorAll("[data-store-option-id]").forEach((button) => {
           button.addEventListener("click", () => {
             selectedStoreOptionId = button.dataset.storeOptionId || "";
+            selectedStoreAction = "";
+            selectedDuplicateFileId = "";
             renderStoreDetail();
           });
         });
         const buyButton = container.querySelector("[data-store-buy]");
-        if (buyButton) buyButton.addEventListener("click", () => previewStorePurchase(store, selectedOption));
+        if (buyButton) buyButton.addEventListener("click", () => beginStorePurchase());
         const tradeButton = container.querySelector("[data-store-trade]");
         if (tradeButton) tradeButton.addEventListener("click", () => previewStoreTrade(store, selectedOption));
+        const confirmButton = container.querySelector("[data-store-confirm-buy]");
+        if (confirmButton) confirmButton.addEventListener("click", () => confirmStorePurchase(store, selectedOption).catch((error) => setStatus(error.message || "Purchase failed.")));
+        const cancelButton = container.querySelector("[data-store-cancel-buy]");
+        if (cancelButton) cancelButton.addEventListener("click", () => {
+          selectedStoreAction = "";
+          selectedDuplicateFileId = "";
+          renderStoreDetail();
+        });
+        container.querySelectorAll("[data-duplicate-file-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedDuplicateFileId = button.dataset.duplicateFileId || "";
+            renderStoreDetail();
+          });
+        });
         const backButton = container.querySelector("[data-store-option-back]");
         if (backButton) backButton.addEventListener("click", () => {
           selectedStoreOptionId = "";
+          selectedStoreAction = "";
+          selectedDuplicateFileId = "";
           renderStoreDetail();
         });
       }
@@ -4223,6 +4271,9 @@
         const canAfford = coinBalance() >= option.cost;
         const canBuy = unlocked && hasAnyDuplicate && canAfford;
         const canTrade = unlocked && eligibleTradeChoices(option.rarity).length > 0;
+        if (selectedStoreAction === "buy") {
+          return storeBuyPanelMarkup(option, canBuy);
+        }
         const buyNote = !unlocked
           ? "Store is not unlocked yet."
           : (!hasAnyDuplicate ? "You need a duplicate cassette to record over." : (!canAfford ? "Not enough balance yet." : "Ready to buy."));
@@ -4244,12 +4295,116 @@
         `;
       }
 
-      function previewStorePurchase(store, option) {
-        if (!option) {
+      function storeBuyPanelMarkup(option, canBuy) {
+        const choices = duplicateEpisodeChoices();
+        const selectedFile = choices.find((choice) => choice.file.id === selectedDuplicateFileId)?.file;
+        return `
+          <div class="store-action-panel">
+            <h3>Record over a duplicate</h3>
+            <p>${escapeHtml(option.cassette?.name || "This cassette")} costs ${currencyAmountMarkup(option.cost).html}. Balance: ${currencyAmountMarkup(coinBalance()).html}</p>
+            ${choices.length ? `
+              <div class="duplicate-choice-list">
+                ${choices.map(({ file, cassette }) => `
+                  <button class="duplicate-choice ${file.id === selectedDuplicateFileId ? "selected" : ""}" type="button" data-duplicate-file-id="${escapeHtml(file.id)}">
+                    <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
+                    <span class="duplicate-choice-main">
+                      <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+                      <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${escapeHtml(cassette?.name || "Duplicate cassette")}</span>
+                    </span>
+                  </button>
+                `).join("")}
+              </div>
+            ` : `<p>You need a duplicate cassette to record over.</p>`}
+            <p>${selectedFile ? `Selected: ${escapeHtml(displayName(selectedFile.name))}` : "Choose a duplicate episode to record over."}</p>
+            <div class="store-action-buttons">
+              <button type="button" data-store-confirm-buy ${canBuy && selectedFile ? "" : "disabled"}>Confirm</button>
+              <button type="button" data-store-cancel-buy>Cancel</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function beginStorePurchase() {
+        selectedStoreAction = "buy";
+        selectedDuplicateFileId = "";
+        renderStoreDetail();
+      }
+
+      async function confirmStorePurchase(store, option) {
+        if (!store || !option?.cassette) {
           setStatus("Choose a cassette before buying.");
           return;
         }
-        setStatus(`Preview only: buying ${option.cassette?.name || "this cassette"} would cost ${option.cost}. Next, you would choose a duplicate cassette to record over.`);
+        const file = audioFiles.find((item) => item.id === selectedDuplicateFileId);
+        if (!file) {
+          setStatus("Choose a duplicate episode to record over.");
+          return;
+        }
+        const cassetteId = cassetteKey(option.cassette);
+        if (!cassetteId) {
+          setStatus("That cassette cannot be assigned yet.");
+          return;
+        }
+        if (cassetteAssignmentCounts().has(cassetteId)) {
+          setStatus("You already own that cassette.");
+          return;
+        }
+        if (coinBalance() < option.cost) {
+          setStatus("Not enough balance yet.");
+          return;
+        }
+
+        const previousCassette = cassetteForFile(file);
+        const nextBalance = coinBalance() - option.cost;
+        saveCoinBalance(nextBalance);
+
+        const overrides = cassetteAssignmentOverrides();
+        overrides[file.id] = cassetteId;
+        saveCassetteAssignmentOverrides(overrides);
+
+        const transaction = {
+          id: `store-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          type: "purchase",
+          storeId: store.id || "",
+          storeName: store.name || "",
+          fileId: file.id,
+          fileName: file.name,
+          previousCassetteId: cassetteKey(previousCassette),
+          previousCassetteName: previousCassette?.name || "",
+          cassetteId,
+          cassetteName: option.cassette.name || "",
+          cost: option.cost,
+          balanceAfter: nextBalance,
+          at: new Date().toISOString()
+        };
+        const transactions = storeTransactions();
+        transactions.push(transaction);
+        saveStoreTransactions(transactions);
+
+        selectedStoreAction = "";
+        selectedDuplicateFileId = "";
+        selectedStoreOptionId = "";
+        renderFiles();
+        renderEpisode();
+        renderStats();
+        renderSettings();
+        renderStores();
+        renderStoreDetail();
+        renderCollection();
+        await createAnnouncements([{
+          id: `store-purchase-${transaction.id}`,
+          type: "store_purchase",
+          title: "Cassette purchased",
+          message: `${displayName(file.name)} was reassigned to ${option.cassette.name || "a new cassette"}.`,
+          meta: `${store.name || "Store"} - ${option.cost}`,
+          image: option.cassette.large || option.cassette.icon || MISSING_CASSETTE_IMAGE,
+          action: {
+            type: "episode",
+            label: "View episode",
+            fileId: file.id
+          }
+        }]);
+        setStatus(`Purchased ${option.cassette.name || "cassette"} and recorded over ${displayName(file.name)}.`);
       }
 
       function previewStoreTrade(store, option) {
@@ -4262,6 +4417,11 @@
 
       function cassetteForFile(file) {
         if (!CASSETTE_ART.length) return null;
+        const overrideId = cassetteAssignmentOverrides()[file?.id || ""];
+        if (overrideId) {
+          const override = CASSETTE_ART.find((cassette) => cassetteKey(cassette) === overrideId);
+          if (override) return override;
+        }
         const identity = file?.id || file?.name || "autodidact";
         return CASSETTE_ART[stableHash(identity) % CASSETTE_ART.length];
       }
