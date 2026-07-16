@@ -493,6 +493,37 @@
         background: rgba(7, 22, 47, .45);
       }
 
+      .duplicate-choice-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .duplicate-choice {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .72);
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+      }
+
+      .duplicate-choice.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(125, 211, 252, .18);
+      }
+
+      .duplicate-choice-main {
+        min-width: 0;
+        flex: 1;
+      }
+
       .cassette-card strong,
       .cassette-card small {
         display: block;
@@ -1170,6 +1201,7 @@
           <section class="future-slot">
             <h2>Trade Readiness</h2>
             <div class="stats-list" id="storeTradeStats"></div>
+            <div id="storeDuplicateChoices"></div>
           </section>
         </section>
       </section>
@@ -1330,7 +1362,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "store-trade-preview-1";
+      const APP_BUILD = "store-duplicate-choice-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2721,6 +2753,7 @@
       let ACHIEVEMENTS = ACHIEVEMENT_FALLBACK;
       let STORES = [];
       let selectedStoreId = "";
+      let selectedDuplicateFileId = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -3873,6 +3906,7 @@
           $("storeDetailStats").innerHTML = "";
           $("storeInventoryStats").innerHTML = "";
           $("storeTradeStats").innerHTML = "";
+          $("storeDuplicateChoices").innerHTML = "";
           return;
         }
         const status = storeStatus(store);
@@ -3907,10 +3941,12 @@
             ? "Later, this store can trade duplicate cassette assignments for new cassette inventory."
             : "Later, this store can use its listed cost type when trading is active."]
         ]);
+        renderStoreDuplicateChoices();
       }
 
       function openStoreDetail(storeId) {
         selectedStoreId = storeId || "";
+        selectedDuplicateFileId = "";
         renderStoreDetail();
         showView("storeDetail");
       }
@@ -3956,6 +3992,57 @@
       function totalDuplicateCassetteAssignments() {
         return [...cassetteAssignmentCounts().values()]
           .reduce((total, count) => total + Math.max(0, count - 1), 0);
+      }
+
+      function duplicateEpisodeChoices() {
+        const choices = [];
+        for (const [cassetteId, files] of cassetteAssignmentFiles()) {
+          if (files.length < 2) continue;
+          const cassette = CASSETTE_ART.find((item) => cassetteKey(item) === cassetteId);
+          files.forEach((file, index) => {
+            if (index === 0) return;
+            choices.push({ file, cassette });
+          });
+        }
+        return choices.sort((a, b) => {
+          const folder = String(a.file.folderPath || "").localeCompare(String(b.file.folderPath || ""));
+          return folder || String(a.file.name || "").localeCompare(String(b.file.name || ""));
+        });
+      }
+
+      function renderStoreDuplicateChoices() {
+        const container = $("storeDuplicateChoices");
+        if (!container) return;
+        const choices = duplicateEpisodeChoices();
+        if (!choices.length) {
+          selectedDuplicateFileId = "";
+          container.innerHTML = "<p>No duplicate episodes are available for reassignment yet.</p>";
+          return;
+        }
+        if (selectedDuplicateFileId && !choices.some((choice) => choice.file.id === selectedDuplicateFileId)) {
+          selectedDuplicateFileId = "";
+        }
+        const selectedFile = choices.find((choice) => choice.file.id === selectedDuplicateFileId)?.file;
+        container.innerHTML = `
+          <div class="duplicate-choice-list">
+            ${choices.map(({ file, cassette }) => `
+              <button class="duplicate-choice ${file.id === selectedDuplicateFileId ? "selected" : ""}" type="button" data-duplicate-file-id="${escapeHtml(file.id)}">
+                <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
+                <span class="duplicate-choice-main">
+                  <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+                  <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${escapeHtml(cassette?.name || "Duplicate cassette")}</span>
+                </span>
+              </button>
+            `).join("")}
+          </div>
+          <p>${selectedFile ? `Selected for reassignment: ${escapeHtml(displayName(selectedFile.name))}` : "Choose the duplicate episode that should receive the new cassette."}</p>
+        `;
+        container.querySelectorAll("[data-duplicate-file-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedDuplicateFileId = button.dataset.duplicateFileId || "";
+            renderStoreDuplicateChoices();
+          });
+        });
       }
 
       function renderCollectionDetail(assignmentFiles = cassetteAssignmentFiles()) {
