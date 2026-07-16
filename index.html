@@ -1460,7 +1460,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "store-buy-1";
+      const APP_BUILD = "store-trade-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -4240,11 +4240,19 @@
         const buyButton = container.querySelector("[data-store-buy]");
         if (buyButton) buyButton.addEventListener("click", () => beginStorePurchase());
         const tradeButton = container.querySelector("[data-store-trade]");
-        if (tradeButton) tradeButton.addEventListener("click", () => previewStoreTrade(store, selectedOption));
+        if (tradeButton) tradeButton.addEventListener("click", () => beginStoreTrade());
         const confirmButton = container.querySelector("[data-store-confirm-buy]");
         if (confirmButton) confirmButton.addEventListener("click", () => confirmStorePurchase(store, selectedOption).catch((error) => setStatus(error.message || "Purchase failed.")));
+        const confirmTradeButton = container.querySelector("[data-store-confirm-trade]");
+        if (confirmTradeButton) confirmTradeButton.addEventListener("click", () => confirmStoreTrade(store, selectedOption).catch((error) => setStatus(error.message || "Trade failed.")));
         const cancelButton = container.querySelector("[data-store-cancel-buy]");
         if (cancelButton) cancelButton.addEventListener("click", () => {
+          selectedStoreAction = "";
+          selectedDuplicateFileId = "";
+          renderStoreDetail();
+        });
+        const cancelTradeButton = container.querySelector("[data-store-cancel-trade]");
+        if (cancelTradeButton) cancelTradeButton.addEventListener("click", () => {
           selectedStoreAction = "";
           selectedDuplicateFileId = "";
           renderStoreDetail();
@@ -4273,6 +4281,9 @@
         const canTrade = unlocked && eligibleTradeChoices(option.rarity).length > 0;
         if (selectedStoreAction === "buy") {
           return storeBuyPanelMarkup(option, canBuy);
+        }
+        if (selectedStoreAction === "trade") {
+          return storeTradePanelMarkup(option, canTrade);
         }
         const buyNote = !unlocked
           ? "Store is not unlocked yet."
@@ -4326,6 +4337,41 @@
 
       function beginStorePurchase() {
         selectedStoreAction = "buy";
+        selectedDuplicateFileId = "";
+        renderStoreDetail();
+      }
+
+      function storeTradePanelMarkup(option, canTrade) {
+        const choices = eligibleTradeChoices(option.rarity);
+        const selectedFile = choices.find((choice) => choice.file.id === selectedDuplicateFileId)?.file;
+        return `
+          <div class="store-action-panel">
+            <h3>Trade a same-rarity duplicate</h3>
+            <p>${escapeHtml(option.cassette?.name || "This cassette")} requires a duplicate ${escapeHtml(option.rarity || "common")} cassette.</p>
+            ${choices.length ? `
+              <div class="duplicate-choice-list">
+                ${choices.map(({ file, cassette }) => `
+                  <button class="duplicate-choice ${file.id === selectedDuplicateFileId ? "selected" : ""}" type="button" data-duplicate-file-id="${escapeHtml(file.id)}">
+                    <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
+                    <span class="duplicate-choice-main">
+                      <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
+                      <span class="explorer-subtitle">${escapeHtml(file.folderPath || "Podcast")} - ${escapeHtml(cassette?.name || "Duplicate cassette")}</span>
+                    </span>
+                  </button>
+                `).join("")}
+              </div>
+            ` : `<p>No same-rarity duplicate is eligible for trade.</p>`}
+            <p>${selectedFile ? `Selected: ${escapeHtml(displayName(selectedFile.name))}` : "Choose an eligible duplicate episode to record over."}</p>
+            <div class="store-action-buttons">
+              <button type="button" data-store-confirm-trade ${canTrade && selectedFile ? "" : "disabled"}>Confirm</button>
+              <button type="button" data-store-cancel-trade>Cancel</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function beginStoreTrade() {
+        selectedStoreAction = "trade";
         selectedDuplicateFileId = "";
         renderStoreDetail();
       }
@@ -4407,12 +4453,86 @@
         setStatus(`Purchased ${option.cassette.name || "cassette"} and recorded over ${displayName(file.name)}.`);
       }
 
-      function previewStoreTrade(store, option) {
-        if (!option) {
+      async function confirmStoreTrade(store, option) {
+        if (!store || !option?.cassette) {
           setStatus("Choose a cassette before trading.");
           return;
         }
-        setStatus(`Preview only: trading for ${option.cassette?.name || "this cassette"} would show eligible ${option.rarity || "common"} duplicates next.`);
+        const file = audioFiles.find((item) => item.id === selectedDuplicateFileId);
+        if (!file) {
+          setStatus("Choose an eligible duplicate episode to record over.");
+          return;
+        }
+        const cassetteId = cassetteKey(option.cassette);
+        if (!cassetteId) {
+          setStatus("That cassette cannot be assigned yet.");
+          return;
+        }
+        if (cassetteAssignmentCounts().has(cassetteId)) {
+          setStatus("You already own that cassette.");
+          return;
+        }
+        const previousCassette = cassetteForFile(file);
+        const previousRarity = String(previousCassette?.rarity || "common").toLowerCase();
+        const wantedRarity = String(option.rarity || "common").toLowerCase();
+        if (previousRarity !== wantedRarity) {
+          setStatus("That duplicate is not the same rarity.");
+          return;
+        }
+        const eligibleFileIds = new Set(eligibleTradeChoices(option.rarity).map((choice) => choice.file.id));
+        if (!eligibleFileIds.has(file.id)) {
+          setStatus("That episode is not eligible for this trade.");
+          return;
+        }
+
+        const overrides = cassetteAssignmentOverrides();
+        overrides[file.id] = cassetteId;
+        saveCassetteAssignmentOverrides(overrides);
+
+        const transaction = {
+          id: `store-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          type: "trade",
+          storeId: store.id || "",
+          storeName: store.name || "",
+          fileId: file.id,
+          fileName: file.name,
+          previousCassetteId: cassetteKey(previousCassette),
+          previousCassetteName: previousCassette?.name || "",
+          cassetteId,
+          cassetteName: option.cassette.name || "",
+          rarity: option.rarity || "common",
+          cost: 0,
+          balanceAfter: coinBalance(),
+          at: new Date().toISOString()
+        };
+        const transactions = storeTransactions();
+        transactions.push(transaction);
+        saveStoreTransactions(transactions);
+
+        selectedStoreAction = "";
+        selectedDuplicateFileId = "";
+        selectedStoreOptionId = "";
+        renderFiles();
+        renderEpisode();
+        renderStats();
+        renderSettings();
+        renderStores();
+        renderStoreDetail();
+        renderCollection();
+        await createAnnouncements([{
+          id: `store-trade-${transaction.id}`,
+          type: "store_trade",
+          title: "Cassette traded",
+          message: `${displayName(file.name)} was traded into ${option.cassette.name || "a new cassette"}.`,
+          meta: `${store.name || "Store"} - ${option.rarity || "common"}`,
+          image: option.cassette.large || option.cassette.icon || MISSING_CASSETTE_IMAGE,
+          action: {
+            type: "episode",
+            label: "View episode",
+            fileId: file.id
+          }
+        }]);
+        setStatus(`Traded for ${option.cassette.name || "cassette"} and recorded over ${displayName(file.name)}.`);
       }
 
       function cassetteForFile(file) {
