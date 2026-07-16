@@ -488,22 +488,61 @@
         margin: 0;
       }
 
+      .store-detail-page {
+        display: grid;
+        gap: 12px;
+        margin: 12px 0;
+      }
+
+      .store-detail-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .store-wallet {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-left: auto;
+        font-weight: 800;
+      }
+
+      .store-wallet-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      .store-wallet-item img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
       .store-detail-art {
         display: grid;
         place-items: center;
         min-height: 180px;
         overflow: hidden;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 12px;
-        background: rgba(7, 22, 47, .55);
       }
 
       .store-detail-art img {
-        width: min(100%, 384px);
-        max-height: 256px;
+        width: 100%;
+        max-height: 320px;
         object-fit: contain;
         image-rendering: pixelated;
+      }
+
+      .store-flavor {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
       }
 
       .store-option-grid {
@@ -1273,22 +1312,23 @@
       </section>
 
       <section id="storeDetailView" class="view">
-        <section class="panel episode-card">
-          <div class="episode-top">
+        <section class="store-detail-page">
+          <div class="store-detail-top">
             <button id="storeDetailBack" type="button">Back</button>
+            <div class="store-wallet" id="storeWallet"></div>
           </div>
           <div class="store-detail-art" id="storeDetailArt"></div>
           <div>
             <h2 class="episode-title" id="storeDetailTitle">Store</h2>
-            <p class="episode-meta" id="storeDetailMeta"></p>
+            <p class="store-flavor" id="storeDetailMeta"></p>
           </div>
-          <div class="stats-list" id="storeDetailStats"></div>
-          <section class="future-slot">
-            <h2>Inventory</h2>
+          <div class="stats-list" id="storeDetailStats" hidden></div>
+          <section class="panel">
+            <h2>Cassettes</h2>
             <div class="stats-list" id="storeInventoryStats"></div>
             <div id="storePurchaseOptions"></div>
           </section>
-          <section class="future-slot">
+          <section class="future-slot" hidden>
             <h2>Trade Readiness</h2>
             <div class="stats-list" id="storeTradeStats"></div>
             <div id="storeDuplicateChoices"></div>
@@ -1460,7 +1500,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "store-trade-1";
+      const APP_BUILD = "store-polish-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2960,6 +3000,15 @@
         };
       }
 
+      function storeWalletMarkup() {
+        const duplicateTotal = totalDuplicateCassetteAssignments();
+        const balance = coinBalance();
+        return `
+          <span class="store-wallet-item"><img src="assets/four.png" alt="">${duplicateTotal}</span>
+          <span class="store-wallet-item"><img src="${currencyIconForAmount(balance)}" alt="">${balance}</span>
+        `;
+      }
+
       function folderRows(items) {
         return items.map(([label, value]) => `
           <div class="stat-row folder-stat-row">
@@ -4090,6 +4139,7 @@
       function renderStoreDetail() {
         const store = currentStore();
         if (!store) {
+          $("storeWallet").innerHTML = "";
           $("storeDetailArt").innerHTML = "";
           $("storeDetailTitle").textContent = "Store";
           $("storeDetailMeta").textContent = "Choose a store from the Stores tab.";
@@ -4101,27 +4151,14 @@
           return;
         }
         const status = storeStatus(store);
+        $("storeWallet").innerHTML = storeWalletMarkup();
         $("storeDetailArt").innerHTML = store.large
           ? `<img src="${escapeHtml(store.large)}" alt="">`
           : "<p>No store art assigned yet.</p>";
         $("storeDetailTitle").textContent = store.name || store.id || "Store";
-        $("storeDetailMeta").innerHTML = `<span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>`;
-        $("storeDetailStats").innerHTML = rows([
-          ["Store type", store.storeType || "Cassette shop"],
-          ["Status", status.label],
-          ["Theme", store.theme || "None"],
-          ["Unlock condition", store.unlockCondition || (status.key === "unlocked" ? "Already available" : "Not specified")],
-          ["Flavor text", store.flavorText || store.description || "None"],
-          ["Store ID", store.id || "None"],
-          ["Notes", store.notes || "None"]
-        ]);
-        $("storeInventoryStats").innerHTML = rows([
-          ["Inventory type", store.inventoryType || "Cassette designs"],
-          ["Inventory theme", store.inventoryTheme || store.theme || "General"],
-          ["Cost type", store.costType || "Not active yet"],
-          ["Cost preview", store.costPreview || "Store trading is coming later."],
-          ["Inventory note", store.inventoryNote || "This store will eventually offer cassette inventory."]
-        ]);
+        $("storeDetailMeta").textContent = store.flavorText || store.description || "";
+        $("storeDetailStats").innerHTML = "";
+        $("storeInventoryStats").innerHTML = "";
         const duplicateTotal = totalDuplicateCassetteAssignments();
         const acceptsDuplicates = String(store.costType || "").toLowerCase().includes("duplicate");
         $("storeTradeStats").innerHTML = rows([
