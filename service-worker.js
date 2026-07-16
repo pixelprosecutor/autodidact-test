@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-currency-icons-v1";
+const CACHE_NAME = "autodidact-store-options-preview-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
