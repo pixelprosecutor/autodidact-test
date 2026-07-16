@@ -527,6 +527,9 @@
       .store-detail-art {
         display: grid;
         place-items: center;
+        width: calc(100% + 24px);
+        margin-left: -12px;
+        margin-right: -12px;
         min-height: 180px;
         overflow: hidden;
       }
@@ -548,7 +551,6 @@
       .store-option-grid {
         display: grid;
         gap: 10px;
-        margin-top: 10px;
       }
 
       .store-option-card {
@@ -1323,11 +1325,8 @@
             <p class="store-flavor" id="storeDetailMeta"></p>
           </div>
           <div class="stats-list" id="storeDetailStats" hidden></div>
-          <section class="panel">
-            <h2>Cassettes</h2>
-            <div class="stats-list" id="storeInventoryStats"></div>
-            <div id="storePurchaseOptions"></div>
-          </section>
+          <div class="stats-list" id="storeInventoryStats" hidden></div>
+          <div id="storePurchaseOptions"></div>
           <section class="future-slot" hidden>
             <h2>Trade Readiness</h2>
             <div class="stats-list" id="storeTradeStats"></div>
@@ -1500,7 +1499,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "store-polish-1";
+      const APP_BUILD = "store-full-art-tiles-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -4253,18 +4252,21 @@
                 option.rarity || "common",
                 cassette.pack && cassette.pack !== "Unsorted" ? cassette.pack : ""
               ].filter(Boolean).join(" - ");
+              const selected = id === selectedStoreOptionId;
               return `
-                <button class="store-option-card ${id === selectedStoreOptionId ? "selected" : ""}" type="button" data-store-option-id="${escapeHtml(id)}">
-                  <img src="${escapeHtml(cassette.icon || MISSING_CASSETTE_IMAGE)}" alt="">
-                  <div>
-                    <h3>${escapeHtml(cassette.name || cassette.id || "Cassette")}</h3>
-                    <p>${escapeHtml(meta)}</p>
-                  </div>
-                </button>
+                <div>
+                  <button class="store-option-card ${selected ? "selected" : ""}" type="button" data-store-option-id="${escapeHtml(id)}">
+                    <img src="${escapeHtml(cassette.icon || MISSING_CASSETTE_IMAGE)}" alt="">
+                    <div>
+                      <h3>${escapeHtml(cassette.name || cassette.id || "Cassette")}</h3>
+                      <p>${escapeHtml(meta)}</p>
+                    </div>
+                  </button>
+                  ${selected ? storeActionPanelMarkup(store, option, status) : ""}
+                </div>
               `;
             }).join("")}
           </div>
-          ${selectedOption ? storeActionPanelMarkup(store, selectedOption, status) : ""}
         `;
         container.querySelectorAll("[data-store-option-id]").forEach((button) => {
           button.addEventListener("click", () => {
