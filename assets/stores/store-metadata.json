@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-15",
+  "updatedAt": "2026-07-16",
   "stores": [
     {
       "id": "barbershop",
@@ -14,7 +14,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Countertop tape box",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Cassette counter",
+      "inventoryTheme": "General cassette designs",
+      "costType": "Not active yet",
+      "costPreview": "Store trading is coming later.",
+      "inventoryNote": "This store will eventually offer cassette inventory."
     },
     {
       "id": "bookstore-1",
@@ -28,7 +33,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Book and tape exchange",
       "theme": "bookstore",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Curated cassette shelf",
+      "inventoryTheme": "Study, reference, and deep-dive tapes",
+      "costType": "Completed listens",
+      "costPreview": "Spend completed listens to browse curated tapes.",
+      "inventoryNote": "This store will eventually favor thoughtful, study-friendly cassette designs."
     },
     {
       "id": "bookstore-2",
@@ -42,7 +52,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Book and tape exchange",
       "theme": "bookstore",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Curated cassette shelf",
+      "inventoryTheme": "Study, reference, and deep-dive tapes",
+      "costType": "Completed listens",
+      "costPreview": "Spend completed listens to browse curated tapes.",
+      "inventoryNote": "This store will eventually favor thoughtful, study-friendly cassette designs."
     },
     {
       "id": "church-basement",
@@ -56,7 +71,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Community tape table",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Cassette counter",
+      "inventoryTheme": "General cassette designs",
+      "costType": "Not active yet",
+      "costPreview": "Store trading is coming later.",
+      "inventoryNote": "This store will eventually offer cassette inventory."
     },
     {
       "id": "college-bookstore",
@@ -70,7 +90,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Book and tape exchange",
       "theme": "bookstore",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Curated cassette shelf",
+      "inventoryTheme": "Study, reference, and deep-dive tapes",
+      "costType": "Completed listens",
+      "costPreview": "Spend completed listens to browse curated tapes.",
+      "inventoryNote": "This store will eventually favor thoughtful, study-friendly cassette designs."
     },
     {
       "id": "concert",
@@ -84,7 +109,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Venue merch table",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Prize counter",
+      "inventoryTheme": "Venue, arcade, and event tapes",
+      "costType": "Achievements",
+      "costPreview": "Unlock inventory through achievements.",
+      "inventoryNote": "This store will eventually reward milestones with special cassette designs."
     },
     {
       "id": "gas-station-1",
@@ -98,7 +128,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Roadside cassette stop",
       "theme": "gas-station",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Roadside cassette crate",
+      "inventoryTheme": "Travel, night drive, and street finds",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicate cassettes for roadside finds.",
+      "inventoryNote": "This store will eventually offer travel and street-themed cassette designs."
     },
     {
       "id": "gas-station-2",
@@ -112,7 +147,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Roadside cassette stop",
       "theme": "gas-station",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Roadside cassette crate",
+      "inventoryTheme": "Travel, night drive, and street finds",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicate cassettes for roadside finds.",
+      "inventoryNote": "This store will eventually offer travel and street-themed cassette designs."
     },
     {
       "id": "library",
@@ -126,7 +166,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Book and tape exchange",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Curated cassette shelf",
+      "inventoryTheme": "Study, reference, and deep-dive tapes",
+      "costType": "Completed listens",
+      "costPreview": "Spend completed listens to browse curated tapes.",
+      "inventoryNote": "This store will eventually favor thoughtful, study-friendly cassette designs."
     },
     {
       "id": "locker-1",
@@ -140,7 +185,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Mystery locker",
       "theme": "locker",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Mystery locker drop",
+      "inventoryTheme": "School, hidden, and surprise tapes",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicates for a mystery cassette.",
+      "inventoryNote": "This store will eventually turn extra cassettes into surprise pulls."
     },
     {
       "id": "locker-2",
@@ -154,7 +204,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Mystery locker",
       "theme": "locker",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Mystery locker drop",
+      "inventoryTheme": "School, hidden, and surprise tapes",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicates for a mystery cassette.",
+      "inventoryNote": "This store will eventually turn extra cassettes into surprise pulls."
     },
     {
       "id": "locker-3",
@@ -168,7 +223,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Mystery locker",
       "theme": "locker",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Mystery locker drop",
+      "inventoryTheme": "School, hidden, and surprise tapes",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicates for a mystery cassette.",
+      "inventoryNote": "This store will eventually turn extra cassettes into surprise pulls."
     },
     {
       "id": "roller-rink",
@@ -182,7 +242,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Arcade prize counter",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Prize counter",
+      "inventoryTheme": "Venue, arcade, and event tapes",
+      "costType": "Achievements",
+      "costPreview": "Unlock inventory through achievements.",
+      "inventoryNote": "This store will eventually reward milestones with special cassette designs."
     },
     {
       "id": "store-exterior-1",
@@ -196,7 +261,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-exterior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-exterior-2",
@@ -210,7 +280,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-exterior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-exterior-3",
@@ -224,7 +299,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-exterior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-exterior-4",
@@ -238,7 +318,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-exterior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-interior-1",
@@ -252,7 +337,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-interior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-interior-2",
@@ -266,7 +356,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-interior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-interior-3",
@@ -280,7 +375,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-interior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "store-interior-4",
@@ -294,7 +394,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "store-interior",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Record-store cassette rack",
+      "inventoryTheme": "Music-shop and collector tapes",
+      "costType": "Completed listens",
+      "costPreview": "Use completed listens to unlock shop inventory.",
+      "inventoryNote": "This store will eventually offer classic cassette-shop designs."
     },
     {
       "id": "street-1",
@@ -308,7 +413,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "street",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Roadside cassette crate",
+      "inventoryTheme": "Travel, night drive, and street finds",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicate cassettes for roadside finds.",
+      "inventoryNote": "This store will eventually offer travel and street-themed cassette designs."
     },
     {
       "id": "street-2",
@@ -322,7 +432,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Cassette shop",
       "theme": "street",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Roadside cassette crate",
+      "inventoryTheme": "Travel, night drive, and street finds",
+      "costType": "Duplicate trade-ins",
+      "costPreview": "Trade duplicate cassettes for roadside finds.",
+      "inventoryNote": "This store will eventually offer travel and street-themed cassette designs."
     },
     {
       "id": "the-car",
@@ -336,7 +451,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Personal stash",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Personal stash",
+      "inventoryTheme": "Favorites, comfort, and repeat listens",
+      "costType": "Replays",
+      "costPreview": "Revisit old favorites to unlock personal-stash tapes.",
+      "inventoryNote": "This store will eventually connect repeat listening with cozy cassette designs."
     },
     {
       "id": "the-couch",
@@ -350,7 +470,12 @@
       "unlockCondition": "Store mechanics coming later.",
       "storeType": "Personal stash",
       "theme": "",
-      "notes": ""
+      "notes": "",
+      "inventoryType": "Personal stash",
+      "inventoryTheme": "Favorites, comfort, and repeat listens",
+      "costType": "Replays",
+      "costPreview": "Revisit old favorites to unlock personal-stash tapes.",
+      "inventoryNote": "This store will eventually connect repeat listening with cozy cassette designs."
     }
   ]
 }
