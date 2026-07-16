@@ -1165,7 +1165,7 @@
           <div class="stats-list" id="storeDetailStats"></div>
           <section class="future-slot">
             <h2>Inventory</h2>
-            <p>Store inventory and cassette trading will live here later.</p>
+            <div class="stats-list" id="storeInventoryStats"></div>
           </section>
         </section>
       </section>
@@ -1326,7 +1326,7 @@
       const LAST_DRIVE_SCAN_KEY = "autodidact-last-drive-scan";
       const LAST_LEDGER_SYNC_KEY = "autodidact-last-ledger-sync";
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
-      const APP_BUILD = "store-status-1";
+      const APP_BUILD = "store-inventory-preview-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3867,6 +3867,7 @@
           $("storeDetailTitle").textContent = "Store";
           $("storeDetailMeta").textContent = "Choose a store from the Stores tab.";
           $("storeDetailStats").innerHTML = "";
+          $("storeInventoryStats").innerHTML = "";
           return;
         }
         const status = storeStatus(store);
@@ -3883,6 +3884,13 @@
           ["Flavor text", store.flavorText || store.description || "None"],
           ["Store ID", store.id || "None"],
           ["Notes", store.notes || "None"]
+        ]);
+        $("storeInventoryStats").innerHTML = rows([
+          ["Inventory type", store.inventoryType || "Cassette designs"],
+          ["Inventory theme", store.inventoryTheme || store.theme || "General"],
+          ["Cost type", store.costType || "Not active yet"],
+          ["Cost preview", store.costPreview || "Store trading is coming later."],
+          ["Inventory note", store.inventoryNote || "This store will eventually offer cassette inventory."]
         ]);
       }
 
