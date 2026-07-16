@@ -789,6 +789,26 @@
                   Flavor Text
                   <textarea id="storeFieldFlavorText"></textarea>
                 </label>
+                <label>
+                  Inventory Type
+                  <input id="storeFieldInventoryType">
+                </label>
+                <label>
+                  Inventory Theme
+                  <input id="storeFieldInventoryTheme">
+                </label>
+                <label>
+                  Cost Type
+                  <input id="storeFieldCostType">
+                </label>
+                <label class="wide">
+                  Cost Preview
+                  <input id="storeFieldCostPreview">
+                </label>
+                <label class="wide">
+                  Inventory Note
+                  <textarea id="storeFieldInventoryNote"></textarea>
+                </label>
                 <label class="wide">
                   Large Art Path
                   <input id="storeFieldLarge">
@@ -1322,6 +1342,11 @@
           lockedByDefault: store.lockedByDefault === true,
           unlockCondition: store.unlockCondition || "",
           storeType: store.storeType || "Cassette shop",
+          inventoryType: store.inventoryType || "Cassette designs",
+          inventoryTheme: store.inventoryTheme || store.theme || "General",
+          costType: store.costType || "Not active yet",
+          costPreview: store.costPreview || "Store trading is coming later.",
+          inventoryNote: store.inventoryNote || "This store will eventually offer cassette inventory.",
           theme: store.theme || "",
           notes: store.notes || ""
         };
@@ -1358,6 +1383,11 @@
             store.theme,
             store.status,
             store.storeType,
+            store.inventoryType,
+            store.inventoryTheme,
+            store.costType,
+            store.costPreview,
+            store.inventoryNote,
             store.unlockCondition,
             store.notes
           ].join(" ").toLowerCase();
@@ -1406,6 +1436,11 @@
         $("storeFieldLocked").checked = store.lockedByDefault;
         $("storeFieldDescription").value = store.description;
         $("storeFieldFlavorText").value = store.flavorText;
+        $("storeFieldInventoryType").value = store.inventoryType;
+        $("storeFieldInventoryTheme").value = store.inventoryTheme;
+        $("storeFieldCostType").value = store.costType;
+        $("storeFieldCostPreview").value = store.costPreview;
+        $("storeFieldInventoryNote").value = store.inventoryNote;
         $("storeFieldLarge").value = store.large;
         $("storeFieldNotes").value = store.notes;
         $("storeImagePreview").src = assetUrl(store.large);
@@ -1706,6 +1741,11 @@
       bindStoreField("storeFieldUnlockCondition", "unlockCondition");
       bindStoreField("storeFieldDescription", "description");
       bindStoreField("storeFieldFlavorText", "flavorText");
+      bindStoreField("storeFieldInventoryType", "inventoryType");
+      bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
+      bindStoreField("storeFieldCostType", "costType");
+      bindStoreField("storeFieldCostPreview", "costPreview");
+      bindStoreField("storeFieldInventoryNote", "inventoryNote");
       bindStoreField("storeFieldLarge", "large");
       bindStoreField("storeFieldNotes", "notes");
       $("storeFieldEnabled").addEventListener("change", () => updateSelectedStore({ enabled: $("storeFieldEnabled").checked }));
