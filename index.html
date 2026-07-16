@@ -514,18 +514,28 @@
 
       .store-option-card {
         display: grid;
-        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-columns: 42px minmax(0, 1fr);
         gap: 10px;
         align-items: center;
+        width: 100%;
         padding: 10px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: rgba(7, 22, 47, .72);
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .store-option-card.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(125, 211, 252, .18);
       }
 
       .store-option-card img {
-        width: 96px;
-        max-height: 64px;
+        width: 34px;
+        height: 34px;
         object-fit: contain;
         image-rendering: pixelated;
       }
@@ -544,9 +554,25 @@
         font-size: 12px;
       }
 
-      .store-option-card button {
-        justify-self: start;
-        margin-top: 8px;
+      .store-action-panel {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .72);
+      }
+
+      .store-action-panel h3,
+      .store-action-panel p {
+        margin: 0;
+      }
+
+      .store-action-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
       }
 
       .future-slot {
@@ -1432,7 +1458,7 @@
       const ACHIEVEMENT_UNLOCK_KEY = "autodidact-achievement-unlocks-v1";
       const COIN_BALANCE_KEY = "autodidact-coin-balance-v1";
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
-      const APP_BUILD = "store-options-preview-1";
+      const APP_BUILD = "store-clean-rows-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2824,6 +2850,7 @@
       let STORES = [];
       let selectedStoreId = "";
       let selectedDuplicateFileId = "";
+      let selectedStoreOptionId = "";
 
       const $ = (id) => document.getElementById(id);
 
@@ -4078,12 +4105,13 @@
             : "Later, this store can use its listed cost type when trading is active."]
         ]);
         renderStorePurchaseOptions(store, status);
-        renderStoreDuplicateChoices();
+        $("storeDuplicateChoices").innerHTML = "";
       }
 
       function openStoreDetail(storeId) {
         selectedStoreId = storeId || "";
         selectedDuplicateFileId = "";
+        selectedStoreOptionId = "";
         renderStoreDetail();
         showView("storeDetail");
       }
@@ -4102,15 +4130,30 @@
         return id === "the-car" || id === "the-couch" || name === "the car" || name === "the couch";
       }
 
+      function cassetteBelongsToStore(cassette, store) {
+        const storeId = String(store?.id || "").toLowerCase();
+        const cassetteStoreId = String(cassette?.storeId || cassette?.exclusiveStoreId || "").toLowerCase();
+        return Boolean(cassetteStoreId && cassetteStoreId === storeId);
+      }
+
+      function isStoreExclusiveCassette(cassette) {
+        return cassette?.storeExclusive === true || cassette?.exclusive === true || Boolean(cassette?.storeId || cassette?.exclusiveStoreId);
+      }
+
       function storePurchaseOptions(store) {
         if (!store || !CASSETTE_ART.length) return [];
         const assignments = cassetteAssignmentCounts();
-        const uncollected = CASSETTE_ART.filter((cassette) => !assignments.has(cassetteKey(cassette)));
-        const pool = uncollected.length >= 3 ? uncollected : CASSETTE_ART;
-        const start = stableHash(`${store.id || store.name || "store"}-inventory`) % pool.length;
+        const unowned = CASSETTE_ART.filter((cassette) => !assignments.has(cassetteKey(cassette)));
+        const exclusive = unowned.filter((cassette) => cassetteBelongsToStore(cassette, store));
+        const randomPool = unowned.filter((cassette) => !isStoreExclusiveCassette(cassette));
+        const pool = [...exclusive];
+        const start = randomPool.length ? stableHash(`${store.id || store.name || "store"}-inventory`) % randomPool.length : 0;
+        for (let offset = 0; pool.length < 3 && offset < randomPool.length; offset += 1) {
+          const cassette = randomPool[(start + offset) % randomPool.length];
+          if (!pool.some((item) => cassetteKey(item) === cassetteKey(cassette))) pool.push(cassette);
+        }
         const options = [];
-        for (let offset = 0; options.length < Math.min(3, pool.length) && offset < pool.length; offset += 1) {
-          const cassette = pool[(start + offset) % pool.length];
+        for (const cassette of pool.slice(0, 3)) {
           if (options.some((option) => cassetteKey(option.cassette) === cassetteKey(cassette))) continue;
           options.push({
             cassette,
@@ -4126,58 +4169,95 @@
         if (!container) return;
         const options = storePurchaseOptions(store);
         if (!options.length) {
-          container.innerHTML = "<p>No purchase previews are available yet.</p>";
+          selectedStoreOptionId = "";
+          container.innerHTML = "<p>Sold Out</p>";
           return;
         }
-        const mystery = isMysteryStore(store);
-        const balance = coinBalance();
-        const duplicateSelected = Boolean(selectedDuplicateFileId);
-        const unlocked = status?.key === "unlocked";
+        if (selectedStoreOptionId && !options.some((option) => cassetteKey(option.cassette) === selectedStoreOptionId)) {
+          selectedStoreOptionId = "";
+        }
+        const selectedOption = options.find((option) => cassetteKey(option.cassette) === selectedStoreOptionId);
         container.innerHTML = `
           <div class="store-option-grid">
-            ${options.map((option, index) => {
+            ${options.map((option) => {
               const cassette = option.cassette;
-              const canPreview = unlocked && duplicateSelected && balance >= option.cost;
-              const image = mystery ? MISSING_CASSETTE_IMAGE : cassette.large;
-              const title = mystery ? `Mystery cassette ${index + 1}` : (cassette.name || cassette.id || "Cassette");
-              const detail = mystery
-                ? `${option.rarity || "common"} - random pull`
-                : [cassette.pack, option.rarity].filter((part) => part && part !== "Unsorted").join(" - ") || option.rarity || "common";
-              const disabledReason = unlocked
-                ? (!duplicateSelected ? "Choose a duplicate episode first." : (balance < option.cost ? "Not enough balance yet." : "Ready to preview."))
-                : "Store is not unlocked yet.";
+              const id = cassetteKey(cassette);
+              const meta = [
+                option.rarity || "common",
+                cassette.pack && cassette.pack !== "Unsorted" ? cassette.pack : ""
+              ].filter(Boolean).join(" - ");
               return `
-                <article class="store-option-card">
-                  <img src="${escapeHtml(image)}" alt="">
+                <button class="store-option-card ${id === selectedStoreOptionId ? "selected" : ""}" type="button" data-store-option-id="${escapeHtml(id)}">
+                  <img src="${escapeHtml(cassette.icon || MISSING_CASSETTE_IMAGE)}" alt="">
                   <div>
-                    <h3>${escapeHtml(title)}</h3>
-                    <p>${escapeHtml(detail)}</p>
-                    <p>Cost: ${currencyAmountMarkup(option.cost).html}</p>
-                    <button type="button" data-store-option="${index}" ${canPreview ? "" : "disabled"}>Preview</button>
-                    <p>${escapeHtml(disabledReason)}</p>
+                    <h3>${escapeHtml(cassette.name || cassette.id || "Cassette")}</h3>
+                    <p>${escapeHtml(meta)}</p>
                   </div>
-                </article>
+                </button>
               `;
             }).join("")}
           </div>
+          ${selectedOption ? storeActionPanelMarkup(store, selectedOption, status) : ""}
         `;
-        container.querySelectorAll("[data-store-option]").forEach((button) => {
+        container.querySelectorAll("[data-store-option-id]").forEach((button) => {
           button.addEventListener("click", () => {
-            const option = options[Number(button.dataset.storeOption) || 0];
-            previewStorePurchase(store, option);
+            selectedStoreOptionId = button.dataset.storeOptionId || "";
+            renderStoreDetail();
           });
+        });
+        const buyButton = container.querySelector("[data-store-buy]");
+        if (buyButton) buyButton.addEventListener("click", () => previewStorePurchase(store, selectedOption));
+        const tradeButton = container.querySelector("[data-store-trade]");
+        if (tradeButton) tradeButton.addEventListener("click", () => previewStoreTrade(store, selectedOption));
+        const backButton = container.querySelector("[data-store-option-back]");
+        if (backButton) backButton.addEventListener("click", () => {
+          selectedStoreOptionId = "";
+          renderStoreDetail();
         });
       }
 
+      function storeActionPanelMarkup(store, option, status) {
+        const cassette = option.cassette;
+        const unlocked = status?.key === "unlocked";
+        const hasAnyDuplicate = totalDuplicateCassetteAssignments() > 0;
+        const canAfford = coinBalance() >= option.cost;
+        const canBuy = unlocked && hasAnyDuplicate && canAfford;
+        const canTrade = unlocked && eligibleTradeChoices(option.rarity).length > 0;
+        const buyNote = !unlocked
+          ? "Store is not unlocked yet."
+          : (!hasAnyDuplicate ? "You need a duplicate cassette to record over." : (!canAfford ? "Not enough balance yet." : "Ready to buy."));
+        const tradeNote = canTrade
+          ? "A same-rarity duplicate is eligible for trade."
+          : "No same-rarity duplicate is eligible for trade.";
+        return `
+          <div class="store-action-panel">
+            <h3>${escapeHtml(cassette.name || cassette.id || "Cassette")}</h3>
+            <p>Price: ${currencyAmountMarkup(option.cost).html} - Balance: ${currencyAmountMarkup(coinBalance()).html}</p>
+            <p>${escapeHtml(buyNote)}</p>
+            <p>${escapeHtml(tradeNote)}</p>
+            <div class="store-action-buttons">
+              <button type="button" data-store-buy ${canBuy ? "" : "disabled"}>Buy</button>
+              ${canTrade ? `<button type="button" data-store-trade>Trade</button>` : ""}
+              <button type="button" data-store-option-back>Back</button>
+            </div>
+          </div>
+        `;
+      }
+
       function previewStorePurchase(store, option) {
-        const file = audioFiles.find((item) => item.id === selectedDuplicateFileId);
-        if (!file || !option) {
-          setStatus("Choose a duplicate episode before previewing a store purchase.");
+        if (!option) {
+          setStatus("Choose a cassette before buying.");
           return;
         }
-        const mystery = isMysteryStore(store);
-        const cassetteName = mystery ? "a mystery cassette" : (option.cassette?.name || "a cassette");
-        setStatus(`Preview only: ${displayName(file.name)} would be reassigned to ${cassetteName} for ${option.cost}.`);
+        setStatus(`Preview only: buying ${option.cassette?.name || "this cassette"} would cost ${option.cost}. Next, you would choose a duplicate cassette to record over.`);
+      }
+
+      function previewStoreTrade(store, option) {
+        if (!option) {
+          setStatus("Choose a cassette before trading.");
+          return;
+        }
+        setStatus(`Preview only: trading for ${option.cassette?.name || "this cassette"} would show eligible ${option.rarity || "common"} duplicates next.`);
       }
 
       function cassetteForFile(file) {
@@ -4237,6 +4317,13 @@
           const folder = String(a.file.folderPath || "").localeCompare(String(b.file.folderPath || ""));
           return folder || String(a.file.name || "").localeCompare(String(b.file.name || ""));
         });
+      }
+
+      function eligibleTradeChoices(rarity) {
+        const wanted = String(rarity || "common").toLowerCase();
+        return duplicateEpisodeChoices().filter((choice) =>
+          String(choice.cassette?.rarity || "common").toLowerCase() === wanted
+        );
       }
 
       function renderStoreDuplicateChoices() {
