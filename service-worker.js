@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-store-duplicate-choice-v1";
+const CACHE_NAME = "autodidact-currency-icons-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,9 @@ const APP_SHELL = [
   "./assets/autodidact-icon-180.png",
   "./assets/autodidact-icon-192.png",
   "./assets/autodidact-icon-512.png",
+  "./assets/currency-large.png",
+  "./assets/currency-medium.png",
+  "./assets/currency-small.png",
   "./assets/downloaded.png",
   "./assets/folder-icon-34.png",
   "./assets/google-no.png",
