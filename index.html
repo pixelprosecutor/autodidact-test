@@ -215,6 +215,27 @@
         height: 28px;
       }
 
+      .summary-grid .settings-metric {
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+      }
+
+      .settings-metric img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .settings-metric strong {
+        overflow-wrap: anywhere;
+        text-align: right;
+        font-size: 21px;
+        line-height: 1.1;
+      }
+
       @media (max-width: 430px) {
         .stats-summary-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -1357,10 +1378,6 @@
       <section id="settingsView" class="view">
         <div class="summary-grid">
           <div>
-            <span id="settingsGoogleStatus">!</span>
-            <small>Google</small>
-          </div>
-          <div>
             <span id="settingsCoinCount">0</span>
             <small>balance</small>
           </div>
@@ -1517,7 +1534,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "settings-icons-1";
+      const APP_BUILD = "settings-summary-icons-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3674,9 +3691,9 @@
         const lastDriveScan = localStorage.getItem(LAST_DRIVE_SCAN_KEY);
         const lastLedgerSync = localStorage.getItem(LAST_LEDGER_SYNC_KEY);
         const online = navigator.onLine !== false;
-        $("settingsGoogleStatus").textContent = accessToken ? "OK" : "!";
-        $("settingsCoinCount").innerHTML = currencyAmountMarkup(coinBalance()).html;
-        $("settingsDownloadCount").textContent = downloads.length;
+        const balance = coinBalance();
+        $("settingsCoinCount").innerHTML = `<span class="settings-metric"><img src="${currencyIconForAmount(balance)}" alt=""><strong>${balance}</strong></span>`;
+        $("settingsDownloadCount").innerHTML = `<span class="settings-metric"><img src="assets/downloaded.png" alt=""><strong>${downloads.length}</strong></span>`;
         $("settingsUnsyncedCount").textContent = unsynced.length;
         $("settingsScanDrive").disabled = false;
         updateGoogleStatus();

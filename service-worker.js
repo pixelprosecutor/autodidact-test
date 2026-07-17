@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-settings-icons-v1";
+const CACHE_NAME = "autodidact-settings-summary-icons-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
