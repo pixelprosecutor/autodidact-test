@@ -1499,7 +1499,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "store-full-art-tiles-1";
+      const APP_BUILD = "store-rotation-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -4080,62 +4080,100 @@
         }
       }
 
-      function renderStores() {
-        const summary = $("storeSummary");
-        const list = $("storeList");
-        if (!summary || !list) return;
-        if (!STORES.length) {
-          summary.textContent = "No stores are available yet.";
-          list.innerHTML = "";
-          return;
-        }
-        const statusCounts = STORES.reduce((counts, store) => {
-          const status = storeStatus(store).key;
-          counts[status] = (counts[status] || 0) + 1;
-          return counts;
-        }, {});
-        summary.innerHTML = `${STORES.length} store${STORES.length === 1 ? "" : "s"}. ${statusCounts.unlocked || 0} unlocked, ${statusCounts.comingSoon || 0} coming soon, ${statusCounts.locked || 0} locked. Balance: ${currencyAmountMarkup(coinBalance()).html}`;
-        list.innerHTML = STORES.map((store) => {
-          const status = storeStatus(store);
-          const locked = status.key === "locked";
-          const details = [
-            store.storeType || "Cassette shop",
-            store.theme ? `Theme: ${store.theme}` : "",
-            store.unlockCondition ? `Unlock: ${store.unlockCondition}` : ""
-          ].filter(Boolean).join(" - ");
-          return `
-            <button class="store-card ${locked ? "locked" : ""}" type="button" data-store-id="${escapeHtml(store.id || "")}" aria-label="Open ${escapeHtml(store.name || store.id || "Store")}">
-              ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
-              <div>
-                <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
-                <span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>
-                <p>${escapeHtml(details)}</p>
-              </div>
-              ${store.flavorText ? `<p>${escapeHtml(store.flavorText)}</p>` : ""}
-            </button>
-          `;
-        }).join("");
-        list.querySelectorAll("[data-store-id]").forEach((button) => {
-          button.addEventListener("click", () => openStoreDetail(button.dataset.storeId));
-        });
-      }
+  
+    function storeIdentity(store) {
+      return String(store?.id || store?.name || "").trim();
+    }
 
-      function currentStore() {
-        return STORES.find((store) => store.id === selectedStoreId) || null;
-      }
+    function storeRotationDayIndex(date = new Date()) {
+      const localDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return Math.floor(localDay.getTime() / 86400000);
+    }
 
-      function storeStatus(store) {
+    function storeRotationCandidates() {
+      return STORES.filter((store) => {
         const rawStatus = String(store?.status || "").trim();
-        if (rawStatus === "locked" || store?.lockedByDefault === true) {
-          return { key: "locked", label: "Locked", className: "locked" };
-        }
-        if (rawStatus === "comingSoon" || rawStatus === "coming-soon") {
-          return { key: "comingSoon", label: "Coming soon", className: "coming-soon" };
-        }
-        return { key: "unlocked", label: "Unlocked", className: "unlocked" };
-      }
+        return store && store.enabled !== false && store.lockedByDefault !== true && rawStatus !== "locked" && storeIdentity(store);
+      });
+    }
 
-      function renderStoreDetail() {
+    function activeStoresForDate(date = new Date()) {
+      const candidates = storeRotationCandidates();
+      if (!candidates.length) return [];
+      const today = storeRotationDayIndex(date);
+      const active = [];
+      const seen = new Set();
+      const slots = Math.min(3, candidates.length);
+      for (let age = 0; age < slots; age += 1) {
+        const day = today - age;
+        const pick = candidates
+          .map((store) => ({
+            store,
+            identity: storeIdentity(store),
+            score: stableHash(String(day) + ":" + storeIdentity(store))
+          }))
+          .sort((a, b) => a.score - b.score || a.identity.localeCompare(b.identity))
+          .find((candidate) => !seen.has(candidate.identity));
+        if (pick) {
+          seen.add(pick.identity);
+          active.push({ ...pick.store, rotationActive: true, rotationAge: age });
+        }
+      }
+      return active;
+    }
+
+    function renderStores() {
+      const summary = $("storeSummary");
+      const list = $("storeList");
+      if (!summary || !list) return;
+      const visibleStores = activeStoresForDate();
+      if (!visibleStores.length) {
+        summary.textContent = STORES.length ? "No stores are open today." : "No stores are available yet.";
+        list.innerHTML = "";
+        return;
+      }
+      summary.innerHTML = `${visibleStores.length} active store${visibleStores.length === 1 ? "" : "s"}. A new store opens each day and stays for 3 days. Balance: ${currencyAmountMarkup(coinBalance()).html}`;
+      list.innerHTML = visibleStores.map((store) => {
+        const status = storeStatus(store);
+        const locked = status.key === "locked";
+        const details = [status.label, store.flavorText || ""].filter(Boolean).join(" - ");
+        return `
+          <button class="store-card ${locked ? "locked" : ""}" type="button" data-store-id="${escapeHtml(store.id || "")}" aria-label="Open ${escapeHtml(store.name || store.id || "Store")}">
+            ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
+            <div>
+              <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
+              <span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>
+              ${details ? `<p>${escapeHtml(details)}</p>` : ""}
+            </div>
+          </button>
+        `;
+      }).join("");
+      list.querySelectorAll("[data-store-id]").forEach((button) => {
+        button.addEventListener("click", () => openStoreDetail(button.dataset.storeId));
+      });
+    }
+
+    function currentStore() {
+      return activeStoresForDate().find((store) => store.id === selectedStoreId) || STORES.find((store) => store.id === selectedStoreId) || null;
+    }
+
+    function storeStatus(store) {
+      const rawStatus = String(store?.status || "").trim();
+      if (rawStatus === "locked" || store?.lockedByDefault === true) return { key: "locked", label: "Locked", className: "locked" };
+      if (store?.rotationActive) {
+        const age = Number(store.rotationAge || 0);
+        const remaining = Math.max(1, 3 - age);
+        return {
+          key: "unlocked",
+          label: age === 0 ? "New today" : `${remaining} day${remaining === 1 ? "" : "s"} left`,
+          className: "unlocked"
+        };
+      }
+      if (rawStatus === "comingSoon" || rawStatus === "coming-soon") return { key: "comingSoon", label: "Coming soon", className: "coming-soon" };
+      return { key: "unlocked", label: "Unlocked", className: "unlocked" };
+    }
+
+    function renderStoreDetail() {
         const store = currentStore();
         if (!store) {
           $("storeWallet").innerHTML = "";
