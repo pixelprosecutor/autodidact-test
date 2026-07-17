@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-store-rotation-v1";
+const CACHE_NAME = "autodidact-store-polish-rotation-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
