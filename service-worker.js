@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-store-polish-rotation-v1";
+const CACHE_NAME = "autodidact-settings-icons-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -35,6 +35,10 @@ const APP_SHELL = [
   "./assets/statstab (3).png",
   "./assets/statstab (4).png",
   "./assets/settings_fb2.png",
+  "./assets/settings-library.png",
+  "./assets/settings-reload.png",
+  "./assets/settings-sync.png",
+  "./assets/settings-update.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-icon-34x34.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-01-19-36-pm-large-384x256.png",
   "./assets/cassettes/library/chatgpt-image-jul-5-2026-02-37-42-pm-1-icon-34x34.png",

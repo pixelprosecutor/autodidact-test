@@ -450,7 +450,7 @@
       }
 
       .store-status-badge {
-        justify-self: start;
+        justify-self: end;
         padding: 4px 7px;
         border: 1px solid var(--line);
         border-radius: 999px;
@@ -458,6 +458,13 @@
         color: var(--accent);
         font-size: 11px;
         font-weight: 800;
+      }
+
+      .store-card-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
       }
 
       .store-status-badge.locked {
@@ -773,7 +780,19 @@
       }
 
       .settings-action-grid button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         width: 100%;
+      }
+
+      .settings-action-grid button img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        image-rendering: pixelated;
+        flex: 0 0 auto;
       }
 
       .stat-row {
@@ -1358,11 +1377,10 @@
         <section class="panel">
           <h2>Important Actions</h2>
           <div class="settings-action-grid">
-            <button id="checkForUpdate">Check for update</button>
-            <button id="reloadApp">Reload app</button>
-            <button id="settingsSignIn">Connect Google</button>
-            <button id="settingsScanDrive">Refresh Drive library</button>
-            <button id="settingsSyncStats">Sync stats to ledger</button>
+            <button id="checkForUpdate"><img src="assets/settings-update.png" alt="">Check for update</button>
+            <button id="reloadApp"><img src="assets/settings-reload.png" alt="">Reload app</button>
+            <button id="settingsScanDrive"><img src="assets/settings-library.png" alt="">Refresh Drive library</button>
+            <button id="settingsSyncStats"><img src="assets/settings-sync.png" alt="">Sync stats to ledger</button>
           </div>
         </section>
 
@@ -1499,7 +1517,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "store-rotation-1";
+      const APP_BUILD = "settings-icons-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3207,6 +3225,9 @@
         if (announcement.action.type === "episode" && announcement.action.fileId) {
           openEpisode(announcement.action.fileId, "library");
           hideAnnouncements();
+        } else if (announcement.action.type === "store" && announcement.action.storeId) {
+          openStoreDetail(announcement.action.storeId);
+          hideAnnouncements();
         } else if (announcement.action.type === "collection") {
           renderCollection();
           showView("collection");
@@ -3658,7 +3679,6 @@
         $("settingsDownloadCount").textContent = downloads.length;
         $("settingsUnsyncedCount").textContent = unsynced.length;
         $("settingsScanDrive").disabled = false;
-        $("settingsSignIn").textContent = accessToken ? "Refresh Google access" : "Connect Google";
         updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
@@ -4136,13 +4156,15 @@
       list.innerHTML = visibleStores.map((store) => {
         const status = storeStatus(store);
         const locked = status.key === "locked";
-        const details = [status.label, store.flavorText || ""].filter(Boolean).join(" - ");
+        const details = store.flavorText || "";
         return `
           <button class="store-card ${locked ? "locked" : ""}" type="button" data-store-id="${escapeHtml(store.id || "")}" aria-label="Open ${escapeHtml(store.name || store.id || "Store")}">
             ${store.large ? `<img src="${escapeHtml(store.large)}" alt="">` : ""}
             <div>
-              <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
-              <span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>
+              <div class="store-card-header">
+                <h3>${escapeHtml(store.name || store.id || "Store")}</h3>
+                <span class="store-status-badge ${escapeHtml(status.className)}">${escapeHtml(status.label)}</span>
+              </div>
               ${details ? `<p>${escapeHtml(details)}</p>` : ""}
             </div>
           </button>
@@ -4251,7 +4273,8 @@
         const exclusive = unowned.filter((cassette) => cassetteBelongsToStore(cassette, store));
         const randomPool = unowned.filter((cassette) => !isStoreExclusiveCassette(cassette));
         const pool = [...exclusive];
-        const start = randomPool.length ? stableHash(`${store.id || store.name || "store"}-inventory`) % randomPool.length : 0;
+        const rotationDay = storeRotationDayIndex();
+        const start = randomPool.length ? stableHash(`${store.id || store.name || "store"}-inventory-${rotationDay}`) % randomPool.length : 0;
         for (let offset = 0; pool.length < 3 && offset < randomPool.length; offset += 1) {
           const cassette = randomPool[(start + offset) % randomPool.length];
           if (!pool.some((item) => cassetteKey(item) === cassetteKey(cassette))) pool.push(cassette);
@@ -4517,14 +4540,14 @@
         await createAnnouncements([{
           id: `store-purchase-${transaction.id}`,
           type: "store_purchase",
-          title: "Cassette purchased",
-          message: `${displayName(file.name)} was reassigned to ${option.cassette.name || "a new cassette"}.`,
-          meta: `${store.name || "Store"} - ${option.cost}`,
+          title: "New cassette acquired",
+          message: `${option.cassette.name || "A new cassette"} was recorded over ${displayName(file.name)}.`,
+          meta: `${store.name || "Store"} - Purchased for ${option.cost}`,
           image: option.cassette.large || option.cassette.icon || MISSING_CASSETTE_IMAGE,
           action: {
-            type: "episode",
-            label: "View episode",
-            fileId: file.id
+            type: "store",
+            label: "Back to store",
+            storeId: store.id || ""
           }
         }]);
         setStatus(`Purchased ${option.cassette.name || "cassette"} and recorded over ${displayName(file.name)}.`);
@@ -4599,14 +4622,14 @@
         await createAnnouncements([{
           id: `store-trade-${transaction.id}`,
           type: "store_trade",
-          title: "Cassette traded",
-          message: `${displayName(file.name)} was traded into ${option.cassette.name || "a new cassette"}.`,
-          meta: `${store.name || "Store"} - ${option.rarity || "common"}`,
+          title: "Trade complete",
+          message: `${option.cassette.name || "A new cassette"} was recorded over ${displayName(file.name)}.`,
+          meta: `${store.name || "Store"} - ${option.rarity || "common"} trade`,
           image: option.cassette.large || option.cassette.icon || MISSING_CASSETTE_IMAGE,
           action: {
-            type: "episode",
-            label: "View episode",
-            fileId: file.id
+            type: "store",
+            label: "Back to store",
+            storeId: store.id || ""
           }
         }]);
         setStatus(`Traded for ${option.cassette.name || "cassette"} and recorded over ${displayName(file.name)}.`);
@@ -5682,11 +5705,6 @@
         setStatus("Ready. Google access will be requested when streaming, downloading, refreshing Drive, or syncing stats.");
         renderSettings();
       }
-
-      $("settingsSignIn").addEventListener("click", () => {
-        window.clearTimeout(quietReconnectTimer);
-        connectToGoogle(localStorage.getItem(GOOGLE_CONSENT_KEY) ? "" : "consent");
-      });
 
       $("googleStatusButton").addEventListener("click", () => {
         window.clearTimeout(quietReconnectTimer);
