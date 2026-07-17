@@ -564,7 +564,7 @@
                 </label>
                 <label>
                   Exclusive Store ID
-                  <input id="fieldStoreId" placeholder="store-exterior-1">
+                  <select id="fieldStoreId"></select>
                 </label>
                 <label class="wide">
                   Notes
@@ -1020,6 +1020,7 @@
       }
 
       function fillForm(cassette) {
+        renderCassetteStoreOptions(cassette.storeId);
         $("fieldId").value = cassette.id;
         $("fieldName").value = cassette.name;
         $("fieldPack").value = cassette.pack;
@@ -1035,6 +1036,21 @@
         $("fieldLarge").value = cassette.large;
         $("iconPreview").src = assetUrl(cassette.icon);
         $("largePreview").src = assetUrl(cassette.large);
+      }
+
+      function renderCassetteStoreOptions(selectedStoreId = "") {
+        const select = $("fieldStoreId");
+        const stores = sortedStores();
+        const selectedMissing = selectedStoreId && !stores.some((store) => store.id === selectedStoreId);
+        select.innerHTML = [
+          '<option value="">No specific store</option>',
+          selectedMissing ? `<option value="${escapeHtml(selectedStoreId)}">${escapeHtml(selectedStoreId)} (not in current stores)</option>` : "",
+          ...stores.map((store) => {
+            const label = `${store.name || store.id} (${store.id})`;
+            return `<option value="${escapeHtml(store.id)}">${escapeHtml(label)}</option>`;
+          })
+        ].join("");
+        select.value = selectedStoreId || "";
       }
 
       function renderEditor() {
@@ -1665,6 +1681,7 @@
           selectedStoreId = storeMetadata.stores[0]?.id || "";
           storeDirty = false;
           renderStores();
+          renderEditor();
           setStatus(`Loaded ${storeMetadata.stores.length} stores.`);
         } catch (error) {
           setStatus(error.message || "Could not load store metadata.");
