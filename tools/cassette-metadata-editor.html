@@ -552,6 +552,14 @@
                   <input id="fieldEnabled" type="checkbox">
                   Enabled for assignment
                 </label>
+                <label class="check-row">
+                  <input id="fieldStoreExclusive" type="checkbox">
+                  Store-exclusive cassette
+                </label>
+                <label>
+                  Exclusive Store ID
+                  <input id="fieldStoreId" placeholder="store-exterior-1">
+                </label>
                 <label class="wide">
                   Notes
                   <textarea id="fieldNotes"></textarea>
@@ -908,6 +916,8 @@
           color: cassette.color || "",
           style: cassette.style || "",
           enabled: cassette.enabled !== false,
+          storeExclusive: cassette.storeExclusive === true || cassette.exclusive === true,
+          storeId: cassette.storeId || cassette.exclusiveStoreId || "",
           icon: cassette.icon || "",
           large: cassette.large || "",
           notes: cassette.notes || ""
@@ -1012,6 +1022,8 @@
         $("fieldColor").value = cassette.color;
         $("fieldStyle").value = cassette.style;
         $("fieldEnabled").checked = cassette.enabled;
+        $("fieldStoreExclusive").checked = cassette.storeExclusive;
+        $("fieldStoreId").value = cassette.storeId;
         $("fieldNotes").value = cassette.notes;
         $("fieldIcon").value = cassette.icon;
         $("fieldLarge").value = cassette.large;
@@ -1719,10 +1731,12 @@
       bindField("fieldRarity", "rarity");
       bindField("fieldColor", "color");
       bindField("fieldStyle", "style");
+      bindField("fieldStoreId", "storeId");
       bindField("fieldNotes", "notes");
       bindField("fieldIcon", "icon");
       bindField("fieldLarge", "large");
       $("fieldEnabled").addEventListener("change", () => updateSelected({ enabled: $("fieldEnabled").checked }));
+      $("fieldStoreExclusive").addEventListener("change", () => updateSelected({ storeExclusive: $("fieldStoreExclusive").checked }));
       bindAchievementField("achievementFieldName", "name");
       bindAchievementField("achievementFieldDescription", "description");
       bindAchievementField("achievementFieldCategory", "category", (value) => value || "Listening");
