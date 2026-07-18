@@ -1449,7 +1449,7 @@
         </button>
 
         <button class="collection-entry folders-entry" id="openFolders" type="button">
-          <strong>Folders</strong>
+          <strong>Folder Stats Leaderboard</strong>
           <small id="foldersEntrySummary">Loading folders.</small>
         </button>
       </section>
@@ -1481,7 +1481,7 @@
           <div class="episode-top">
             <button id="foldersBack" type="button">Back</button>
           </div>
-          <h2>Folders</h2>
+          <h2>Folder Stats Leaderboard</h2>
           <div class="stats-list" id="folderStats"></div>
         </section>
       </section>
@@ -1688,7 +1688,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "achievement-gallery-groups-1";
+      const APP_BUILD = "library-added-size-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3178,19 +3178,12 @@
         return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
       }
 
-      function fileDurationText(file) {
-        const progress = progressForFile(file.id);
-        const duration = Number(file.duration || progress.duration || 0);
-        return duration ? formatDuration(duration) : "";
-      }
-
       function librarySubtitle(file, includeFolder = false) {
         const parts = [];
         if (includeFolder) parts.push(file.folderPath || "Podcast");
         const addedDate = formatDate(file.createdTime);
         if (addedDate) parts.push(`Added ${addedDate}`);
-        const duration = fileDurationText(file);
-        if (duration) parts.push(duration);
+        parts.push(formatBytes(file.size));
         if (isDownloaded(file.id)) parts.push("downloaded");
         return parts.join(" - ") || "Audio";
       }
