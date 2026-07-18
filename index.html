@@ -911,6 +911,61 @@
         image-rendering: pixelated;
       }
 
+      .achievement-section {
+        display: grid;
+        gap: 8px;
+      }
+
+      .achievement-section + .achievement-section {
+        margin-top: 18px;
+      }
+
+      .achievement-section h3 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+
+      .achievement-card-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .achievement-card {
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .8);
+      }
+
+      .achievement-card-art {
+        display: grid;
+        place-items: center;
+        min-height: 160px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: rgba(3, 10, 24, .35);
+      }
+
+      .achievement-card-art img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .achievement-card h4 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .achievement-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
       .folder-stat-row strong {
         text-align: left;
       }
@@ -1633,7 +1688,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "unlocked-achievement-art-1";
+      const APP_BUILD = "achievement-gallery-groups-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3697,21 +3752,47 @@
           $("achievementSummary").textContent = `${unlockedCount} of ${enabled.length} achievement${enabled.length === 1 ? "" : "s"} unlocked.`;
         }
         if (!$("achievementStats")) return;
-        $("achievementStats").innerHTML = enabled.map((achievement) => {
+        const decorated = enabled.map((achievement) => {
           const progress = achievementProgress(achievement);
           const unlocked = unlockedIds.has(achievement.id) || progress.unlocked;
-          const image = unlocked && achievement.image ? achievement.image : "";
-          return `
-            <div class="stat-row achievement-row ${unlocked ? "unlocked" : "locked"}">
-              ${image ? `<img class="achievement-art" src="${escapeHtml(image)}" alt="">` : ""}
-              <span>
-                ${escapeHtml(achievement.name)}
-                <small>${escapeHtml(achievement.description || achievement.conditionType || "")}</small>
-              </span>
-              <strong>${escapeHtml(unlocked ? "Unlocked" : formatAchievementProgress(achievement, progress))}</strong>
-            </div>
-          `;
-        }).join("") || "<p>No achievements configured yet.</p>";
+          return { achievement, progress, unlocked };
+        });
+        const lockedAchievements = decorated.filter((item) => !item.unlocked);
+        const unlockedAchievements = decorated.filter((item) => item.unlocked);
+        $("achievementStats").innerHTML = `
+          <section class="achievement-section">
+            <h3>Locked</h3>
+            ${lockedAchievements.map(({ achievement, progress }) => `
+              <div class="stat-row achievement-row locked">
+                <span>
+                  ${escapeHtml(achievement.name)}
+                  <small>${escapeHtml(achievement.description || achievement.conditionType || "")}</small>
+                </span>
+                <strong>${escapeHtml(formatAchievementProgress(achievement, progress))}</strong>
+              </div>
+            `).join("") || "<p>No locked achievements remain.</p>"}
+          </section>
+          <section class="achievement-section">
+            <h3>Unlocked</h3>
+            ${unlockedAchievements.length ? `
+              <div class="achievement-card-grid">
+                ${unlockedAchievements.map(({ achievement }) => `
+                  <article class="achievement-card">
+                    ${achievement.image ? `
+                      <div class="achievement-card-art">
+                        <img src="${escapeHtml(achievement.image)}" alt="">
+                      </div>
+                    ` : ""}
+                    <div>
+                      <h4>${escapeHtml(achievement.name)}</h4>
+                      <p>${escapeHtml(achievement.description || achievement.conditionType || "")}</p>
+                    </div>
+                  </article>
+                `).join("")}
+              </div>
+            ` : "<p>No achievements unlocked yet.</p>"}
+          </section>
+        `;
       }
 
       async function evaluateAchievements() {

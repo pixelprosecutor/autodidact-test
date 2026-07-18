@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-unlocked-achievement-art-v1";
+const CACHE_NAME = "autodidact-achievement-gallery-groups-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
