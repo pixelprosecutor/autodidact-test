@@ -1547,7 +1547,8 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "stores-flat-top-wallet-1";
+      const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
+      const APP_BUILD = "stores-count-wallet-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3053,10 +3054,12 @@
         };
       }
 
-      function storeWalletMarkup() {
+      function storeWalletMarkup(options = {}) {
+        const activeStoreCount = Array.isArray(options.activeStores) ? options.activeStores.length : null;
         const duplicateTotal = totalDuplicateCassetteAssignments();
         const balance = coinBalance();
         return `
+          ${activeStoreCount === null ? "" : `<span class="store-wallet-item"><img src="assets/stores-count.png" alt="">${activeStoreCount}</span>`}
           <span class="store-wallet-item"><img src="assets/four.png" alt="">${duplicateTotal}</span>
           <span class="store-wallet-item"><img src="${currencyIconForAmount(balance)}" alt="">${balance}</span>
         `;
@@ -4183,7 +4186,7 @@
       const list = $("storeList");
       if (!summary || !list) return;
       const visibleStores = activeStoresForDate();
-      summary.innerHTML = storeWalletMarkup();
+      summary.innerHTML = storeWalletMarkup({ activeStores: visibleStores });
       if (!visibleStores.length) {
         list.innerHTML = `<p>${STORES.length ? "No stores are open today." : "No stores are available yet."}</p>`;
         return;
@@ -4301,26 +4304,92 @@
         return cassette?.storeExclusive === true || cassette?.exclusive === true || Boolean(cassette?.storeId || cassette?.exclusiveStoreId);
       }
 
-      function storePurchaseOptions(store) {
+      function storeInventoryRecords() {
+        try {
+          return JSON.parse(localStorage.getItem(STORE_INVENTORY_KEY) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function saveStoreInventoryRecords(records) {
+        localStorage.setItem(STORE_INVENTORY_KEY, JSON.stringify(records || {}));
+      }
+
+      function storeInventoryKey(store) {
+        return `${storeRotationDayIndex()}:${storeIdentity(store) || store?.id || store?.name || "store"}`;
+      }
+
+      function storeCandidateCassettes(store, excludeIds = []) {
         if (!store || !CASSETTE_ART.length) return [];
+        const exclude = new Set(excludeIds.filter(Boolean));
         const assignments = cassetteAssignmentCounts();
-        const unowned = CASSETTE_ART.filter((cassette) => !assignments.has(cassetteKey(cassette)));
+        const unowned = CASSETTE_ART.filter((cassette) => {
+          const id = cassetteKey(cassette);
+          return id && !assignments.has(id) && !exclude.has(id);
+        });
         const exclusive = unowned.filter((cassette) => cassetteBelongsToStore(cassette, store));
         const randomPool = unowned.filter((cassette) => !isStoreExclusiveCassette(cassette));
         const pool = [...exclusive];
         const rotationDay = storeRotationDayIndex();
         const start = randomPool.length ? stableHash(`${store.id || store.name || "store"}-inventory-${rotationDay}`) % randomPool.length : 0;
-        for (let offset = 0; pool.length < 3 && offset < randomPool.length; offset += 1) {
+        for (let offset = 0; offset < randomPool.length; offset += 1) {
           const cassette = randomPool[(start + offset) % randomPool.length];
           if (!pool.some((item) => cassetteKey(item) === cassetteKey(cassette))) pool.push(cassette);
         }
+        return pool;
+      }
+
+      function hydrateStoreInventory(store) {
+        const key = storeInventoryKey(store);
+        const records = storeInventoryRecords();
+        const existing = Array.isArray(records[key]) ? records[key].filter(Boolean) : [];
+        const validIds = new Set(CASSETTE_ART.map((cassette) => cassetteKey(cassette)).filter(Boolean));
+        const kept = existing.filter((id, index) => validIds.has(id) && existing.indexOf(id) === index);
+        const candidates = storeCandidateCassettes(store, kept);
+        while (kept.length < 3 && candidates.length) {
+          const next = candidates.shift();
+          const id = cassetteKey(next);
+          if (id && !kept.includes(id)) kept.push(id);
+        }
+        records[key] = kept.slice(0, 3);
+        saveStoreInventoryRecords(records);
+        return records[key];
+      }
+
+      function refillStoreInventorySlot(store, purchasedCassetteId, slotIndex) {
+        const key = storeInventoryKey(store);
+        const records = storeInventoryRecords();
+        const inventory = Array.isArray(records[key]) ? [...records[key]] : hydrateStoreInventory(store);
+        const index = Number.isInteger(slotIndex) && slotIndex >= 0 ? slotIndex : inventory.indexOf(purchasedCassetteId);
+        if (index < 0) return;
+        const candidates = storeCandidateCassettes(store, inventory.filter((id) => id !== purchasedCassetteId));
+        const replacement = candidates.find((cassette) => {
+          const id = cassetteKey(cassette);
+          return id && id !== purchasedCassetteId && !inventory.includes(id);
+        });
+        if (replacement) {
+          inventory[index] = cassetteKey(replacement);
+        } else {
+          inventory.splice(index, 1);
+        }
+        records[key] = inventory.filter(Boolean).slice(0, 3);
+        saveStoreInventoryRecords(records);
+      }
+
+      function storePurchaseOptions(store) {
+        if (!store || !CASSETTE_ART.length) return [];
+        const inventory = hydrateStoreInventory(store);
         const options = [];
-        for (const cassette of pool.slice(0, 3)) {
+        for (let slotIndex = 0; slotIndex < inventory.length; slotIndex += 1) {
+          const cassette = CASSETTE_ART.find((item) => cassetteKey(item) === inventory[slotIndex]);
+          if (!cassette) continue;
           if (options.some((option) => cassetteKey(option.cassette) === cassetteKey(cassette))) continue;
           options.push({
             cassette,
             rarity: cassette.rarity || "common",
-            cost: rarityCost(cassette.rarity)
+            cost: rarityCost(cassette.rarity),
+            slotIndex
           });
         }
         return options;
@@ -4542,6 +4611,7 @@
         const overrides = cassetteAssignmentOverrides();
         overrides[file.id] = cassetteId;
         saveCassetteAssignmentOverrides(overrides);
+        refillStoreInventorySlot(store, cassetteId, option.slotIndex);
 
         const transaction = {
           id: `store-${Date.now()}-${Math.random().toString(16).slice(2)}`,

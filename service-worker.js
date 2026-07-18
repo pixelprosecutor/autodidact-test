@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-stores-flat-top-wallet-v1";
+const CACHE_NAME = "autodidact-stores-count-wallet-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -32,6 +32,7 @@ const APP_SHELL = [
   "./assets/stores_tab.png",
   "./assets/stats_tab.png",
   "./assets/four.png",
+  "./assets/stores-count.png",
   "./assets/statstab (1).png",
   "./assets/statstab (3).png",
   "./assets/statstab (4).png",
