@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-cassette-duplicate-announcements-v1";
+const CACHE_NAME = "autodidact-library-root-button-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

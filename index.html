@@ -1534,7 +1534,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "cassette-duplicate-announcements-1";
+      const APP_BUILD = "library-root-button-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -2952,6 +2952,12 @@
         if (view) view.classList.add("active");
         if (button) button.classList.add("active");
         if (viewName === "stores") renderStores();
+      }
+
+      function showLibraryRoot() {
+        currentFolder = "Podcast";
+        renderFiles();
+        showView("library");
       }
 
       function readCachedLibrary() {
@@ -5819,6 +5825,10 @@
 
       document.querySelectorAll(".nav-button[data-view]").forEach((button) => {
         button.addEventListener("click", () => {
+          if (button.dataset.view === "library") {
+            showLibraryRoot();
+            return;
+          }
           showView(button.dataset.view);
         });
       });
