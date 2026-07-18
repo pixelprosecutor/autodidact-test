@@ -1534,7 +1534,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "settings-summary-icons-1";
+      const APP_BUILD = "cassette-duplicate-announcements-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -4881,17 +4881,20 @@
       }
 
       async function createCassetteRevealAnnouncements(newFiles) {
+        const assignmentCounts = cassetteAssignmentCounts();
         const records = newFiles.map((file) => {
           const cassette = cassetteForFile(file);
           const cassetteName = cassette?.name || "a new cassette";
+          const cassetteId = cassetteKey(cassette);
+          const isDuplicate = cassetteId && (assignmentCounts.get(cassetteId) || 0) > 1;
           const meta = [cassette?.pack, cassette?.rarity]
             .filter((part) => part && part !== "Unsorted")
             .join(" - ");
           return {
             id: `cassette-reveal-${file.id}`,
-            type: "cassette_reveal",
-            title: "New cassette discovered",
-            message: `${displayName(file.name)} was assigned ${cassetteName}.`,
+            type: isDuplicate ? "cassette_duplicate" : "cassette_reveal",
+            title: isDuplicate ? "You got a duplicate" : "New cassette discovered",
+            message: cassetteName,
             meta,
             image: cassette?.large || MISSING_CASSETTE_IMAGE,
             action: {
