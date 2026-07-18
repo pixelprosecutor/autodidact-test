@@ -1548,7 +1548,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "stores-count-wallet-1";
+      const APP_BUILD = "library-added-duration-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3029,6 +3029,30 @@
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return "None";
         return date.toLocaleString();
+      }
+
+      function formatDate(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      }
+
+      function fileDurationText(file) {
+        const progress = progressForFile(file.id);
+        const duration = Number(file.duration || progress.duration || 0);
+        return duration ? formatDuration(duration) : "";
+      }
+
+      function librarySubtitle(file, includeFolder = false) {
+        const parts = [];
+        if (includeFolder) parts.push(file.folderPath || "Podcast");
+        const addedDate = formatDate(file.createdTime);
+        if (addedDate) parts.push(`Added ${addedDate}`);
+        const duration = fileDurationText(file);
+        if (duration) parts.push(duration);
+        if (isDownloaded(file.id)) parts.push("downloaded");
+        return parts.join(" - ") || "Audio";
       }
 
       function rows(items) {
@@ -5243,14 +5267,12 @@
       }
 
       function fileRow(file, includeFolder = false) {
-        const saved = isDownloaded(file.id);
-        const folderText = includeFolder ? `${file.folderPath || "Podcast"} - ` : "";
         return `
           <div class="explorer-row playable-row" data-episode-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(displayName(file.name))}">
             <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
-              <span class="explorer-subtitle">${escapeHtml(folderText)}${(file.mimeType || "audio").replace("audio/", "")} - ${formatBytes(file.size)}${saved ? " - downloaded" : ""}</span>
+              <span class="explorer-subtitle">${escapeHtml(librarySubtitle(file, includeFolder))}</span>
             </span>
           </div>
         `;
@@ -5599,7 +5621,7 @@
         do {
           const data = await driveFetch("files", {
             q: `'${folderId}' in parents and trashed = false`,
-            fields: "nextPageToken, files(id, name, mimeType, size, modifiedTime)",
+            fields: "nextPageToken, files(id, name, mimeType, size, createdTime, modifiedTime)",
             pageSize: "1000",
             pageToken
           });
@@ -5685,6 +5707,7 @@
             folderPath: file.folderPath,
             mimeType: file.mimeType,
             size: Number(file.size || blob.size || 0),
+            createdTime: file.createdTime || "",
             modifiedTime: file.modifiedTime || "",
             savedAt: new Date().toISOString(),
             blob

@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-stores-count-wallet-v1";
+const CACHE_NAME = "autodidact-library-added-duration-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
