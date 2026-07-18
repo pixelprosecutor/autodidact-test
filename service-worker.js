@@ -1,10 +1,11 @@
-const CACHE_NAME = "autodidact-collection-entry-tile-v1";
+const CACHE_NAME = "autodidact-achievement-entry-tile-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/achievements/achievement-art.json",
   "./assets/achievements/achievement-metadata.json",
+  "./assets/achievements/trophy1.png",
   "./assets/stores/store-art.json",
   "./assets/stores/store-metadata.json",
   "./assets/cassettes/cassette-metadata.json",

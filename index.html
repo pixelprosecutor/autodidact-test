@@ -399,6 +399,12 @@
         text-shadow: 0 2px 0 rgba(0, 0, 0, .65);
       }
 
+      .achievement-entry {
+        background:
+          linear-gradient(180deg, rgba(3, 10, 24, .04), rgba(3, 10, 24, .84)),
+          url("assets/achievements/trophy1.png") center 44% / cover;
+      }
+
       .collection-pack {
         display: grid;
         gap: 10px;
@@ -1364,11 +1370,10 @@
           <small id="collectionEntrySummary">Loading collection.</small>
         </button>
 
-        <section class="panel">
-          <h2>Achievements</h2>
-          <p id="achievementSummary">Loading achievements.</p>
-          <div class="stats-list" id="achievementStats"></div>
-        </section>
+        <button class="collection-entry achievement-entry" id="openAchievements" type="button">
+          <strong>Achievements</strong>
+          <small id="achievementEntrySummary">Loading achievements.</small>
+        </button>
       </section>
 
       <section id="collectionView" class="view">
@@ -1390,6 +1395,17 @@
 
         <section class="panel" id="collectionDetailPanel" hidden>
           <div id="collectionDetail"></div>
+        </section>
+      </section>
+
+      <section id="achievementsView" class="view">
+        <section class="panel">
+          <div class="episode-top">
+            <button id="achievementsBack" type="button">Back</button>
+          </div>
+          <h2>Achievements</h2>
+          <p id="achievementSummary">Loading achievements.</p>
+          <div class="stats-list" id="achievementStats"></div>
         </section>
       </section>
 
@@ -1584,7 +1600,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "collection-entry-tile-1";
+      const APP_BUILD = "achievement-entry-tile-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3637,11 +3653,17 @@
       }
 
       function renderAchievementStats() {
-        if (!$("achievementStats")) return;
         const unlockedIds = achievementUnlocks();
         const enabled = ACHIEVEMENTS.filter((achievement) => achievement.enabled !== false);
         const unlockedCount = enabled.filter((achievement) => unlockedIds.has(achievement.id) || achievementProgress(achievement).unlocked).length;
-        $("achievementSummary").textContent = `${unlockedCount} of ${enabled.length} achievement${enabled.length === 1 ? "" : "s"} unlocked.`;
+        const summaryText = `${unlockedCount} / ${enabled.length} unlocked`;
+        if ($("achievementEntrySummary")) {
+          $("achievementEntrySummary").textContent = summaryText;
+        }
+        if ($("achievementSummary")) {
+          $("achievementSummary").textContent = `${unlockedCount} of ${enabled.length} achievement${enabled.length === 1 ? "" : "s"} unlocked.`;
+        }
+        if (!$("achievementStats")) return;
         $("achievementStats").innerHTML = enabled.map((achievement) => {
           const progress = achievementProgress(achievement);
           const unlocked = unlockedIds.has(achievement.id) || progress.unlocked;
@@ -5963,6 +5985,13 @@
         showView("collection");
       });
       $("collectionBack").addEventListener("click", () => {
+        showView("stats");
+      });
+      $("openAchievements").addEventListener("click", () => {
+        renderAchievementStats();
+        showView("achievements");
+      });
+      $("achievementsBack").addEventListener("click", () => {
         showView("stats");
       });
       $("collectionSmallView").addEventListener("click", () => {
