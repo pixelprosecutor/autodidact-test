@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-folders-entry-tile-v1";
+const CACHE_NAME = "autodidact-stats-feature-tile-order-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
