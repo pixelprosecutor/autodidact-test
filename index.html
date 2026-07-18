@@ -894,6 +894,23 @@
         text-align: right;
       }
 
+      .achievement-row {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .achievement-row.locked {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .achievement-art {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
       .folder-stat-row strong {
         text-align: left;
       }
@@ -1616,7 +1633,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "stats-feature-tile-order-1";
+      const APP_BUILD = "unlocked-achievement-art-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3683,8 +3700,10 @@
         $("achievementStats").innerHTML = enabled.map((achievement) => {
           const progress = achievementProgress(achievement);
           const unlocked = unlockedIds.has(achievement.id) || progress.unlocked;
+          const image = unlocked && achievement.image ? achievement.image : "";
           return `
-            <div class="stat-row">
+            <div class="stat-row achievement-row ${unlocked ? "unlocked" : "locked"}">
+              ${image ? `<img class="achievement-art" src="${escapeHtml(image)}" alt="">` : ""}
               <span>
                 ${escapeHtml(achievement.name)}
                 <small>${escapeHtml(achievement.description || achievement.conditionType || "")}</small>
