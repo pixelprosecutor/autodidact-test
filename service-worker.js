@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-library-root-button-v1";
+const CACHE_NAME = "autodidact-downloads-clear-row-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const APP_SHELL = [
   "./assets/fc136.png",
   "./assets/fc131.png",
   "./assets/downloaded.png",
+  "./assets/clear-downloads.png",
   "./assets/folder-icon-34.png",
   "./assets/google-no.png",
   "./assets/google-ok.png",

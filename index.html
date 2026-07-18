@@ -1534,7 +1534,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "library-root-button-1";
+      const APP_BUILD = "downloads-clear-row-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -5203,6 +5203,19 @@
         `;
       }
 
+      function clearDownloadsRow() {
+        if (!downloads.length) return "";
+        return `
+          <button class="explorer-row" data-clear-downloads type="button">
+            <span class="explorer-icon audio-icon"><img class="audio-cassette-icon" src="assets/clear-downloads.png" alt=""></span>
+            <span class="explorer-main">
+              <span class="explorer-title">Clear Downloads</span>
+              <span class="explorer-subtitle">Delete ${downloads.length} local file${downloads.length === 1 ? "" : "s"} from this device</span>
+            </span>
+          </button>
+        `;
+      }
+
       function renderEpisode() {
         if (!$("episodeView")) return;
         const file = selectedFileId ? findEpisodeFile(selectedFileId) : null;
@@ -5301,9 +5314,12 @@
           ? rows(folderRows)
           : "<p>No downloaded folders yet.</p>";
 
-        $("downloadList").innerHTML = downloads.map((file) => downloadedFileRow(file)).join("") || "<p>No downloads yet.</p>";
+        $("downloadList").innerHTML = downloads.length
+          ? clearDownloadsRow() + downloads.map((file) => downloadedFileRow(file)).join("")
+          : "<p>No downloads yet.</p>";
 
         bindFileActions($("downloadList"));
+        $("downloadList").querySelector("[data-clear-downloads]")?.addEventListener("click", clearAllLocalDownloads);
         renderDownloadFolderStats();
         renderStoragePanels();
         renderOfflineReadiness();
@@ -5655,6 +5671,15 @@
         }
       }
 
+      async function clearAllLocalDownloads() {
+        const confirmed = window.confirm("Delete every local audio download saved by this test page?");
+        if (!confirmed) return;
+        await clearDownloads();
+        resetMiniPlayer();
+        setStatus("All local downloads deleted.");
+        await refreshDownloads();
+      }
+
       function ensureGoogleClient() {
         if (!window.google?.accounts?.oauth2) {
           return false;
@@ -5844,14 +5869,7 @@
         setStatus("Local stats cleared. Downloads were not deleted.");
       });
 
-      $("clearAllDownloads").addEventListener("click", async () => {
-        const confirmed = window.confirm("Delete every local audio download saved by this test page?");
-        if (!confirmed) return;
-        await clearDownloads();
-        resetMiniPlayer();
-        setStatus("All local downloads deleted.");
-        await refreshDownloads();
-      });
+      $("clearAllDownloads").addEventListener("click", clearAllLocalDownloads);
 
       $("player").addEventListener("play", () => {
         updatePlayButton();
