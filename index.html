@@ -405,6 +405,12 @@
           url("assets/achievements/trophy1.png") center 44% / cover;
       }
 
+      .folders-entry {
+        background:
+          linear-gradient(180deg, rgba(3, 10, 24, .03), rgba(3, 10, 24, .82)),
+          url("assets/folders-background.png") center 52% / cover;
+      }
+
       .collection-pack {
         display: grid;
         gap: 10px;
@@ -1360,10 +1366,10 @@
           </div>
         </section>
 
-        <section class="panel">
-          <h2>Folders</h2>
-          <div class="stats-list" id="folderStats"></div>
-        </section>
+        <button class="collection-entry folders-entry" id="openFolders" type="button">
+          <strong>Folders</strong>
+          <small id="foldersEntrySummary">Loading folders.</small>
+        </button>
 
         <button class="collection-entry" id="openCassetteCollection" type="button">
           <strong>Cassette Collection</strong>
@@ -1395,6 +1401,16 @@
 
         <section class="panel" id="collectionDetailPanel" hidden>
           <div id="collectionDetail"></div>
+        </section>
+      </section>
+
+      <section id="foldersView" class="view">
+        <section class="panel">
+          <div class="episode-top">
+            <button id="foldersBack" type="button">Back</button>
+          </div>
+          <h2>Folders</h2>
+          <div class="stats-list" id="folderStats"></div>
         </section>
       </section>
 
@@ -1600,7 +1616,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "achievement-entry-tile-1";
+      const APP_BUILD = "folders-entry-tile-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3780,6 +3796,16 @@
         summary.textContent = `${collected} / ${total} collected${duplicates ? ` - ${duplicates} duplicate${duplicates === 1 ? "" : "s"}` : ""}`;
       }
 
+      function renderFoldersEntry() {
+        const summary = $("foldersEntrySummary");
+        if (!summary) return;
+        const folders = new Set(audioFiles.map((file) => file.folderPath || "Podcast"));
+        const listeningSeconds = events.reduce((total, event) => total + (Number(event.seconds) || 0), 0);
+        summary.textContent = audioFiles.length
+          ? `${folders.size} folder${folders.size === 1 ? "" : "s"} - ${formatDuration(listeningSeconds)} listened`
+          : "Refresh Drive library to load folders";
+      }
+
       function renderStats() {
         const playEvents = events.filter((event) => event.type === "play");
         const completeEvents = events.filter((event) => event.type === "complete");
@@ -3794,6 +3820,7 @@
         $("folderStats").innerHTML = folders.length
           ? folderRows(folders)
           : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
+        renderFoldersEntry();
         renderCollectionEntry();
         renderAchievementStats();
       }
@@ -5979,6 +6006,13 @@
           return;
         }
         downloadFile(file).then(renderEpisode).catch(() => {});
+      });
+      $("openFolders").addEventListener("click", () => {
+        renderStats();
+        showView("folders");
+      });
+      $("foldersBack").addEventListener("click", () => {
+        showView("stats");
       });
       $("openCassetteCollection").addEventListener("click", () => {
         renderCollection();

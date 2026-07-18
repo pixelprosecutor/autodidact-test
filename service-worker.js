@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-achievement-entry-tile-v1";
+const CACHE_NAME = "autodidact-folders-entry-tile-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -35,6 +35,7 @@ const APP_SHELL = [
   "./assets/four.png",
   "./assets/stores-count.png",
   "./assets/collection-background.png",
+  "./assets/folders-background.png",
   "./assets/statstab (1).png",
   "./assets/statstab (3).png",
   "./assets/statstab (4).png",
