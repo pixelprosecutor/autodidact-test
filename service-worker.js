@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-library-added-duration-v1";
+const CACHE_NAME = "autodidact-collection-entry-tile-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -33,6 +33,7 @@ const APP_SHELL = [
   "./assets/stats_tab.png",
   "./assets/four.png",
   "./assets/stores-count.png",
+  "./assets/collection-background.png",
   "./assets/statstab (1).png",
   "./assets/statstab (3).png",
   "./assets/statstab (4).png",

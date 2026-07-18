@@ -361,6 +361,44 @@
         background: rgba(125, 211, 252, .12);
       }
 
+      .collection-entry {
+        position: relative;
+        display: grid;
+        align-content: end;
+        width: 100%;
+        min-height: 160px;
+        overflow: hidden;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(180deg, rgba(3, 10, 24, .05), rgba(3, 10, 24, .82)),
+          url("assets/collection-background.png") center 42% / cover;
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .collection-entry:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .collection-entry strong {
+        font-size: 22px;
+        line-height: 1.1;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, .65);
+      }
+
+      .collection-entry small {
+        margin-top: 6px;
+        color: #e0f2fe;
+        font-size: 12px;
+        font-weight: 800;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, .65);
+      }
+
       .collection-pack {
         display: grid;
         gap: 10px;
@@ -1321,12 +1359,10 @@
           <div class="stats-list" id="folderStats"></div>
         </section>
 
-        <section class="panel">
-          <h2>Cassettes</h2>
-          <div class="toolbar">
-            <button class="primary" id="openCassetteCollection">Open cassette collection</button>
-          </div>
-        </section>
+        <button class="collection-entry" id="openCassetteCollection" type="button">
+          <strong>Cassette Collection</strong>
+          <small id="collectionEntrySummary">Loading collection.</small>
+        </button>
 
         <section class="panel">
           <h2>Achievements</h2>
@@ -1548,7 +1584,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "library-added-duration-1";
+      const APP_BUILD = "collection-entry-tile-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3713,6 +3749,15 @@
           ]);
       }
 
+      function renderCollectionEntry() {
+        const summary = $("collectionEntrySummary");
+        if (!summary) return;
+        const total = sortedCassettes().length;
+        const collected = cassetteAssignmentFiles().size;
+        const duplicates = totalDuplicateCassetteAssignments();
+        summary.textContent = `${collected} / ${total} collected${duplicates ? ` - ${duplicates} duplicate${duplicates === 1 ? "" : "s"}` : ""}`;
+      }
+
       function renderStats() {
         const playEvents = events.filter((event) => event.type === "play");
         const completeEvents = events.filter((event) => event.type === "complete");
@@ -3727,6 +3772,7 @@
         $("folderStats").innerHTML = folders.length
           ? folderRows(folders)
           : `<p>No folder stats yet. Refresh the Podcast library to load folders.</p>`;
+        renderCollectionEntry();
         renderAchievementStats();
       }
 
