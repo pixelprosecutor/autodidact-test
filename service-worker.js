@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-downloads-clear-row-bottom-v1";
+const CACHE_NAME = "autodidact-stores-flat-top-wallet-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

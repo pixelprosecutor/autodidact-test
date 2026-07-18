@@ -445,6 +445,18 @@
         max-height: 128px;
       }
 
+      .store-list-page {
+        display: grid;
+        gap: 12px;
+        margin: 12px 0;
+      }
+
+      .stores-top {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
       .store-grid {
         display: grid;
         gap: 12px;
@@ -1346,9 +1358,10 @@
       </section>
 
       <section id="storesView" class="view">
-        <section class="panel">
-          <h2>Stores</h2>
-          <p id="storeSummary">Loading stores.</p>
+        <section class="store-list-page">
+          <div class="stores-top">
+            <div class="store-wallet" id="storeSummary" aria-label="Store balance"></div>
+          </div>
           <div class="store-grid" id="storeList"></div>
         </section>
       </section>
@@ -1534,7 +1547,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "downloads-clear-row-bottom-1";
+      const APP_BUILD = "stores-flat-top-wallet-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -4170,12 +4183,11 @@
       const list = $("storeList");
       if (!summary || !list) return;
       const visibleStores = activeStoresForDate();
+      summary.innerHTML = storeWalletMarkup();
       if (!visibleStores.length) {
-        summary.textContent = STORES.length ? "No stores are open today." : "No stores are available yet.";
-        list.innerHTML = "";
+        list.innerHTML = `<p>${STORES.length ? "No stores are open today." : "No stores are available yet."}</p>`;
         return;
       }
-      summary.innerHTML = `${visibleStores.length} active store${visibleStores.length === 1 ? "" : "s"}. A new store opens each day and stays for 3 days. Balance: ${currencyAmountMarkup(coinBalance()).html}`;
       list.innerHTML = visibleStores.map((store) => {
         const status = storeStatus(store);
         const locked = status.key === "locked";
