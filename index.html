@@ -1534,7 +1534,7 @@
       const COIN_LEDGER_KEY = "autodidact-coin-ledger-v1";
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
-      const APP_BUILD = "downloads-clear-row-1";
+      const APP_BUILD = "downloads-clear-row-bottom-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -5315,7 +5315,7 @@
           : "<p>No downloaded folders yet.</p>";
 
         $("downloadList").innerHTML = downloads.length
-          ? clearDownloadsRow() + downloads.map((file) => downloadedFileRow(file)).join("")
+          ? downloads.map((file) => downloadedFileRow(file)).join("") + clearDownloadsRow()
           : "<p>No downloads yet.</p>";
 
         bindFileActions($("downloadList"));
