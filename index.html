@@ -13,6 +13,7 @@
     <style>
       :root {
         color-scheme: dark;
+        --app-font: "Autodidact Lowres", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         --paper: #07162f;
         --panel: #10284d;
         --panel-strong: #143058;
@@ -25,8 +26,24 @@
       }
 
       @font-face {
-        font-family: "Autodidact Pixel";
+        font-family: "Autodidact Lowres";
         src: url("assets/fonts/LowresPixel-Regular.otf") format("opentype");
+        font-weight: 400 800;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Autodidact Arcade";
+        src: url("assets/fonts/ARCADECLASSIC.TTF") format("truetype");
+        font-weight: 400 800;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Autodidact KA1";
+        src: url("assets/fonts/ka1.ttf") format("truetype");
         font-weight: 400 800;
         font-style: normal;
         font-display: swap;
@@ -42,8 +59,20 @@
         padding: 18px 14px 96px;
         background: var(--paper);
         color: var(--ink);
-        font-family: "Autodidact Pixel", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: var(--app-font);
         line-height: 1.45;
+      }
+
+      body.font-lowres {
+        --app-font: "Autodidact Lowres", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body.font-arcade {
+        --app-font: "Autodidact Arcade", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body.font-ka1 {
+        --app-font: "Autodidact KA1", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       body.has-player {
@@ -97,7 +126,8 @@
         opacity: .5;
       }
 
-      input[type="search"] {
+      input[type="search"],
+      select {
         width: 100%;
         min-height: 42px;
         border: 1px solid var(--line);
@@ -106,6 +136,11 @@
         background: rgba(7, 22, 47, .8);
         color: var(--ink);
         font: inherit;
+      }
+
+      .settings-select-row {
+        display: grid;
+        gap: 8px;
       }
 
       [hidden] {
@@ -1570,6 +1605,18 @@
         </section>
 
         <section class="panel">
+          <h2>Display</h2>
+          <label class="settings-select-row">
+            <span>Font</span>
+            <select id="fontSelect">
+              <option value="lowres">Lowres Pixel</option>
+              <option value="arcade">Arcade Classic</option>
+              <option value="ka1">KA1</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
           <h2>Connection</h2>
           <div class="stats-list" id="connectionSettings"></div>
         </section>
@@ -1696,7 +1743,9 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "pixel-font-test-1";
+      const FONT_SETTING_KEY = "autodidact-font-choice-v1";
+      const FONT_CHOICES = ["lowres", "arcade", "ka1"];
+      const APP_BUILD = "pixel-font-picker-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3938,6 +3987,9 @@
         $("settingsDownloadCount").innerHTML = `<span class="settings-metric"><img src="assets/downloaded.png" alt=""><strong>${downloads.length}</strong></span>`;
         $("settingsUnsyncedCount").textContent = unsynced.length;
         $("settingsScanDrive").disabled = false;
+        if ($("fontSelect")) {
+          $("fontSelect").value = currentFontChoice();
+        }
         updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
@@ -3966,6 +4018,21 @@
           ["Last ledger sync", formatDateTime(lastLedgerSync)]
         ]);
         renderBuildStatus();
+      }
+
+      function currentFontChoice() {
+        const stored = localStorage.getItem(FONT_SETTING_KEY);
+        return FONT_CHOICES.includes(stored) ? stored : "lowres";
+      }
+
+      function applyFontChoice(choice = currentFontChoice()) {
+        const selected = FONT_CHOICES.includes(choice) ? choice : "lowres";
+        document.body.classList.remove("font-lowres", "font-arcade", "font-ka1");
+        document.body.classList.add(`font-${selected}`);
+        localStorage.setItem(FONT_SETTING_KEY, selected);
+        if ($("fontSelect")) {
+          $("fontSelect").value = selected;
+        }
       }
 
       async function recordEvent(type, extra = {}) {
@@ -6072,6 +6139,9 @@
         renderSearch();
         showView("search");
       });
+      $("fontSelect").addEventListener("change", (event) => {
+        applyFontChoice(event.target.value);
+      });
 
       $("togglePlay").addEventListener("click", togglePlayback);
       $("skipBack").addEventListener("click", () => skipAudio(-15));
@@ -6262,6 +6332,7 @@
       loadAchievementMetadata();
       loadCassetteMetadata();
       loadStoreMetadata();
+      applyFontChoice();
       Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");
       });

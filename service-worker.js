@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-pixel-font-test-v1";
+const CACHE_NAME = "autodidact-pixel-font-picker-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -36,6 +36,8 @@ const APP_SHELL = [
   "./assets/stores-count.png",
   "./assets/collection-background.png",
   "./assets/folders-background.png",
+  "./assets/fonts/ARCADECLASSIC.TTF",
+  "./assets/fonts/ka1.ttf",
   "./assets/fonts/LowresPixel-Regular.otf",
   "./assets/statstab (1).png",
   "./assets/statstab (3).png",
