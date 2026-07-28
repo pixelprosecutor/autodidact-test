@@ -49,6 +49,14 @@
         font-display: swap;
       }
 
+      @font-face {
+        font-family: "Autodidact Byte";
+        src: url("assets/fonts/ByteBounce.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+
       * {
         box-sizing: border-box;
       }
@@ -61,6 +69,22 @@
         color: var(--ink);
         font-family: var(--app-font);
         line-height: 1.45;
+      }
+
+      body.font-lowres {
+        --app-font: "Autodidact Lowres", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body.font-arcade {
+        --app-font: "Autodidact Arcade", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body.font-ka1 {
+        --app-font: "Autodidact KA1", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body.font-byte {
+        --app-font: "Autodidact Byte", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       body.has-player {
@@ -1602,6 +1626,19 @@
         </section>
 
         <section class="panel">
+          <h2>Display</h2>
+          <label class="settings-select-row">
+            <span>Normal text font</span>
+            <select id="fontSelect">
+              <option value="lowres">Lowres Pixel</option>
+              <option value="arcade">Arcade Classic</option>
+              <option value="ka1">KA1</option>
+              <option value="byte">Byte Bounce</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
           <h2>Connection</h2>
           <div class="stats-list" id="connectionSettings"></div>
         </section>
@@ -1728,7 +1765,9 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "pixel-font-system-1";
+      const FONT_SETTING_KEY = "autodidact-font-choice-v2";
+      const FONT_CHOICES = ["lowres", "arcade", "ka1", "byte"];
+      const APP_BUILD = "byte-font-picker-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3970,6 +4009,9 @@
         $("settingsDownloadCount").innerHTML = `<span class="settings-metric"><img src="assets/downloaded.png" alt=""><strong>${downloads.length}</strong></span>`;
         $("settingsUnsyncedCount").textContent = unsynced.length;
         $("settingsScanDrive").disabled = false;
+        if ($("fontSelect")) {
+          $("fontSelect").value = currentFontChoice();
+        }
         updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
@@ -3998,6 +4040,21 @@
           ["Last ledger sync", formatDateTime(lastLedgerSync)]
         ]);
         renderBuildStatus();
+      }
+
+      function currentFontChoice() {
+        const stored = localStorage.getItem(FONT_SETTING_KEY);
+        return FONT_CHOICES.includes(stored) ? stored : "lowres";
+      }
+
+      function applyFontChoice(choice = currentFontChoice()) {
+        const selected = FONT_CHOICES.includes(choice) ? choice : "lowres";
+        document.body.classList.remove("font-lowres", "font-arcade", "font-ka1", "font-byte");
+        document.body.classList.add(`font-${selected}`);
+        localStorage.setItem(FONT_SETTING_KEY, selected);
+        if ($("fontSelect")) {
+          $("fontSelect").value = selected;
+        }
       }
 
       async function recordEvent(type, extra = {}) {
@@ -6104,6 +6161,9 @@
         renderSearch();
         showView("search");
       });
+      $("fontSelect").addEventListener("change", (event) => {
+        applyFontChoice(event.target.value);
+      });
       $("togglePlay").addEventListener("click", togglePlayback);
       $("skipBack").addEventListener("click", () => skipAudio(-15));
       $("skipForward").addEventListener("click", () => skipAudio(30));
@@ -6293,6 +6353,7 @@
       loadAchievementMetadata();
       loadCassetteMetadata();
       loadStoreMetadata();
+      applyFontChoice();
       Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
