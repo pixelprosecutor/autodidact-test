@@ -252,6 +252,121 @@
         font-size: 11px;
       }
 
+      .heatmap-panel {
+        display: grid;
+        gap: 10px;
+      }
+
+      .heatmap-panel h2,
+      .heatmap-panel p {
+        margin: 0;
+      }
+
+      .heatmap-panel p {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .heatmap-weekdays,
+      .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+      }
+
+      .heatmap-weekdays span {
+        color: var(--muted);
+        font-size: 10px;
+        text-align: center;
+      }
+
+      .heatmap-day {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: rgba(7, 22, 47, .82);
+        color: rgba(247, 251, 255, .72);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .heatmap-day.outside {
+        opacity: .22;
+      }
+
+      .heatmap-day.today {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      .heatmap-day.level-1 {
+        border-color: #2f7890;
+        background: #1f4b5d;
+      }
+
+      .heatmap-day.level-2 {
+        border-color: #45b2a4;
+        background: #236f71;
+      }
+
+      .heatmap-day.level-3 {
+        border-color: #b6d94a;
+        background: #6b8f32;
+      }
+
+      .heatmap-day.level-4 {
+        border-color: #ffe18a;
+        background: #f7c948;
+        color: #07162f;
+        box-shadow: 0 0 0 1px rgba(247, 201, 72, .25);
+      }
+
+      .heatmap-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .heatmap-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .heatmap-swatch {
+        width: 12px;
+        height: 12px;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: rgba(7, 22, 47, .82);
+      }
+
+      .heatmap-swatch.level-1 {
+        border-color: #2f7890;
+        background: #1f4b5d;
+      }
+
+      .heatmap-swatch.level-2 {
+        border-color: #45b2a4;
+        background: #236f71;
+      }
+
+      .heatmap-swatch.level-3 {
+        border-color: #b6d94a;
+        background: #6b8f32;
+      }
+
+      .heatmap-swatch.level-4 {
+        border-color: #ffe18a;
+        background: #f7c948;
+      }
+
       .currency-amount {
         display: inline-flex;
         align-items: center;
@@ -1502,6 +1617,30 @@
           </div>
         </section>
 
+        <section class="panel heatmap-panel">
+          <div>
+            <h2>Listening Calendar</h2>
+            <p id="heatmapSummary">Loading listening days.</p>
+          </div>
+          <div class="heatmap-weekdays" aria-hidden="true">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+          <div class="heatmap-grid" id="listeningHeatmap" aria-label="Listening calendar heatmap"></div>
+          <div class="heatmap-legend" aria-label="Listening calendar legend">
+            <span><i class="heatmap-swatch"></i>0-4m</span>
+            <span><i class="heatmap-swatch level-1"></i>5m</span>
+            <span><i class="heatmap-swatch level-2"></i>30m</span>
+            <span><i class="heatmap-swatch level-3"></i>60m</span>
+            <span><i class="heatmap-swatch level-4"></i>90m hot</span>
+          </div>
+        </section>
+
         <button class="collection-entry" id="openCassetteCollection" type="button">
           <strong>Cassette Collection</strong>
           <small id="collectionEntrySummary">Loading collection.</small>
@@ -1767,7 +1906,7 @@
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
       const FONT_SETTING_KEY = "autodidact-font-choice-v2";
       const FONT_CHOICES = ["lowres", "arcade", "ka1", "byte"];
-      const APP_BUILD = "byte-font-picker-1";
+      const APP_BUILD = "stats-heatmap-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3674,6 +3813,65 @@
         return days;
       }
 
+      function heatmapLevel(seconds) {
+        const minutes = seconds / 60;
+        if (minutes >= 90) return 4;
+        if (minutes >= 60) return 3;
+        if (minutes >= 30) return 2;
+        if (minutes >= 5) return 1;
+        return 0;
+      }
+
+      function renderListeningHeatmap() {
+        const grid = $("listeningHeatmap");
+        const summary = $("heatmapSummary");
+        if (!grid || !summary) return;
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const secondsByDay = new Map();
+
+        for (const event of events) {
+          const seconds = Number(event.seconds) || 0;
+          if (!seconds) continue;
+          const eventDate = new Date(event.at);
+          if (eventDate.getFullYear() !== year || eventDate.getMonth() !== month) continue;
+          const key = dayKey(eventDate);
+          secondsByDay.set(key, (secondsByDay.get(key) || 0) + seconds);
+        }
+
+        const cells = [];
+        for (let index = 0; index < firstDay.getDay(); index += 1) {
+          cells.push(`<div class="heatmap-day outside" aria-hidden="true"></div>`);
+        }
+
+        let activeDays = 0;
+        let hotDays = 0;
+        let monthSeconds = 0;
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          const date = new Date(year, month, day);
+          const key = dayKey(date);
+          const seconds = secondsByDay.get(key) || 0;
+          const level = heatmapLevel(seconds);
+          const isToday = dayKey(today) === key;
+          activeDays += seconds >= 300 ? 1 : 0;
+          hotDays += seconds >= 5400 ? 1 : 0;
+          monthSeconds += seconds;
+          cells.push(`
+            <div class="heatmap-day level-${level}${isToday ? " today" : ""}" title="${key}: ${formatDuration(seconds)} listened" aria-label="${key}, ${formatDuration(seconds)} listened">
+              ${day}
+            </div>
+          `);
+        }
+
+        grid.innerHTML = cells.join("");
+        const monthName = today.toLocaleDateString(undefined, { month: "long" });
+        summary.textContent = `${monthName}: ${formatDuration(monthSeconds)} listened across ${activeDays} day${activeDays === 1 ? "" : "s"}${hotDays ? `, ${hotDays} hot day${hotDays === 1 ? "" : "s"}` : ""}.`;
+      }
+
       function maxListeningStreakDays() {
         const times = [...listeningDaySet()]
           .map((key) => new Date(`${key}T00:00:00`).getTime())
@@ -3995,6 +4193,7 @@
         renderFoldersEntry();
         renderCollectionEntry();
         renderAchievementStats();
+        renderListeningHeatmap();
       }
 
       function renderSettings() {
