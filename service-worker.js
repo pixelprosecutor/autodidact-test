@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-listening-streak-tape-v1";
+const CACHE_NAME = "autodidact-double-byte-text-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
