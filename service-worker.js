@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-pixel-font-picker-v1";
+const CACHE_NAME = "autodidact-pixel-font-picker-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
