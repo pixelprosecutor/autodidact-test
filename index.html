@@ -13,7 +13,7 @@
     <style>
       :root {
         color-scheme: dark;
-        --app-font: "Autodidact Lowres", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --app-font: "Autodidact Byte", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         --paper: #07162f;
         --panel: #10284d;
         --panel-strong: #143058;
@@ -68,23 +68,8 @@
         background: var(--paper);
         color: var(--ink);
         font-family: var(--app-font);
+        font-size: 17px;
         line-height: 1.45;
-      }
-
-      body.font-lowres {
-        --app-font: "Autodidact Lowres", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      body.font-arcade {
-        --app-font: "Autodidact Arcade", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      body.font-ka1 {
-        --app-font: "Autodidact KA1", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      body.font-byte {
-        --app-font: "Autodidact Byte", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       body.has-player {
@@ -107,7 +92,7 @@
       h2 {
         margin-bottom: 10px;
         font-family: "Autodidact Arcade", var(--app-font);
-        font-size: 18px;
+        font-size: 20px;
       }
 
       p,
@@ -249,7 +234,7 @@
         display: block;
         margin-top: 4px;
         color: var(--muted);
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .heatmap-panel {
@@ -304,25 +289,52 @@
       }
 
       .heatmap-day.level-1 {
-        border-color: #2f7890;
-        background: #1f4b5d;
+        border-color: #ff1744;
+        background: #ff1744;
+        color: #fff7fb;
+        box-shadow: 0 0 10px rgba(255, 23, 68, .48);
       }
 
       .heatmap-day.level-2 {
-        border-color: #45b2a4;
-        background: #236f71;
+        border-color: #ff8a00;
+        background: #ff8a00;
+        color: #1a0b00;
+        box-shadow: 0 0 10px rgba(255, 138, 0, .48);
       }
 
       .heatmap-day.level-3 {
-        border-color: #b6d94a;
-        background: #6b8f32;
+        border-color: #ffe600;
+        background: #ffe600;
+        color: #161300;
+        box-shadow: 0 0 10px rgba(255, 230, 0, .48);
       }
 
       .heatmap-day.level-4 {
-        border-color: #ffe18a;
-        background: #f7c948;
-        color: #07162f;
-        box-shadow: 0 0 0 1px rgba(247, 201, 72, .25);
+        border-color: #39ff14;
+        background: #39ff14;
+        color: #001605;
+        box-shadow: 0 0 10px rgba(57, 255, 20, .48);
+      }
+
+      .heatmap-day.level-5 {
+        border-color: #00b7ff;
+        background: #00b7ff;
+        color: #00111a;
+        box-shadow: 0 0 10px rgba(0, 183, 255, .48);
+      }
+
+      .heatmap-day.level-6 {
+        border-color: #4b5cff;
+        background: #4b5cff;
+        color: #f4f6ff;
+        box-shadow: 0 0 10px rgba(75, 92, 255, .48);
+      }
+
+      .heatmap-day.level-7 {
+        border-color: #c724ff;
+        background: #c724ff;
+        color: #fff7ff;
+        box-shadow: 0 0 12px rgba(199, 36, 255, .58);
       }
 
       .heatmap-legend {
@@ -348,23 +360,38 @@
       }
 
       .heatmap-swatch.level-1 {
-        border-color: #2f7890;
-        background: #1f4b5d;
+        border-color: #ff1744;
+        background: #ff1744;
       }
 
       .heatmap-swatch.level-2 {
-        border-color: #45b2a4;
-        background: #236f71;
+        border-color: #ff8a00;
+        background: #ff8a00;
       }
 
       .heatmap-swatch.level-3 {
-        border-color: #b6d94a;
-        background: #6b8f32;
+        border-color: #ffe600;
+        background: #ffe600;
       }
 
       .heatmap-swatch.level-4 {
-        border-color: #ffe18a;
-        background: #f7c948;
+        border-color: #39ff14;
+        background: #39ff14;
+      }
+
+      .heatmap-swatch.level-5 {
+        border-color: #00b7ff;
+        background: #00b7ff;
+      }
+
+      .heatmap-swatch.level-6 {
+        border-color: #4b5cff;
+        background: #4b5cff;
+      }
+
+      .heatmap-swatch.level-7 {
+        border-color: #c724ff;
+        background: #c724ff;
       }
 
       .currency-amount {
@@ -1243,7 +1270,7 @@
       .explorer-title {
         display: block;
         overflow: hidden;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 750;
         line-height: 1.2;
         text-overflow: ellipsis;
@@ -1254,7 +1281,7 @@
         display: block;
         margin-top: 4px;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1635,9 +1662,12 @@
           <div class="heatmap-legend" aria-label="Listening calendar legend">
             <span><i class="heatmap-swatch"></i>0-4m</span>
             <span><i class="heatmap-swatch level-1"></i>5m</span>
-            <span><i class="heatmap-swatch level-2"></i>30m</span>
-            <span><i class="heatmap-swatch level-3"></i>60m</span>
-            <span><i class="heatmap-swatch level-4"></i>90m hot</span>
+            <span><i class="heatmap-swatch level-2"></i>15m</span>
+            <span><i class="heatmap-swatch level-3"></i>30m</span>
+            <span><i class="heatmap-swatch level-4"></i>45m</span>
+            <span><i class="heatmap-swatch level-5"></i>60m</span>
+            <span><i class="heatmap-swatch level-6"></i>75m</span>
+            <span><i class="heatmap-swatch level-7"></i>90m hot</span>
           </div>
         </section>
 
@@ -1762,19 +1792,6 @@
           <p class="status" id="status">Ready. Google access will be requested when needed.</p>
           <p id="buildStatus">Checking app version.</p>
           <div class="stats-list" id="buildSettings"></div>
-        </section>
-
-        <section class="panel">
-          <h2>Display</h2>
-          <label class="settings-select-row">
-            <span>Normal text font</span>
-            <select id="fontSelect">
-              <option value="lowres">Lowres Pixel</option>
-              <option value="arcade">Arcade Classic</option>
-              <option value="ka1">KA1</option>
-              <option value="byte">Byte Bounce</option>
-            </select>
-          </label>
         </section>
 
         <section class="panel">
@@ -1904,9 +1921,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const FONT_SETTING_KEY = "autodidact-font-choice-v2";
-      const FONT_CHOICES = ["lowres", "arcade", "ka1", "byte"];
-      const APP_BUILD = "stats-heatmap-1";
+      const APP_BUILD = "byte-neon-heatmap-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3815,9 +3830,12 @@
 
       function heatmapLevel(seconds) {
         const minutes = seconds / 60;
-        if (minutes >= 90) return 4;
-        if (minutes >= 60) return 3;
-        if (minutes >= 30) return 2;
+        if (minutes >= 90) return 7;
+        if (minutes >= 75) return 6;
+        if (minutes >= 60) return 5;
+        if (minutes >= 45) return 4;
+        if (minutes >= 30) return 3;
+        if (minutes >= 15) return 2;
         if (minutes >= 5) return 1;
         return 0;
       }
@@ -4208,9 +4226,6 @@
         $("settingsDownloadCount").innerHTML = `<span class="settings-metric"><img src="assets/downloaded.png" alt=""><strong>${downloads.length}</strong></span>`;
         $("settingsUnsyncedCount").textContent = unsynced.length;
         $("settingsScanDrive").disabled = false;
-        if ($("fontSelect")) {
-          $("fontSelect").value = currentFontChoice();
-        }
         updateGoogleStatus();
 
         $("connectionSettings").innerHTML = rows([
@@ -4239,21 +4254,6 @@
           ["Last ledger sync", formatDateTime(lastLedgerSync)]
         ]);
         renderBuildStatus();
-      }
-
-      function currentFontChoice() {
-        const stored = localStorage.getItem(FONT_SETTING_KEY);
-        return FONT_CHOICES.includes(stored) ? stored : "lowres";
-      }
-
-      function applyFontChoice(choice = currentFontChoice()) {
-        const selected = FONT_CHOICES.includes(choice) ? choice : "lowres";
-        document.body.classList.remove("font-lowres", "font-arcade", "font-ka1", "font-byte");
-        document.body.classList.add(`font-${selected}`);
-        localStorage.setItem(FONT_SETTING_KEY, selected);
-        if ($("fontSelect")) {
-          $("fontSelect").value = selected;
-        }
       }
 
       async function recordEvent(type, extra = {}) {
@@ -6360,9 +6360,6 @@
         renderSearch();
         showView("search");
       });
-      $("fontSelect").addEventListener("change", (event) => {
-        applyFontChoice(event.target.value);
-      });
       $("togglePlay").addEventListener("click", togglePlayback);
       $("skipBack").addEventListener("click", () => skipAudio(-15));
       $("skipForward").addEventListener("click", () => skipAudio(30));
@@ -6552,7 +6549,6 @@
       loadAchievementMetadata();
       loadCassetteMetadata();
       loadStoreMetadata();
-      applyFontChoice();
       Promise.all([refreshDownloads(), refreshEvents(), refreshAnnouncements(true)]).catch(() => {
         setStatus("Could not read local browser storage.");
       });
