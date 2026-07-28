@@ -394,6 +394,55 @@
         background: #c724ff;
       }
 
+      .streak-panel {
+        display: grid;
+        gap: 10px;
+      }
+
+      .streak-panel h2,
+      .streak-panel p {
+        margin: 0;
+      }
+
+      .streak-panel p {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .streak-tape {
+        display: flex;
+        gap: 8px;
+        min-height: 48px;
+        overflow-x: auto;
+        padding: 4px 2px 8px;
+        scrollbar-width: thin;
+      }
+
+      .streak-cassette {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(125, 211, 252, .28);
+        border-radius: 8px;
+        background: rgba(7, 22, 47, .64);
+      }
+
+      .streak-cassette img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .streak-empty {
+        display: grid;
+        align-items: center;
+        min-height: 42px;
+        color: var(--muted);
+      }
+
       .currency-amount {
         display: inline-flex;
         align-items: center;
@@ -1671,6 +1720,14 @@
           </div>
         </section>
 
+        <section class="panel streak-panel">
+          <div>
+            <h2>Listening Streak Tape</h2>
+            <p id="streakSummary">Loading listening streak.</p>
+          </div>
+          <div class="streak-tape" id="listeningStreakTape" aria-label="Listening streak cassette tape"></div>
+        </section>
+
         <button class="collection-entry" id="openCassetteCollection" type="button">
           <strong>Cassette Collection</strong>
           <small id="collectionEntrySummary">Loading collection.</small>
@@ -1921,7 +1978,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "byte-neon-heatmap-1";
+      const APP_BUILD = "listening-streak-tape-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3890,6 +3947,48 @@
         summary.textContent = `${monthName}: ${formatDuration(monthSeconds)} listened across ${activeDays} day${activeDays === 1 ? "" : "s"}${hotDays ? `, ${hotDays} hot day${hotDays === 1 ? "" : "s"}` : ""}.`;
       }
 
+      function currentListeningStreakKeys() {
+        const days = listeningDaySet();
+        const keys = [];
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+        while (days.has(dayKey(date))) {
+          keys.unshift(dayKey(date));
+          date.setDate(date.getDate() - 1);
+        }
+        return keys;
+      }
+
+      function cassetteIconForStreakDay(key) {
+        const cassettes = CASSETTE_ART.filter((cassette) => cassette?.icon);
+        if (!cassettes.length) return "";
+        return cassettes[stableHash(`streak-${key}`) % cassettes.length].icon;
+      }
+
+      function renderListeningStreakTape() {
+        const tape = $("listeningStreakTape");
+        const summary = $("streakSummary");
+        if (!tape || !summary) return;
+
+        const keys = currentListeningStreakKeys();
+        const best = maxListeningStreakDays();
+        if (!keys.length) {
+          summary.textContent = best
+            ? `No current streak. Your longest streak is ${best} day${best === 1 ? "" : "s"}.`
+            : "Listen for at least a few minutes today to start a streak.";
+          tape.innerHTML = `<span class="streak-empty">No current streak yet.</span>`;
+          return;
+        }
+
+        summary.textContent = `${keys.length} day current streak${best > keys.length ? ` - longest streak ${best} days` : ""}.`;
+        tape.innerHTML = keys.map((key) => {
+          const icon = cassetteIconForStreakDay(key);
+          return icon
+            ? `<span class="streak-cassette" title="${escapeHtml(key)}" aria-label="${escapeHtml(key)}"><img src="${icon}" alt=""></span>`
+            : `<span class="streak-cassette" title="${escapeHtml(key)}" aria-label="${escapeHtml(key)}"></span>`;
+        }).join("");
+      }
+
       function maxListeningStreakDays() {
         const times = [...listeningDaySet()]
           .map((key) => new Date(`${key}T00:00:00`).getTime())
@@ -4212,6 +4311,7 @@
         renderCollectionEntry();
         renderAchievementStats();
         renderListeningHeatmap();
+        renderListeningStreakTape();
       }
 
       function renderSettings() {
@@ -4624,6 +4724,7 @@
           renderFiles();
           renderSearch();
           renderDownloads();
+          renderStats();
           renderEpisode();
           renderCollection();
           evaluateAchievements().catch(() => {});
