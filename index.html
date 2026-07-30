@@ -582,6 +582,34 @@
         filter: grayscale(1);
       }
 
+      .episode-icon-button.is-downloading,
+      .explorer-row.is-downloading {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(125, 211, 252, .28), 0 0 14px rgba(125, 211, 252, .18);
+      }
+
+      .episode-icon-button.is-downloading img {
+        animation: download-pulse .72s steps(2, end) infinite;
+      }
+
+      .download-spinner {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border: 3px solid rgba(125, 211, 252, .28);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: download-spin .8s steps(8, end) infinite;
+      }
+
+      @keyframes download-spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes download-pulse {
+        50% { transform: translateY(-2px); filter: drop-shadow(0 0 6px rgba(125, 211, 252, .75)); }
+      }
+
       .episode-progress {
         height: 10px;
         overflow: hidden;
@@ -1978,7 +2006,7 @@
       const CASSETTE_ASSIGNMENT_OVERRIDES_KEY = "autodidact-cassette-assignment-overrides-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "tight-byte-text-1";
+      const APP_BUILD = "download-animation-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3343,6 +3371,7 @@
       let audioFiles = readCachedLibrary();
       let currentFolder = "Podcast";
       let downloads = [];
+      let downloadingFileIds = new Set();
       let events = [];
       let currentFile = null;
       let currentPlaybackSource = "";
@@ -5852,13 +5881,15 @@
       }
 
       function fileRow(file, includeFolder = false) {
+        const downloading = downloadingFileIds.has(file.id);
         return `
-          <div class="explorer-row playable-row" data-episode-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(displayName(file.name))}">
+          <div class="explorer-row playable-row${downloading ? " is-downloading" : ""}" data-episode-file="${escapeHtml(file.id)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(displayName(file.name))}">
             <span class="explorer-icon audio-icon">${cassetteIconMarkup(file)}</span>
             <span class="explorer-main">
               <span class="explorer-title">${escapeHtml(displayName(file.name))}</span>
-              <span class="explorer-subtitle">${escapeHtml(librarySubtitle(file, includeFolder))}</span>
+              <span class="explorer-subtitle">${downloading ? "Downloading... keep this page open" : escapeHtml(librarySubtitle(file, includeFolder))}</span>
             </span>
+            ${downloading ? `<span class="download-spinner" aria-label="Downloading"></span>` : ""}
           </div>
         `;
       }
@@ -5928,6 +5959,7 @@
         }
 
         const saved = isDownloaded(file.id);
+        const downloading = downloadingFileIds.has(file.id);
         const libraryFile = audioFiles.find((item) => item.id === file.id);
         const stats = statsForFile(file.id);
         const progress = resumableProgressForFile(file.id);
@@ -5944,10 +5976,11 @@
         $("episodeResume").disabled = !progress.canResume;
         $("episodeResume").setAttribute("aria-label", progress.canResume ? `Resume ${displayName(file.name)} at ${formatDuration(progress.position)}` : "Resume unavailable");
         $("episodeResume").title = progress.canResume ? `Resume at ${formatDuration(progress.position)}` : "Resume unavailable";
-        $("episodeDownload").disabled = saved || !libraryFile;
+        $("episodeDownload").disabled = saved || downloading || !libraryFile;
         $("episodeDownload").classList.toggle("is-downloaded", saved);
-        $("episodeDownload").setAttribute("aria-label", saved ? "Downloaded" : "Download");
-        $("episodeDownload").title = saved ? "Downloaded" : "Download";
+        $("episodeDownload").classList.toggle("is-downloading", downloading);
+        $("episodeDownload").setAttribute("aria-label", downloading ? "Downloading" : saved ? "Downloaded" : "Download");
+        $("episodeDownload").title = downloading ? "Downloading" : saved ? "Downloaded" : "Download";
         $("episodeStats").innerHTML = rows([
           ["Completed listens", String(stats.completions)],
           ["Total listening time", formatDuration(stats.seconds)],
@@ -6277,6 +6310,11 @@
           requestGoogleAccess(() => downloadFile(file, refreshAfter).catch(() => {}), "Google access is needed to download this file.");
           return;
         }
+        if (downloadingFileIds.has(file.id)) return;
+        downloadingFileIds.add(file.id);
+        renderFiles();
+        renderSearch();
+        renderEpisode();
         try {
           setStatus(`Downloading ${file.name}... Keep this page open until it finishes.`);
           const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
@@ -6304,6 +6342,11 @@
         } catch (error) {
           setStatus(error.message || "Download failed.");
           throw error;
+        } finally {
+          downloadingFileIds.delete(file.id);
+          renderFiles();
+          renderSearch();
+          renderEpisode();
         }
       }
 
