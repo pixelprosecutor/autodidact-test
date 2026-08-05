@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updatedAt": "2026-07-15",
+  "version": 2,
+  "updatedAt": "2026-08-04",
   "achievements": [
     {
       "id": "collector_spark",
@@ -265,6 +265,20 @@
       "hiddenUntilUnlocked": false,
       "repeatable": false,
       "rarity": "uncommon",
+      "image": "assets/achievements/trophy.png",
+      "notes": ""
+    },
+    {
+      "id": "full_collection",
+      "name": "Full Collection",
+      "description": "Collect every currently available cassette design.",
+      "category": "Collection",
+      "conditionType": "all_cassettes_collected",
+      "target": 1,
+      "enabled": true,
+      "hiddenUntilUnlocked": false,
+      "repeatable": false,
+      "rarity": "legendary",
       "image": "assets/achievements/trophy.png",
       "notes": ""
     }
