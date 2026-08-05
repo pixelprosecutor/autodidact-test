@@ -74,6 +74,16 @@
 
       body.has-player {
         padding-bottom: 96px;
+        background: #000;
+      }
+
+      /*
+       * iPhone can expose page content behind its translucent status area.
+       * While the player is open, leave only a black surface beneath it so
+       * the episode screen cannot show or scroll through at the top edge.
+       */
+      body.has-player main {
+        visibility: hidden;
       }
 
       h1,
