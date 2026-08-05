@@ -40,3 +40,10 @@ Drive access, and game rules in one large file. Split it gradually into focused
 parts, starting with game progress and reward rules, then stores and the
 player. Add automated checks for content metadata, image pairs and dimensions,
 unique cassette IDs, and release consistency.
+
+## Archive folder integration
+
+For now, exclude the Google Drive Archive folder and its audio from the active
+library, collection counts, and ordinary app views. Later, consider an Archive
+experience that can safely browse, restore, or otherwise incorporate those
+audio files without treating them as active collection entries.
