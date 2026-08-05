@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-download-animation-v1";
+const CACHE_NAME = "autodidact-download-animation-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
