@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-07-17",
+  "updatedAt": "2026-08-05",
   "cassettes": [
     {
       "id": "library-001",
@@ -1455,6 +1455,81 @@
       "storeId": "",
       "icon": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-icon-34x34.png",
       "large": "assets/cassettes/library/chatgpt-image-jul-5-2026-03-41-30-pm-9-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-098",
+      "name": "Metallic 1",
+      "pack": "Metallic",
+      "orderNumber": 98,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "storeExclusive": false,
+      "storeId": "",
+      "icon": "assets/cassettes/library/metallic-1-icon-34x21.png",
+      "large": "assets/cassettes/library/metallic-1-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-099",
+      "name": "Metallic 3",
+      "pack": "Metallic",
+      "orderNumber": 99,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "storeExclusive": false,
+      "storeId": "",
+      "icon": "assets/cassettes/library/metallic-3-icon-34x21.png",
+      "large": "assets/cassettes/library/metallic-3-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-100",
+      "name": "Metallic 4",
+      "pack": "Metallic",
+      "orderNumber": 100,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "storeExclusive": false,
+      "storeId": "",
+      "icon": "assets/cassettes/library/metallic-4-icon-34x21.png",
+      "large": "assets/cassettes/library/metallic-4-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-101",
+      "name": "Metallic 5",
+      "pack": "Metallic",
+      "orderNumber": 101,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "storeExclusive": false,
+      "storeId": "",
+      "icon": "assets/cassettes/library/metallic-5-icon-34x21.png",
+      "large": "assets/cassettes/library/metallic-5-large-384x256.png",
+      "notes": ""
+    },
+    {
+      "id": "library-102",
+      "name": "Metallic 6",
+      "pack": "Metallic",
+      "orderNumber": 102,
+      "rarity": "common",
+      "color": "",
+      "style": "",
+      "enabled": true,
+      "storeExclusive": false,
+      "storeId": "",
+      "icon": "assets/cassettes/library/metallic-6-icon-34x21.png",
+      "large": "assets/cassettes/library/metallic-6-large-384x256.png",
       "notes": ""
     }
   ]
