@@ -47,3 +47,30 @@ For now, exclude the Google Drive Archive folder and its audio from the active
 library, collection counts, and ordinary app views. Later, consider an Archive
 experience that can safely browse, restore, or otherwise incorporate those
 audio files without treating them as active collection entries.
+
+
+## Eliminate the recurring Google access button
+
+The installed PWA currently keeps its Google access token only for the active
+session. It remembers prior consent but does not attempt an automatic quiet
+reconnection when the app reopens.
+
+First, attempt a quiet reconnect at startup and clearly handle the cases where
+iPhone or Google requires user interaction. If that still leaves an annoying
+recurring prompt, evaluate a durable server-side connection for Drive and
+Sheets. Keep audio streaming, privacy, and offline behavior in scope before
+moving Drive access behind a service.
+
+## Content-management saving
+
+Replace the Cassette Editor's legacy JSON export/import workflow with a
+one-button publishing flow. A private service should validate cassette,
+achievement, and store metadata, then commit only the intended metadata file to
+GitHub. Keep a download-for-Codex fallback until direct saving is fully
+deployed.
+
+Use a server-side GitHub credential, never a browser-held credential. A Google
+Apps Script proof of concept may be suitable for metadata saves, but verify
+cross-origin behavior and save-result reporting from the GitHub Pages editor
+before relying on it. If it cannot provide a dependable browser API, use a
+small CORS-capable service instead.
