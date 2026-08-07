@@ -466,6 +466,8 @@
           <p>Edit cassette art metadata and achievement definitions.</p>
         </div>
         <button id="loadDefault" class="primary">Load Cassettes</button>
+        <button id="saveToGitHub" class="primary">Save changes</button>
+        <button id="forgetGitHubToken">Forget GitHub token</button>
         <button id="loadAchievements">Load Achievements</button>
         <span id="status" class="status">Ready.</span>
       </header>
@@ -878,6 +880,8 @@
 
     <script>
       const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
+      const GITHUB_REPOSITORY = "pixelprosecutor/autodidact-test";
+      const GITHUB_TOKEN_KEY = "autodidact-management-github-token";
       const ACHIEVEMENT_METADATA_URL = "../assets/achievements/achievement-metadata.json";
       const ACHIEVEMENT_ART_URL = "../assets/achievements/achievement-art.json";
       const STORE_METADATA_URL = "../assets/stores/store-metadata.json";
@@ -1527,6 +1531,76 @@
         });
       }
 
+      function base64Utf8(text) {
+        const bytes = new TextEncoder().encode(text);
+        let binary = "";
+        for (let index = 0; index < bytes.length; index += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+        }
+        return btoa(binary);
+      }
+
+      function githubToken() {
+        let token = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
+        if (token) return token;
+        token = window.prompt(
+          "Paste a GitHub fine-grained personal access token with Contents read/write access to pixelprosecutor/autodidact-test. It will be stored only in this browser until you choose Forget GitHub token."
+        ) || "";
+        if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
+        return token.trim();
+      }
+
+      async function saveGitHubFile(path, content, label) {
+        const token = githubToken();
+        if (!token) throw new Error("A GitHub token is needed to save changes.");
+        const headers = {
+          "Accept": "application/vnd.github+json",
+          "Authorization": "Bearer " + token
+        };
+        const url = "https://api.github.com/repos/" + GITHUB_REPOSITORY + "/contents/" + path;
+        const current = await fetch(url, { headers });
+        if (!current.ok) throw new Error(label + " could not be prepared for saving (" + current.status + ").");
+        const existing = await current.json();
+        const saved = await fetch(url, {
+          method: "PUT",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: "Update " + label + " from Autodidact Management",
+            content: base64Utf8(content),
+            sha: existing.sha
+          })
+        });
+        if (!saved.ok) throw new Error(label + " could not be saved (" + saved.status + ").");
+      }
+
+      async function saveAllToGitHub() {
+        const jobs = [];
+        if (dirty) jobs.push(["assets/cassettes/cassette-metadata.json", outputJson(), "cassette metadata"]);
+        if (achievementDirty) jobs.push(["assets/achievements/achievement-metadata.json", achievementOutputJson(), "achievement metadata"]);
+        if (storeDirty) jobs.push(["assets/stores/store-metadata.json", storeOutputJson(), "store metadata"]);
+        if (!jobs.length) {
+          setStatus("There are no unsaved changes.");
+          return;
+        }
+        const button = $("saveToGitHub");
+        button.disabled = true;
+        setStatus("Saving changes to GitHub…");
+        try {
+          for (const [path, fileContent, label] of jobs) await saveGitHubFile(path, fileContent, label);
+          dirty = false;
+          achievementDirty = false;
+          storeDirty = false;
+          render();
+          renderAchievements();
+          renderStores();
+          setStatus("Changes saved to GitHub.");
+        } catch (error) {
+          setStatus(error.message || "Could not save changes to GitHub.");
+        } finally {
+          button.disabled = false;
+        }
+      }
+
       async function loadDefaultMetadata() {
         try {
           const response = await fetch(`${METADATA_URL}?t=${Date.now()}`, { cache: "no-store" });
@@ -1720,6 +1794,11 @@
       }
 
       $("loadDefault").addEventListener("click", loadDefaultMetadata);
+      $("saveToGitHub").addEventListener("click", saveAllToGitHub);
+      $("forgetGitHubToken").addEventListener("click", () => {
+        localStorage.removeItem(GITHUB_TOKEN_KEY);
+        setStatus("The saved GitHub token was removed from this browser.");
+      });
       $("loadAchievements").addEventListener("click", () => {
         activateTab("achievements");
         loadAchievementMetadata();
