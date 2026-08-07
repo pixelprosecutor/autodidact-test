@@ -65,6 +65,24 @@
         font-weight: 700;
       }
 
+      /* Old export/import controls are retained in the code for recovery, but
+         the everyday workflow is now edit, then Save changes. */
+      #loadDefault,
+      #loadAchievements,
+      #loadStores,
+      #importButton,
+      #copyJson,
+      #downloadJson,
+      #achievementImportButton,
+      #achievementCopyJson,
+      #achievementDownloadJson,
+      #storeDownloadJson,
+      #loadAchievementArt,
+      #importFile,
+      #achievementImportFile {
+        display: none;
+      }
+
       button.danger {
         border-color: #7d3547;
         background: #3a1830;
