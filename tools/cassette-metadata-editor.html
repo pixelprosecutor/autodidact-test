@@ -484,7 +484,7 @@
           <p>Edit cassette art metadata and achievement definitions.</p>
         </div>
         <button id="loadDefault" class="primary">Load Cassettes</button>
-        <button id="saveToGitHub" class="primary">Save changes for Codex</button>
+        <button id="saveToGitHub" class="primary">Save changes</button>
         <button id="loadAchievements">Load Achievements</button>
         <span id="status" class="status">Ready.</span>
       </header>
@@ -897,8 +897,7 @@
 
     <script>
       const METADATA_URL = "../assets/cassettes/cassette-metadata.json";
-      const GITHUB_REPOSITORY = "pixelprosecutor/autodidact-test";
-      const GITHUB_TOKEN_KEY = "autodidact-management-github-token";
+      const SAVE_SERVICE_URL = ""; // Set this once after deploying the Apps Script web app.
       const ACHIEVEMENT_METADATA_URL = "../assets/achievements/achievement-metadata.json";
       const ACHIEVEMENT_ART_URL = "../assets/achievements/achievement-art.json";
       const STORE_METADATA_URL = "../assets/stores/store-metadata.json";
@@ -1548,7 +1547,9 @@
         });
       }
 
-      function downloadChangeSet() {
+      let pendingSaveSections = null;
+
+      function saveAllToService() {
         const changes = {};
         if (dirty) changes.cassettes = JSON.parse(outputJson());
         if (achievementDirty) changes.achievements = JSON.parse(achievementOutputJson());
@@ -1557,22 +1558,47 @@
           setStatus("There are no unsaved changes.");
           return;
         }
-        const blob = new Blob([JSON.stringify({
-          format: "autodidact-management-change-set",
-          version: 1,
-          createdAt: new Date().toISOString(),
-          changes
-        }, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "autodidact-management-changes.json";
-        document.body.append(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        setStatus("Change file saved. Attach it in Codex and ask to publish it.");
+        if (!SAVE_SERVICE_URL) {
+          setStatus("The save service has not been connected yet.");
+          return;
+        }
+        pendingSaveSections = Object.keys(changes);
+        const frame = document.createElement("iframe");
+        frame.name = "autodidactSaveFrame";
+        frame.hidden = true;
+        document.body.append(frame);
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = SAVE_SERVICE_URL;
+        form.target = frame.name;
+        const payload = document.createElement("input");
+        payload.type = "hidden";
+        payload.name = "payload";
+        payload.value = JSON.stringify({ source: "autodidact-management-editor", changes });
+        form.append(payload);
+        document.body.append(form);
+        form.submit();
+        form.remove();
+        setStatus("Saving changes…");
       }
+
+      window.addEventListener("message", (event) => {
+        const result = event.data;
+        if (!result || result.source !== "autodidact-save-service") return;
+        if (!result.ok) {
+          pendingSaveSections = null;
+          setStatus(result.message || "Could not save changes.");
+          return;
+        }
+        if (pendingSaveSections?.includes("cassettes")) dirty = false;
+        if (pendingSaveSections?.includes("achievements")) achievementDirty = false;
+        if (pendingSaveSections?.includes("stores")) storeDirty = false;
+        pendingSaveSections = null;
+        render();
+        renderAchievements();
+        renderStores();
+        setStatus("Changes saved to Autodidact.");
+      });
 
       async function loadDefaultMetadata() {
         try {
@@ -1767,7 +1793,7 @@
       }
 
       $("loadDefault").addEventListener("click", loadDefaultMetadata);
-      $("saveToGitHub").addEventListener("click", downloadChangeSet);
+      $("saveToGitHub").addEventListener("click", saveAllToService);
       $("loadAchievements").addEventListener("click", () => {
         activateTab("achievements");
         loadAchievementMetadata();
