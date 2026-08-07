@@ -484,8 +484,7 @@
           <p>Edit cassette art metadata and achievement definitions.</p>
         </div>
         <button id="loadDefault" class="primary">Load Cassettes</button>
-        <button id="saveToGitHub" class="primary">Save changes</button>
-        <button id="forgetGitHubToken">Forget GitHub token</button>
+        <button id="saveToGitHub" class="primary">Save changes for Codex</button>
         <button id="loadAchievements">Load Achievements</button>
         <span id="status" class="status">Ready.</span>
       </header>
@@ -1549,74 +1548,30 @@
         });
       }
 
-      function base64Utf8(text) {
-        const bytes = new TextEncoder().encode(text);
-        let binary = "";
-        for (let index = 0; index < bytes.length; index += 0x8000) {
-          binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
-        }
-        return btoa(binary);
-      }
-
-      function githubToken() {
-        let token = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
-        if (token) return token;
-        token = window.prompt(
-          "Paste a GitHub fine-grained personal access token with Contents read/write access to pixelprosecutor/autodidact-test. It will be stored only in this browser until you choose Forget GitHub token."
-        ) || "";
-        if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token.trim());
-        return token.trim();
-      }
-
-      async function saveGitHubFile(path, content, label) {
-        const token = githubToken();
-        if (!token) throw new Error("A GitHub token is needed to save changes.");
-        const headers = {
-          "Accept": "application/vnd.github+json",
-          "Authorization": "Bearer " + token
-        };
-        const url = "https://api.github.com/repos/" + GITHUB_REPOSITORY + "/contents/" + path;
-        const current = await fetch(url, { headers });
-        if (!current.ok) throw new Error(label + " could not be prepared for saving (" + current.status + ").");
-        const existing = await current.json();
-        const saved = await fetch(url, {
-          method: "PUT",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: "Update " + label + " from Autodidact Management",
-            content: base64Utf8(content),
-            sha: existing.sha
-          })
-        });
-        if (!saved.ok) throw new Error(label + " could not be saved (" + saved.status + ").");
-      }
-
-      async function saveAllToGitHub() {
-        const jobs = [];
-        if (dirty) jobs.push(["assets/cassettes/cassette-metadata.json", outputJson(), "cassette metadata"]);
-        if (achievementDirty) jobs.push(["assets/achievements/achievement-metadata.json", achievementOutputJson(), "achievement metadata"]);
-        if (storeDirty) jobs.push(["assets/stores/store-metadata.json", storeOutputJson(), "store metadata"]);
-        if (!jobs.length) {
+      function downloadChangeSet() {
+        const changes = {};
+        if (dirty) changes.cassettes = JSON.parse(outputJson());
+        if (achievementDirty) changes.achievements = JSON.parse(achievementOutputJson());
+        if (storeDirty) changes.stores = JSON.parse(storeOutputJson());
+        if (!Object.keys(changes).length) {
           setStatus("There are no unsaved changes.");
           return;
         }
-        const button = $("saveToGitHub");
-        button.disabled = true;
-        setStatus("Saving changes to GitHub…");
-        try {
-          for (const [path, fileContent, label] of jobs) await saveGitHubFile(path, fileContent, label);
-          dirty = false;
-          achievementDirty = false;
-          storeDirty = false;
-          render();
-          renderAchievements();
-          renderStores();
-          setStatus("Changes saved to GitHub.");
-        } catch (error) {
-          setStatus(error.message || "Could not save changes to GitHub.");
-        } finally {
-          button.disabled = false;
-        }
+        const blob = new Blob([JSON.stringify({
+          format: "autodidact-management-change-set",
+          version: 1,
+          createdAt: new Date().toISOString(),
+          changes
+        }, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "autodidact-management-changes.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setStatus("Change file saved. Attach it in Codex and ask to publish it.");
       }
 
       async function loadDefaultMetadata() {
@@ -1812,11 +1767,7 @@
       }
 
       $("loadDefault").addEventListener("click", loadDefaultMetadata);
-      $("saveToGitHub").addEventListener("click", saveAllToGitHub);
-      $("forgetGitHubToken").addEventListener("click", () => {
-        localStorage.removeItem(GITHUB_TOKEN_KEY);
-        setStatus("The saved GitHub token was removed from this browser.");
-      });
+      $("saveToGitHub").addEventListener("click", downloadChangeSet);
       $("loadAchievements").addEventListener("click", () => {
         activateTab("achievements");
         loadAchievementMetadata();
