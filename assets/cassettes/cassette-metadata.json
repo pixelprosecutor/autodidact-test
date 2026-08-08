@@ -813,21 +813,6 @@
       "notes": ""
     },
     {
-      "id": "library-136",
-      "name": "Round 4 23",
-      "pack": "Leopard",
-      "orderNumber": 136,
-      "rarity": "common",
-      "color": "",
-      "style": "",
-      "enabled": true,
-      "storeExclusive": false,
-      "storeId": "",
-      "icon": "assets/cassettes/library/round-4-23-icon-34x34.png",
-      "large": "assets/cassettes/library/round-4-23-large-384x256.png",
-      "notes": ""
-    },
-    {
       "id": "library-137",
       "name": "Four Cats",
       "pack": "Leopard",
