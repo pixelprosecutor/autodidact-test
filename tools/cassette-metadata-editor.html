@@ -834,6 +834,11 @@
                   Inventory Theme
                   <input id="storeFieldInventoryTheme">
                 </label>
+                <label class="wide">
+                  Eligible Cassette Packs
+                  <select id="storeFieldInventoryPacks" multiple size="6" aria-label="Eligible cassette packs"></select>
+                  <small>Leave every pack unselected to allow any cassette pack.</small>
+                </label>
                 <label>
                   Cost Type
                   <input id="storeFieldCostType">
@@ -1402,6 +1407,7 @@
           storeType: store.storeType || "Cassette shop",
           inventoryType: store.inventoryType || "Cassette designs",
           inventoryTheme: store.inventoryTheme || store.theme || "General",
+          inventoryPacks: Array.isArray(store.inventoryPacks) ? store.inventoryPacks.filter(Boolean) : [],
           costType: store.costType || "Not active yet",
           costPreview: store.costPreview || "Store trading is coming later.",
           inventoryNote: store.inventoryNote || "This store will eventually offer cassette inventory.",
@@ -1496,6 +1502,10 @@
         $("storeFieldFlavorText").value = store.flavorText;
         $("storeFieldInventoryType").value = store.inventoryType;
         $("storeFieldInventoryTheme").value = store.inventoryTheme;
+        const selectedPacks = new Set(store.inventoryPacks || []);
+        const packs = [...new Set(cassetteMetadata.cassettes.map((cassette) => String(cassette.pack || "Unsorted").trim()).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b));
+        $("storeFieldInventoryPacks").innerHTML = packs.map((pack) => `<option value="${escapeHtml(pack)}"${selectedPacks.has(pack) ? " selected" : ""}>${escapeHtml(pack)}</option>`).join("");
         $("storeFieldCostType").value = store.costType;
         $("storeFieldCostPreview").value = store.costPreview;
         $("storeFieldInventoryNote").value = store.inventoryNote;
@@ -1858,6 +1868,9 @@
       bindStoreField("storeFieldFlavorText", "flavorText");
       bindStoreField("storeFieldInventoryType", "inventoryType");
       bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
+      $("storeFieldInventoryPacks").addEventListener("change", () => {
+        updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").selectedOptions].map((option) => option.value) });
+      });
       bindStoreField("storeFieldCostType", "costType");
       bindStoreField("storeFieldCostPreview", "costPreview");
       bindStoreField("storeFieldInventoryNote", "inventoryNote");
