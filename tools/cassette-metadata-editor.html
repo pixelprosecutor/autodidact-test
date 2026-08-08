@@ -839,6 +839,16 @@
                   <select id="storeFieldInventoryPacks" multiple size="6" aria-label="Eligible cassette packs"></select>
                   <small>Leave every pack unselected to allow any cassette pack.</small>
                 </label>
+                <label class="wide">
+                  Eligible Cassette Rarities
+                  <select id="storeFieldInventoryRarities" multiple size="4" aria-label="Eligible cassette rarities">
+                    <option value="common">common</option>
+                    <option value="uncommon">uncommon</option>
+                    <option value="rare">rare</option>
+                    <option value="special">special</option>
+                  </select>
+                  <small>Leave every rarity unselected to allow every rarity.</small>
+                </label>
                 <label>
                   Cost Type
                   <input id="storeFieldCostType">
@@ -1408,6 +1418,7 @@
           inventoryType: store.inventoryType || "Cassette designs",
           inventoryTheme: store.inventoryTheme || store.theme || "General",
           inventoryPacks: Array.isArray(store.inventoryPacks) ? store.inventoryPacks.filter(Boolean) : [],
+          inventoryRarities: Array.isArray(store.inventoryRarities) ? store.inventoryRarities.filter(Boolean) : [],
           costType: store.costType || "Not active yet",
           costPreview: store.costPreview || "Store trading is coming later.",
           inventoryNote: store.inventoryNote || "This store will eventually offer cassette inventory.",
@@ -1506,6 +1517,10 @@
         const packs = [...new Set(cassetteMetadata.cassettes.map((cassette) => String(cassette.pack || "Unsorted").trim()).filter(Boolean))]
           .sort((a, b) => a.localeCompare(b));
         $("storeFieldInventoryPacks").innerHTML = packs.map((pack) => `<option value="${escapeHtml(pack)}"${selectedPacks.has(pack) ? " selected" : ""}>${escapeHtml(pack)}</option>`).join("");
+        const selectedRarities = new Set(store.inventoryRarities || []);
+        [...$("storeFieldInventoryRarities").options].forEach((option) => {
+          option.selected = selectedRarities.has(option.value);
+        });
         $("storeFieldCostType").value = store.costType;
         $("storeFieldCostPreview").value = store.costPreview;
         $("storeFieldInventoryNote").value = store.inventoryNote;
@@ -1870,6 +1885,9 @@
       bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
       $("storeFieldInventoryPacks").addEventListener("change", () => {
         updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").selectedOptions].map((option) => option.value) });
+      });
+      $("storeFieldInventoryRarities").addEventListener("change", () => {
+        updateSelectedStore({ inventoryRarities: [...$("storeFieldInventoryRarities").selectedOptions].map((option) => option.value) });
       });
       bindStoreField("storeFieldCostType", "costType");
       bindStoreField("storeFieldCostPreview", "costPreview");
