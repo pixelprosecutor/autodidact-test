@@ -1578,21 +1578,6 @@
       "notes": ""
     },
     {
-      "id": "library-116",
-      "name": "Round 4 3",
-      "pack": "Unsorted",
-      "orderNumber": 116,
-      "rarity": "common",
-      "color": "",
-      "style": "",
-      "enabled": true,
-      "storeExclusive": false,
-      "storeId": "",
-      "icon": "assets/cassettes/library/round-4-03-icon-34x34.png",
-      "large": "assets/cassettes/library/round-4-03-large-384x256.png",
-      "notes": ""
-    },
-    {
       "id": "library-117",
       "name": "Round 4 4",
       "pack": "Unsorted",
@@ -1620,21 +1605,6 @@
       "storeId": "",
       "icon": "assets/cassettes/library/round-4-05-icon-34x34.png",
       "large": "assets/cassettes/library/round-4-05-large-384x256.png",
-      "notes": ""
-    },
-    {
-      "id": "library-128",
-      "name": "Round 4 15",
-      "pack": "Unsorted",
-      "orderNumber": 128,
-      "rarity": "common",
-      "color": "",
-      "style": "",
-      "enabled": true,
-      "storeExclusive": false,
-      "storeId": "",
-      "icon": "assets/cassettes/library/round-4-15-icon-34x34.png",
-      "large": "assets/cassettes/library/round-4-15-large-384x256.png",
       "notes": ""
     },
     {
