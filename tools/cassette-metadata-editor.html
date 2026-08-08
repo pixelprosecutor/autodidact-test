@@ -1714,6 +1714,7 @@
           selectedId = metadata.cassettes[0]?.id || "";
           dirty = false;
           render();
+          renderStores();
           setStatus(`Loaded ${metadata.cassettes.length} cassettes.`);
         } catch (error) {
           setStatus(error.message || "Could not load metadata.");
@@ -1729,6 +1730,7 @@
             selectedId = metadata.cassettes[0]?.id || "";
             dirty = false;
             render();
+            renderStores();
             setStatus(`Imported ${metadata.cassettes.length} cassettes.`);
           } catch (error) {
             setStatus(error.message || "Could not import JSON.");
