@@ -74,3 +74,11 @@ Apps Script proof of concept may be suitable for metadata saves, but verify
 cross-origin behavior and save-result reporting from the GitHub Pages editor
 before relying on it. If it cannot provide a dependable browser API, use a
 small CORS-capable service instead.
+
+## Store metadata cleanup
+
+Audit the Store section of Autodidact Management and remove, rename, or connect fields that currently do nothing. In particular, align store status with the stores that are already active, decide whether descriptions should appear in the player-facing app, and replace the unused theme and placeholder inventory fields with settings that affect store behavior.
+
+## Store inventory controls
+
+Keep the existing three-item store inventory system, but let each store define which cassette packs it may offer. The Store editor should provide a multi-select pack control; an empty selection means the store may draw from every pack. Later, extend this same system with inventory size, rarity preferences, rotation rules, and duplicate-trade rewards.
