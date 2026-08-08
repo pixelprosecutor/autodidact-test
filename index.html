@@ -2019,7 +2019,7 @@
       const CASSETTE_ASSIGNMENT_SEED_KEY = "autodidact-cassette-assignment-seed-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "download-animation-3";
+      const APP_BUILD = "store-pack-filters-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -5025,13 +5025,20 @@
         return `${storeRotationDayIndex()}:${storeIdentity(store) || store?.id || store?.name || "store"}`;
       }
 
+      function cassetteMatchesStorePacks(cassette, store) {
+        const allowedPacks = Array.isArray(store?.inventoryPacks)
+          ? store.inventoryPacks.map((pack) => String(pack || "").trim()).filter(Boolean)
+          : [];
+        return !allowedPacks.length || allowedPacks.includes(String(cassette?.pack || "Unsorted").trim());
+      }
+
       function storeCandidateCassettes(store, excludeIds = []) {
         if (!store || !CASSETTE_ART.length) return [];
         const exclude = new Set(excludeIds.filter(Boolean));
         const assignments = cassetteAssignmentCounts();
         const unowned = CASSETTE_ART.filter((cassette) => {
           const id = cassetteKey(cassette);
-          return id && !assignments.has(id) && !exclude.has(id);
+          return id && !assignments.has(id) && !exclude.has(id) && cassetteMatchesStorePacks(cassette, store);
         });
         const exclusive = unowned.filter((cassette) => cassetteBelongsToStore(cassette, store));
         const randomPool = unowned.filter((cassette) => !isStoreExclusiveCassette(cassette));
