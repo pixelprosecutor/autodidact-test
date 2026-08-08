@@ -390,6 +390,55 @@
         height: 20px;
       }
 
+      .filter-checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+      }
+
+      .filter-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 32px;
+        padding: 5px 9px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--ink);
+      }
+
+      .filter-check input {
+        width: 18px;
+        height: 18px;
+      }
+
+      .exclusive-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .exclusive-cassette {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+      }
+
+      .exclusive-cassette img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
       .json-panel {
         display: grid;
         gap: 12px;
@@ -780,6 +829,11 @@
               </div>
             </section>
 
+            <section id="storeExclusivePanel" class="panel" hidden>
+              <h3>Store-exclusive cassettes</h3>
+              <div id="storeExclusiveList" class="exclusive-list"></div>
+            </section>
+
             <section id="storeFormPanel" class="panel" hidden>
               <div class="form-grid">
                 <label>
@@ -836,18 +890,18 @@
                 </label>
                 <label class="wide">
                   Eligible Cassette Packs
-                  <select id="storeFieldInventoryPacks" multiple size="6" aria-label="Eligible cassette packs"></select>
-                  <small>Leave every pack unselected to allow any cassette pack.</small>
+                  <div id="storeFieldInventoryPacks" class="filter-checks" aria-label="Eligible cassette packs"></div>
+                  <small>Leave every pack unchecked to allow any cassette pack. “Unassigned” includes cassettes not yet placed in a named pack.</small>
                 </label>
                 <label class="wide">
                   Eligible Cassette Rarities
-                  <select id="storeFieldInventoryRarities" multiple size="4" aria-label="Eligible cassette rarities">
-                    <option value="common">common</option>
-                    <option value="uncommon">uncommon</option>
-                    <option value="rare">rare</option>
-                    <option value="special">special</option>
-                  </select>
-                  <small>Leave every rarity unselected to allow every rarity.</small>
+                  <div id="storeFieldInventoryRarities" class="filter-checks" aria-label="Eligible cassette rarities">
+                    <label class="filter-check"><input type="checkbox" value="common"> common</label>
+                    <label class="filter-check"><input type="checkbox" value="uncommon"> uncommon</label>
+                    <label class="filter-check"><input type="checkbox" value="rare"> rare</label>
+                    <label class="filter-check"><input type="checkbox" value="special"> special</label>
+                  </div>
+                  <small>Leave every rarity unchecked to allow every rarity.</small>
                 </label>
                 <label>
                   Cost Type
@@ -1516,10 +1570,16 @@
         const selectedPacks = new Set(store.inventoryPacks || []);
         const packs = [...new Set(metadata.cassettes.map((cassette) => String(cassette.pack || "Unsorted").trim()).filter(Boolean))]
           .sort((a, b) => a.localeCompare(b));
-        $("storeFieldInventoryPacks").innerHTML = packs.map((pack) => `<option value="${escapeHtml(pack)}"${selectedPacks.has(pack) ? " selected" : ""}>${escapeHtml(pack)}</option>`).join("");
+        const packOptions = [
+          { value: "Unsorted", label: "Unassigned" },
+          ...packs.filter((pack) => pack !== "Unsorted").map((pack) => ({ value: pack, label: pack }))
+        ];
+        $("storeFieldInventoryPacks").innerHTML = packOptions.map(({ value, label }) =>
+          `<label class="filter-check"><input type="checkbox" value="${escapeHtml(value)}"${selectedPacks.has(value) ? " checked" : ""}> ${escapeHtml(label)}</label>`
+        ).join("");
         const selectedRarities = new Set(store.inventoryRarities || []);
-        [...$("storeFieldInventoryRarities").options].forEach((option) => {
-          option.selected = selectedRarities.has(option.value);
+        $("storeFieldInventoryRarities").querySelectorAll("input").forEach((input) => {
+          input.checked = selectedRarities.has(input.value);
         });
         $("storeFieldCostType").value = store.costType;
         $("storeFieldCostPreview").value = store.costPreview;
@@ -1529,12 +1589,29 @@
         $("storeImagePreview").src = assetUrl(store.large);
       }
 
+      function renderStoreExclusiveCassettes(store) {
+        const storeId = String(store?.id || "").trim().toLowerCase();
+        const exclusives = metadata.cassettes.filter((cassette) => {
+          const cassetteStoreId = String(cassette.storeId || cassette.exclusiveStoreId || "").trim().toLowerCase();
+          return storeId && cassetteStoreId === storeId &&
+            (cassette.storeExclusive === true || cassette.exclusive === true || Boolean(cassetteStoreId));
+        });
+        $("storeExclusivePanel").hidden = !exclusives.length;
+        $("storeExclusiveList").innerHTML = exclusives.map((cassette) =>
+          `<div class="exclusive-cassette"><img src="${escapeHtml(assetUrl(cassette.icon))}" alt=""><span>${escapeHtml(cassette.name || cassette.id)}</span></div>`
+        ).join("");
+      }
+
       function renderStoreEditor() {
         const store = currentStore();
         $("storeEmptyState").hidden = !!store || storeMetadata.stores.length > 0;
         $("storePreviewPanel").hidden = !store;
+        $("storeExclusivePanel").hidden = !store;
         $("storeFormPanel").hidden = !store;
-        if (store) fillStoreForm(store);
+        if (store) {
+          fillStoreForm(store);
+          renderStoreExclusiveCassettes(store);
+        }
       }
 
       function storeOutputJson() {
@@ -1884,10 +1961,10 @@
       bindStoreField("storeFieldInventoryType", "inventoryType");
       bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
       $("storeFieldInventoryPacks").addEventListener("change", () => {
-        updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").selectedOptions].map((option) => option.value) });
+        updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").querySelectorAll("input:checked")].map((input) => input.value) });
       });
       $("storeFieldInventoryRarities").addEventListener("change", () => {
-        updateSelectedStore({ inventoryRarities: [...$("storeFieldInventoryRarities").selectedOptions].map((option) => option.value) });
+        updateSelectedStore({ inventoryRarities: [...$("storeFieldInventoryRarities").querySelectorAll("input:checked")].map((input) => input.value) });
       });
       bindStoreField("storeFieldCostType", "costType");
       bindStoreField("storeFieldCostPreview", "costPreview");
