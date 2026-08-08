@@ -439,6 +439,19 @@
         image-rendering: pixelated;
       }
 
+      .eligibility-summary {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #071225;
+        color: var(--muted);
+      }
+
+      .eligibility-summary.warning {
+        border-color: #f0ad4e;
+        color: #ffd48a;
+      }
+
       .json-panel {
         display: grid;
         gap: 12px;
@@ -903,6 +916,7 @@
                   </div>
                   <small>Leave every rarity unchecked to allow every rarity.</small>
                 </label>
+                <div id="storeEligibilitySummary" class="eligibility-summary wide" role="status"></div>
                 <label>
                   Cost Type
                   <input id="storeFieldCostType">
@@ -1554,6 +1568,27 @@
         });
       }
 
+      function renderStoreEligibility(store) {
+        const selectedPacks = new Set(store.inventoryPacks || []);
+        const selectedRarities = new Set(store.inventoryRarities || []);
+        const storeId = String(store.id || "").trim().toLowerCase();
+        const eligible = metadata.cassettes.filter((cassette) => {
+          if (cassette.enabled === false) return false;
+          const pack = String(cassette.pack || "Unsorted").trim();
+          const rarity = String(cassette.rarity || "common").trim();
+          const cassetteStoreId = String(cassette.storeId || cassette.exclusiveStoreId || "").trim().toLowerCase();
+          const isExclusive = cassette.storeExclusive === true || cassette.exclusive === true || Boolean(cassetteStoreId);
+          return (!selectedPacks.size || selectedPacks.has(pack)) &&
+            (!selectedRarities.size || selectedRarities.has(rarity)) &&
+            (!isExclusive || cassetteStoreId === storeId);
+        });
+        const message = eligible.length
+          ? `${eligible.length} cassette design${eligible.length === 1 ? "" : "s"} currently match these inventory rules.`
+          : "No cassette designs match these inventory rules. This store would have no new inventory to offer.";
+        $("storeEligibilitySummary").textContent = message;
+        $("storeEligibilitySummary").classList.toggle("warning", !eligible.length);
+      }
+
       function fillStoreForm(store) {
         $("storeFieldId").value = store.id;
         $("storeFieldName").value = store.name;
@@ -1581,6 +1616,7 @@
         $("storeFieldInventoryRarities").querySelectorAll("input").forEach((input) => {
           input.checked = selectedRarities.has(input.value);
         });
+        renderStoreEligibility(store);
         $("storeFieldCostType").value = store.costType;
         $("storeFieldCostPreview").value = store.costPreview;
         $("storeFieldInventoryNote").value = store.inventoryNote;
