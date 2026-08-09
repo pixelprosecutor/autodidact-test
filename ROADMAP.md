@@ -90,3 +90,7 @@ Explore lightweight, optional GIF animations for moments such as cassette discov
 ## Replay and retention
 
 Track and display the number of completed plays for every audio file. Add optional replay rewards that encourage useful revisiting rather than immediate repetition: for example, small rewards for returning after an interval, an unobtrusive “ready to revisit” cue, and achievements for building a lasting review habit. Design the schedule around retention while keeping it flexible and never blocking ordinary listening.
+
+## Classroom recommendations and a cleaner home screen
+
+Replace the persistent Google button in the bottom row with a Teacher or Classroom entry point. The Classroom should recommend what to hear next based on completed-listen history and how long it has been since each audio file was last completed, beginning with clear “ready to revisit” suggestions and later supporting a flexible retention-oriented review schedule. Google connection should happen quietly in the background or through a private service; show a connection action only when it is genuinely needed, preferably in Settings rather than as permanent bottom-row navigation.
