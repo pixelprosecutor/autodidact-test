@@ -82,3 +82,7 @@ Audit the Store section of Autodidact Management and remove, rename, or connect 
 ## Store inventory controls
 
 Keep the existing three-item store inventory system, but let each store define which cassette packs it may offer. The Store editor should provide a multi-select pack control; an empty selection means the store may draw from every pack. Later, extend this same system with inventory size, rarity preferences, rotation rules, and duplicate-trade rewards.
+
+## Short GIF animations
+
+Explore lightweight, optional GIF animations for moments such as cassette discoveries, store activity, achievements, and player feedback. Establish size and performance limits so animations feel playful without slowing the installed app or disrupting listening.
