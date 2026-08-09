@@ -1421,7 +1421,7 @@
         height: 100dvh;
         padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
         display: grid;
-        grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+        grid-template-rows: auto minmax(0, 1fr) auto auto auto;
         align-content: stretch;
         overflow: hidden;
         background: var(--paper);
@@ -1436,15 +1436,21 @@
       }
 
       .mini-player strong {
-        display: block;
+        display: -webkit-box;
+        min-width: 0;
+        margin: 0 0 12px;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 26px;
+        font-family: "Autodidact KA1", var(--app-font);
+        font-size: clamp(24px, 6vw, 36px);
+        line-height: 1.18;
+        overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
       }
 
       .mini-player small {
         display: block;
+        min-width: 0;
         margin: 3px 0 8px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1940,8 +1946,8 @@
     </main>
 
     <aside class="mini-player hidden" id="miniPlayer" hidden>
-      <div class="player-art" id="playerArt" aria-hidden="true"></div>
       <strong id="nowPlaying">No local file selected</strong>
+      <div class="player-art" id="playerArt" aria-hidden="true"></div>
       <small id="nowPlayingMeta">Select a downloaded file to begin.</small>
       <audio class="native-player" id="player" preload="metadata"></audio>
       <div class="player-progress" aria-label="Playback progress">
@@ -2019,7 +2025,7 @@
       const CASSETTE_ASSIGNMENT_SEED_KEY = "autodidact-cassette-assignment-seed-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "store-inventory-size-5";
+      const APP_BUILD = "player-title-ka1-6";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
