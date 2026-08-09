@@ -2030,7 +2030,7 @@
       const CASSETTE_ASSIGNMENT_SEED_KEY = "autodidact-cassette-assignment-seed-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "episode-title-wrap-7";
+      const APP_BUILD = "store-slot-refill-8";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -5087,17 +5087,23 @@
         const existing = Array.isArray(records[key]) ? records[key].filter(Boolean) : [];
         const validIds = new Set(CASSETTE_ART.map((cassette) => cassetteKey(cassette)).filter(Boolean));
         const assignments = cassetteAssignmentCounts();
-        const exclusiveIds = unownedExclusiveCassettes(store).map((cassette) => cassetteKey(cassette));
-        const regularExisting = existing.filter((id, index) =>
-          validIds.has(id) && !assignments.has(id) && existing.indexOf(id) === index && !exclusiveIds.includes(id)
-        );
         const configuredSize = Math.max(1, Math.min(12, Number(store.inventorySize) || 3));
-        const targetSize = Math.max(configuredSize, exclusiveIds.length);
-        const kept = [...exclusiveIds, ...regularExisting].slice(0, targetSize);
+        const kept = existing.filter((id, index) =>
+          validIds.has(id) && !assignments.has(id) && existing.indexOf(id) === index
+        );
+
+        // Keep the shelf in its current order. New unowned exclusives are added without
+        // rearranging the other visible cassettes.
+        const exclusiveIds = unownedExclusiveCassettes(store, kept).map((cassette) => cassetteKey(cassette));
+        const targetSize = Math.max(configuredSize, kept.length + exclusiveIds.length);
+        for (const id of exclusiveIds) {
+          if (id && !kept.includes(id)) kept.push(id);
+        }
+
         const candidates = storeCandidateCassettes(store, kept);
         while (kept.length < targetSize && candidates.length) {
-          const next = candidates.shift();
-          const id = cassetteKey(next);
+          const candidate = candidates.shift();
+          const id = cassetteKey(candidate);
           if (id && !kept.includes(id)) kept.push(id);
         }
         records[key] = kept;
@@ -5111,6 +5117,8 @@
         const inventory = Array.isArray(records[key]) ? [...records[key]] : hydrateStoreInventory(store);
         const index = Number.isInteger(slotIndex) && slotIndex >= 0 ? slotIndex : inventory.indexOf(purchasedCassetteId);
         if (index < 0) return;
+
+        // Only the purchased position changes. The remaining shelf stays exactly as it was.
         const candidates = storeCandidateCassettes(store, inventory.filter((id) => id !== purchasedCassetteId));
         const replacement = candidates.find((cassette) => {
           const id = cassetteKey(cassette);
@@ -5123,7 +5131,6 @@
         }
         records[key] = inventory.filter(Boolean);
         saveStoreInventoryRecords(records);
-        hydrateStoreInventory(store);
       }
 
       function storePurchaseOptions(store) {
@@ -5442,6 +5449,7 @@
         const overrides = cassetteAssignmentOverrides();
         overrides[file.id] = cassetteId;
         saveCassetteAssignmentOverrides(overrides);
+        refillStoreInventorySlot(store, cassetteId, option.slotIndex);
 
         const transaction = {
           id: `store-${Date.now()}-${Math.random().toString(16).slice(2)}`,
