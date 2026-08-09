@@ -2019,7 +2019,7 @@
       const CASSETTE_ASSIGNMENT_SEED_KEY = "autodidact-cassette-assignment-seed-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "store-exclusive-inventory-4";
+      const APP_BUILD = "store-inventory-size-5";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -5080,7 +5080,8 @@
         const regularExisting = existing.filter((id, index) =>
           validIds.has(id) && !assignments.has(id) && existing.indexOf(id) === index && !exclusiveIds.includes(id)
         );
-        const targetSize = Math.max(3, exclusiveIds.length);
+        const configuredSize = Math.max(1, Math.min(12, Number(store.inventorySize) || 3));
+        const targetSize = Math.max(configuredSize, exclusiveIds.length);
         const kept = [...exclusiveIds, ...regularExisting].slice(0, targetSize);
         const candidates = storeCandidateCassettes(store, kept);
         while (kept.length < targetSize && candidates.length) {
