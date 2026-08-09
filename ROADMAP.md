@@ -86,3 +86,7 @@ Keep the existing three-item store inventory system, but let each store define w
 ## Short GIF animations
 
 Explore lightweight, optional GIF animations for moments such as cassette discoveries, store activity, achievements, and player feedback. Establish size and performance limits so animations feel playful without slowing the installed app or disrupting listening.
+
+## Replay and retention
+
+Track and display the number of completed plays for every audio file. Add optional replay rewards that encourage useful revisiting rather than immediate repetition: for example, small rewards for returning after an interval, an unobtrusive “ready to revisit” cue, and achievements for building a lasting review habit. Design the schedule around retention while keeping it flexible and never blocking ordinary listening.
