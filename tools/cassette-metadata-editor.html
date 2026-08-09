@@ -858,48 +858,20 @@
                   <input id="storeFieldName">
                 </label>
                 <label>
-                  Theme
-                  <input id="storeFieldTheme">
-                </label>
-                <label>
-                  Status
+                  Availability
                   <select id="storeFieldStatus">
-                    <option value="comingSoon">comingSoon</option>
-                    <option value="unlocked">unlocked</option>
-                    <option value="locked">locked</option>
+                    <option value="active">Available in rotation</option>
+                    <option value="locked">Hidden from players</option>
                   </select>
-                </label>
-                <label>
-                  Store Type
-                  <input id="storeFieldStoreType">
-                </label>
-                <label>
-                  Unlock Condition
-                  <input id="storeFieldUnlockCondition">
                 </label>
                 <label class="check-row">
                   <input id="storeFieldEnabled" type="checkbox">
                   Enabled
                 </label>
-                <label class="check-row">
-                  <input id="storeFieldLocked" type="checkbox">
-                  Locked by default
-                </label>
                 <label class="wide">
                   Description
                   <textarea id="storeFieldDescription"></textarea>
-                </label>
-                <label class="wide">
-                  Flavor Text
-                  <textarea id="storeFieldFlavorText"></textarea>
-                </label>
-                <label>
-                  Inventory Type
-                  <input id="storeFieldInventoryType">
-                </label>
-                <label>
-                  Inventory Theme
-                  <input id="storeFieldInventoryTheme">
+                  <small>This text appears on the store card and its information page.</small>
                 </label>
                 <label>
                   Inventory Size
@@ -921,25 +893,9 @@
                   <small>Leave every rarity unchecked to allow every rarity.</small>
                 </label>
                 <div id="storeEligibilitySummary" class="eligibility-summary wide" role="status"></div>
-                <label>
-                  Cost Type
-                  <input id="storeFieldCostType">
-                </label>
-                <label class="wide">
-                  Cost Preview
-                  <input id="storeFieldCostPreview">
-                </label>
-                <label class="wide">
-                  Inventory Note
-                  <textarea id="storeFieldInventoryNote"></textarea>
-                </label>
                 <label class="wide">
                   Large Art Path
                   <input id="storeFieldLarge">
-                </label>
-                <label class="wide">
-                  Notes
-                  <textarea id="storeFieldNotes"></textarea>
                 </label>
               </div>
             </section>
@@ -1476,27 +1432,17 @@
       }
 
       function normalizeStore(store, index) {
+        const isLocked = store.status === "locked" || store.lockedByDefault === true;
         return {
           id: store.id || `store-${String(index + 1).padStart(3, "0")}`,
           name: store.name || `Store ${String(index + 1).padStart(3, "0")}`,
-          description: store.description || "",
-          flavorText: store.flavorText || "",
+          description: store.flavorText || store.description || "",
           large: store.large || "",
           enabled: store.enabled !== false,
-          status: store.status || (store.lockedByDefault === true ? "locked" : "comingSoon"),
-          lockedByDefault: store.lockedByDefault === true,
-          unlockCondition: store.unlockCondition || "",
-          storeType: store.storeType || "Cassette shop",
-          inventoryType: store.inventoryType || "Cassette designs",
-          inventoryTheme: store.inventoryTheme || store.theme || "General",
+          status: isLocked ? "locked" : "active",
           inventorySize: Math.max(1, Math.min(12, Number(store.inventorySize) || 3)),
           inventoryPacks: Array.isArray(store.inventoryPacks) ? store.inventoryPacks.filter(Boolean) : [],
-          inventoryRarities: Array.isArray(store.inventoryRarities) ? store.inventoryRarities.filter(Boolean) : [],
-          costType: store.costType || "Not active yet",
-          costPreview: store.costPreview || "Store trading is coming later.",
-          inventoryNote: store.inventoryNote || "This store will eventually offer cassette inventory.",
-          theme: store.theme || "",
-          notes: store.notes || ""
+          inventoryRarities: Array.isArray(store.inventoryRarities) ? store.inventoryRarities.filter(Boolean) : []
         };
       }
 
@@ -1514,56 +1460,39 @@
       }
 
       function sortedStores(items = storeMetadata.stores) {
-        return [...items].sort((a, b) =>
-          String(a.theme || "").localeCompare(String(b.theme || "")) ||
-          String(a.name || "").localeCompare(String(b.name || ""))
-        );
+        return [...items].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
       }
 
       function filteredStores() {
         const query = $("storeSearch").value.trim().toLowerCase();
         return sortedStores().filter((store) => {
-          const searchText = [
-            store.id,
-            store.name,
-            store.description,
-            store.flavorText,
-            store.theme,
-            store.status,
-            store.storeType,
-            store.inventoryType,
-            store.inventoryTheme,
-            store.costType,
-            store.costPreview,
-            store.inventoryNote,
-            store.unlockCondition,
-            store.notes
-          ].join(" ").toLowerCase();
+          const searchText = [store.id, store.name, store.description, store.status].join(" ").toLowerCase();
           return !query || searchText.includes(query);
         });
       }
 
       function renderStoreList() {
-        const enabled = storeMetadata.stores.filter((store) => store.enabled).length;
-        const locked = storeMetadata.stores.filter((store) => store.status === "locked" || store.lockedByDefault).length;
-        const comingSoon = storeMetadata.stores.filter((store) => store.status === "comingSoon").length;
+        const available = storeMetadata.stores.filter((store) => store.enabled && store.status !== "locked").length;
+        const hidden = storeMetadata.stores.length - available;
         $("storeCounts").innerHTML = [
           `<span class="pill">${storeMetadata.stores.length} stores</span>`,
-          `<span class="pill">${enabled} enabled</span>`,
-          `<span class="pill">${comingSoon} coming soon</span>`,
-          `<span class="pill">${locked} locked</span>`
+          `<span class="pill">${available} available</span>`,
+          `<span class="pill">${hidden} hidden or disabled</span>`
         ].join("");
         const items = filteredStores();
-        $("storeList").innerHTML = items.map((store) => `
-          <button class="store-row" data-store-id="${escapeHtml(store.id)}" aria-selected="${store.id === selectedStoreId ? "true" : "false"}">
-            <img src="${escapeHtml(assetUrl(store.large))}" alt="">
-            <span>
-              <span class="row-title">${escapeHtml(store.name)}</span>
-              <span class="row-subtitle">${escapeHtml(store.status || "comingSoon")} - ${escapeHtml(store.storeType || "Cassette shop")}${store.enabled ? "" : " - disabled"}${store.lockedByDefault ? " - locked by default" : ""}</span>
-            </span>
-            <span class="pill">${escapeHtml(store.id)}</span>
-          </button>
-        `).join("") || '<div class="empty">No stores match the current filters.</div>';
+        $("storeList").innerHTML = items.map((store) => {
+          const availability = store.enabled && store.status !== "locked" ? "Available in rotation" : "Hidden from players";
+          return `
+            <button class="store-row" data-store-id="${escapeHtml(store.id)}" aria-selected="${store.id === selectedStoreId ? "true" : "false"}">
+              <img src="${escapeHtml(assetUrl(store.large))}" alt="">
+              <span>
+                <span class="row-title">${escapeHtml(store.name)}</span>
+                <span class="row-subtitle">${availability}</span>
+              </span>
+              <span class="pill">${escapeHtml(store.id)}</span>
+            </button>
+          `;
+        }).join("") || '<div class="empty">No stores match the current filters.</div>';
 
         $("storeList").querySelectorAll("[data-store-id]").forEach((button) => {
           button.addEventListener("click", () => {
@@ -1597,16 +1526,9 @@
       function fillStoreForm(store) {
         $("storeFieldId").value = store.id;
         $("storeFieldName").value = store.name;
-        $("storeFieldTheme").value = store.theme;
-        $("storeFieldStatus").value = store.status || "comingSoon";
-        $("storeFieldStoreType").value = store.storeType;
-        $("storeFieldUnlockCondition").value = store.unlockCondition;
+        $("storeFieldStatus").value = store.status === "locked" ? "locked" : "active";
         $("storeFieldEnabled").checked = store.enabled;
-        $("storeFieldLocked").checked = store.lockedByDefault;
         $("storeFieldDescription").value = store.description;
-        $("storeFieldFlavorText").value = store.flavorText;
-        $("storeFieldInventoryType").value = store.inventoryType;
-        $("storeFieldInventoryTheme").value = store.inventoryTheme;
         $("storeFieldInventorySize").value = store.inventorySize;
         const selectedPacks = new Set(store.inventoryPacks || []);
         const packs = [...new Set(metadata.cassettes.map((cassette) => String(cassette.pack || "Unsorted").trim()).filter(Boolean))]
@@ -1623,11 +1545,7 @@
           input.checked = selectedRarities.has(input.value);
         });
         renderStoreEligibility(store);
-        $("storeFieldCostType").value = store.costType;
-        $("storeFieldCostPreview").value = store.costPreview;
-        $("storeFieldInventoryNote").value = store.inventoryNote;
         $("storeFieldLarge").value = store.large;
-        $("storeFieldNotes").value = store.notes;
         $("storeImagePreview").src = assetUrl(store.large);
       }
 
@@ -1996,14 +1914,8 @@
       $("achievementFieldHidden").addEventListener("change", () => updateSelectedAchievement({ hiddenUntilUnlocked: $("achievementFieldHidden").checked }));
       $("achievementFieldRepeatable").addEventListener("change", () => updateSelectedAchievement({ repeatable: $("achievementFieldRepeatable").checked }));
       bindStoreField("storeFieldName", "name");
-      bindStoreField("storeFieldTheme", "theme");
       bindStoreField("storeFieldStatus", "status");
-      bindStoreField("storeFieldStoreType", "storeType");
-      bindStoreField("storeFieldUnlockCondition", "unlockCondition");
       bindStoreField("storeFieldDescription", "description");
-      bindStoreField("storeFieldFlavorText", "flavorText");
-      bindStoreField("storeFieldInventoryType", "inventoryType");
-      bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
       bindStoreField("storeFieldInventorySize", "inventorySize", (value) => Math.max(1, Math.min(12, Number(value) || 3)));
       $("storeFieldInventoryPacks").addEventListener("change", () => {
         updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").querySelectorAll("input:checked")].map((input) => input.value) });
@@ -2011,13 +1923,8 @@
       $("storeFieldInventoryRarities").addEventListener("change", () => {
         updateSelectedStore({ inventoryRarities: [...$("storeFieldInventoryRarities").querySelectorAll("input:checked")].map((input) => input.value) });
       });
-      bindStoreField("storeFieldCostType", "costType");
-      bindStoreField("storeFieldCostPreview", "costPreview");
-      bindStoreField("storeFieldInventoryNote", "inventoryNote");
       bindStoreField("storeFieldLarge", "large");
-      bindStoreField("storeFieldNotes", "notes");
       $("storeFieldEnabled").addEventListener("change", () => updateSelectedStore({ enabled: $("storeFieldEnabled").checked }));
-      $("storeFieldLocked").addEventListener("change", () => updateSelectedStore({ lockedByDefault: $("storeFieldLocked").checked }));
 
       loadDefaultMetadata();
       loadAchievementMetadata();
