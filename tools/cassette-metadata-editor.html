@@ -901,6 +901,10 @@
                   Inventory Theme
                   <input id="storeFieldInventoryTheme">
                 </label>
+                <label>
+                  Inventory Size
+                  <input id="storeFieldInventorySize" type="number" min="1" max="12" step="1">
+                </label>
                 <label class="wide">
                   Eligible Cassette Packs
                   <div id="storeFieldInventoryPacks" class="filter-checks" aria-label="Eligible cassette packs"></div>
@@ -1485,6 +1489,7 @@
           storeType: store.storeType || "Cassette shop",
           inventoryType: store.inventoryType || "Cassette designs",
           inventoryTheme: store.inventoryTheme || store.theme || "General",
+          inventorySize: Math.max(1, Math.min(12, Number(store.inventorySize) || 3)),
           inventoryPacks: Array.isArray(store.inventoryPacks) ? store.inventoryPacks.filter(Boolean) : [],
           inventoryRarities: Array.isArray(store.inventoryRarities) ? store.inventoryRarities.filter(Boolean) : [],
           costType: store.costType || "Not active yet",
@@ -1602,6 +1607,7 @@
         $("storeFieldFlavorText").value = store.flavorText;
         $("storeFieldInventoryType").value = store.inventoryType;
         $("storeFieldInventoryTheme").value = store.inventoryTheme;
+        $("storeFieldInventorySize").value = store.inventorySize;
         const selectedPacks = new Set(store.inventoryPacks || []);
         const packs = [...new Set(metadata.cassettes.map((cassette) => String(cassette.pack || "Unsorted").trim()).filter(Boolean))]
           .sort((a, b) => a.localeCompare(b));
@@ -1998,6 +2004,7 @@
       bindStoreField("storeFieldFlavorText", "flavorText");
       bindStoreField("storeFieldInventoryType", "inventoryType");
       bindStoreField("storeFieldInventoryTheme", "inventoryTheme");
+      bindStoreField("storeFieldInventorySize", "inventorySize", (value) => Math.max(1, Math.min(12, Number(value) || 3)));
       $("storeFieldInventoryPacks").addEventListener("change", () => {
         updateSelectedStore({ inventoryPacks: [...$("storeFieldInventoryPacks").querySelectorAll("input:checked")].map((input) => input.value) });
       });
