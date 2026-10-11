@@ -91,6 +91,14 @@ Explore lightweight, optional GIF animations for moments such as cassette discov
 
 Track and display the number of completed plays for every audio file. Add optional replay rewards that encourage useful revisiting rather than immediate repetition: for example, small rewards for returning after an interval, an unobtrusive “ready to revisit” cue, and achievements for building a lasting review habit. Design the schedule around retention while keeping it flexible and never blocking ordinary listening.
 
-## Classroom recommendations and a cleaner home screen
+## Classroom recommendations: next steps
 
-Replace the persistent Google button in the bottom row with a Teacher or Classroom entry point. The Classroom should recommend what to hear next based on completed-listen history and how long it has been since each audio file was last completed, beginning with clear “ready to revisit” suggestions and later supporting a flexible retention-oriented review schedule. Google connection should happen quietly in the background or through a private service; show a connection action only when it is genuinely needed, preferably in Settings rather than as permanent bottom-row navigation.
+The first Classroom version is implemented. It replaces the bottom-row Google
+button, prioritizes unfinished lessons and overdue reviews, recommends unheard
+material, and opens each recommendation in the episode screen. Google connection
+now lives in Settings.
+
+Later, make the review schedule configurable, explain recommendation scoring in
+more detail, and sync the underlying history across devices when durable progress
+storage is available.
+
