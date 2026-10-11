@@ -1646,6 +1646,62 @@
         color: var(--ink);
       }
 
+      .classroom-hero {
+        display: grid;
+        gap: 8px;
+      }
+
+      .classroom-hero h2,
+      .classroom-hero p {
+        margin: 0;
+      }
+
+      .classroom-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .classroom-card {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+      }
+
+      .classroom-card img {
+        width: 52px;
+        height: 52px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .classroom-card-copy {
+        min-width: 0;
+      }
+
+      .classroom-card strong,
+      .classroom-card small {
+        display: block;
+      }
+
+      .classroom-card strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .classroom-card small {
+        margin-top: 4px;
+      }
+
+      .classroom-badge {
+        color: var(--accent);
+        font-size: 16px;
+        white-space: nowrap;
+      }
+
       @media (min-width: 680px) {
         .file-row {
           grid-template-columns: 1fr auto;
@@ -1793,6 +1849,14 @@
         </button>
       </section>
 
+      <section id="classroomView" class="view">
+        <section class="panel classroom-hero">
+          <h2>Classroom</h2>
+          <p id="classroomSummary">Preparing your next lessons.</p>
+        </section>
+        <section class="classroom-list" id="classroomList"></section>
+      </section>
+
       <section id="collectionView" class="view">
         <section class="panel">
           <div class="episode-top">
@@ -1903,6 +1967,9 @@
         <section class="panel">
           <h2>Connection</h2>
           <div class="stats-list" id="connectionSettings"></div>
+          <div class="settings-action-grid">
+            <button id="googleStatusButton" type="button"><img id="googleStatusIcon" src="assets/google-no.png" alt="">Connect Google</button>
+          </div>
         </section>
 
         <section class="panel">
@@ -1978,9 +2045,9 @@
         <img src="assets/stores_tab.png" alt="">
         <span>Stores</span>
       </button>
-      <button class="nav-button" id="googleStatusButton" type="button" aria-label="Google access unavailable" title="Google access unavailable">
-        <img id="googleStatusIcon" src="assets/google-no.png" alt="">
-        <span>Google</span>
+      <button class="nav-button" data-view="classroom" type="button" aria-label="Classroom" title="Classroom">
+        <img src="assets/fc151.png" alt="">
+        <span>Classroom</span>
       </button>
       <button class="nav-button" data-view="stats" type="button" aria-label="Stats" title="Stats">
         <img src="assets/stats_tab.png" alt="">
@@ -2030,7 +2097,7 @@
       const CASSETTE_ASSIGNMENT_SEED_KEY = "autodidact-cassette-assignment-seed-v1";
       const STORE_TRANSACTION_LEDGER_KEY = "autodidact-store-transactions-v1";
       const STORE_INVENTORY_KEY = "autodidact-store-inventory-v1";
-      const APP_BUILD = "store-slot-refill-8";
+      const APP_BUILD = "classroom-recommendations-1";
       const SERVICE_WORKER_FILE = "service-worker.js";
       const CASSETTE_METADATA_URL = "assets/cassettes/cassette-metadata.json";
       const ACHIEVEMENT_METADATA_URL = "assets/achievements/achievement-metadata.json";
@@ -3438,6 +3505,7 @@
         $("googleStatusIcon").src = connected ? "assets/google-ok.png" : "assets/google-no.png";
         $("googleStatusButton").setAttribute("aria-label", connected ? "Google access connected" : "Google access unavailable");
         $("googleStatusButton").title = connected ? "Google access connected" : "Google access unavailable";
+        $("googleStatusButton").lastChild.textContent = connected ? " Connected" : " Connect Google";
       }
 
       function showView(viewName) {
@@ -3449,6 +3517,7 @@
         if (view) view.classList.add("active");
         if (button) button.classList.add("active");
         if (viewName === "stores") renderStores();
+        if (viewName === "classroom") renderClassroom();
       }
 
       function showLibraryRoot() {
@@ -4332,6 +4401,92 @@
         return { seconds, plays, completions, latest };
       }
 
+      function daysSince(timestamp) {
+        const time = new Date(timestamp || 0).getTime();
+        return time ? Math.max(0, Math.floor((Date.now() - time) / 86400000)) : null;
+      }
+
+      function reviewIntervalDays(completions) {
+        return [1, 3, 7, 14, 30][Math.min(Math.max(completions - 1, 0), 4)];
+      }
+
+      function classroomRecommendations() {
+        const files = [...new Map([...audioFiles, ...downloads].map((file) => [file.id, file])).values()];
+        return files.map((file) => {
+          const stats = statsForFile(file.id);
+          const progress = resumableProgressForFile(file.id);
+          const completions = events
+            .filter((event) => event.fileId === file.id && event.type === "complete")
+            .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0));
+          const lastCompletedAt = completions[0]?.at || "";
+          const elapsedDays = daysSince(lastCompletedAt);
+          const intervalDays = reviewIntervalDays(stats.completions);
+          const overdueDays = elapsedDays === null ? 0 : elapsedDays - intervalDays;
+          let priority = 3;
+          let badge = "New";
+          let reason = "A new lesson from your library";
+
+          if (progress.canResume) {
+            priority = 0;
+            badge = "Resume";
+            reason = `Continue at ${formatDuration(progress.position)} of ${formatDuration(progress.duration)}`;
+          } else if (stats.completions && overdueDays >= 0) {
+            priority = 1;
+            badge = "Review";
+            reason = elapsedDays === 0
+              ? "Completed today and ready for another pass"
+              : `Last completed ${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+          } else if (!stats.completions) {
+            priority = 2;
+          } else {
+            priority = 4;
+            badge = "Upcoming";
+            const daysRemaining = Math.max(1, intervalDays - elapsedDays);
+            reason = `Suggested again in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+          }
+
+          return { file, stats, priority, badge, reason, overdueDays, lastCompletedAt };
+        }).sort((a, b) =>
+          a.priority - b.priority ||
+          b.overdueDays - a.overdueDays ||
+          new Date(a.lastCompletedAt || 0) - new Date(b.lastCompletedAt || 0) ||
+          a.file.name.localeCompare(b.file.name)
+        );
+      }
+
+      function renderClassroom() {
+        const list = $("classroomList");
+        const summary = $("classroomSummary");
+        if (!list || !summary) return;
+        const recommendations = classroomRecommendations();
+        if (!recommendations.length) {
+          summary.textContent = "Refresh your Drive library or download a lesson to get recommendations.";
+          list.innerHTML = `<section class="panel"><p>Your classroom is empty for now.</p></section>`;
+          return;
+        }
+
+        const readyCount = recommendations.filter((item) => item.priority <= 1).length;
+        summary.textContent = readyCount
+          ? `${readyCount} lesson${readyCount === 1 ? " is" : "s are"} ready now. Recommendations favor unfinished lessons and material you have not heard recently.`
+          : "Nothing is due for review, so here are good lessons to begin next.";
+        list.innerHTML = recommendations.slice(0, 10).map(({ file, stats, badge, reason }) => {
+          const cassette = cassetteForFile(file);
+          const art = cassette?.icon || cassette?.large || "assets/fc151.png";
+          const listens = stats.completions ? ` · ${stats.completions} complete` : "";
+          return `
+            <button class="classroom-card" data-episode-file="${escapeHtml(file.id)}" type="button">
+              <img src="${escapeHtml(art)}" alt="">
+              <span class="classroom-card-copy">
+                <strong>${escapeHtml(displayName(file.name))}</strong>
+                <small>${escapeHtml(reason)}${listens}</small>
+              </span>
+              <span class="classroom-badge">${escapeHtml(badge)}</span>
+            </button>
+          `;
+        }).join("");
+        bindFileActions(list);
+      }
+
       function progressForFile(fileId) {
         const latestProgress = [...events].reverse().find((event) =>
           event.fileId === fileId &&
@@ -4419,6 +4574,7 @@
         renderAchievementStats();
         renderListeningHeatmap();
         renderListeningStreakTape();
+        renderClassroom();
       }
 
       function renderSettings() {
@@ -6861,3 +7017,4 @@
     </script>
   </body>
 </html>
+
