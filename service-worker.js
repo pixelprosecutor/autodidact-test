@@ -1,4 +1,4 @@
-const CACHE_NAME = "autodidact-download-animation-v3";
+const CACHE_NAME = "autodidact-classroom-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -285,3 +285,4 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
